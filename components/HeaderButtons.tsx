@@ -1,14 +1,16 @@
+
 import React from "react";
-import { Pressable, StyleSheet, Alert } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { IconSymbol } from "@/components/IconSymbol";
 import { useTheme } from "@react-navigation/native";
+import { router } from "expo-router";
 
 export function HeaderRightButton() {
   const theme = useTheme();
 
   return (
     <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
+      onPress={() => router.push("/create")}
       style={styles.headerButtonContainer}
     >
       <IconSymbol ios_icon_name="plus" android_material_icon_name="add" color={theme.colors.primary} />
@@ -21,7 +23,7 @@ export function HeaderLeftButton() {
 
   return (
     <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
+      onPress={() => router.push("/settings")}
       style={styles.headerButtonContainer}
     >
       <IconSymbol ios_icon_name="gear" android_material_icon_name="settings" color={theme.colors.primary} />

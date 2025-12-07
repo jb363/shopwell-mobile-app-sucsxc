@@ -1,91 +1,263 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
+
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { router } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { IconSymbol } from '@/components/IconSymbol';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function ProfileScreen() {
-  const theme = useTheme();
+  const { user, logout } = useAuth();
+  const { expoPushToken, schedulePushNotification } = useNotifications();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/(auth)/login');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleTestNotification = () => {
+    schedulePushNotification(
+      'Test Notification',
+      'This is a test notification from ShopWell.ai!'
+    );
+    Alert.alert('Success', 'Test notification scheduled!');
+  };
+
+  const menuItems = [
+    {
+      title: 'Account Settings',
+      icon: 'person.circle.fill',
+      androidIcon: 'account_circle',
+      onPress: () => Alert.alert('Account Settings', 'Coming soon!'),
+    },
+    {
+      title: 'Notifications',
+      icon: 'bell.fill',
+      androidIcon: 'notifications',
+      onPress: () => Alert.alert('Notifications', 'Coming soon!'),
+    },
+    {
+      title: 'Privacy & Security',
+      icon: 'lock.shield.fill',
+      androidIcon: 'security',
+      onPress: () => Alert.alert('Privacy & Security', 'Coming soon!'),
+    },
+    {
+      title: 'Help & Support',
+      icon: 'questionmark.circle.fill',
+      androidIcon: 'help',
+      onPress: () => Alert.alert('Help & Support', 'Coming soon!'),
+    },
+    {
+      title: 'About',
+      icon: 'info.circle.fill',
+      androidIcon: 'info',
+      onPress: () => Alert.alert('About', 'ShopWell.ai v1.0.0'),
+    },
+  ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <View style={styles.container}>
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={[
-          styles.contentContainer,
-          Platform.OS !== 'ios' && styles.contentContainerWithTabBar
-        ]}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <GlassView style={[
-          styles.profileHeader,
-          Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-        ]} glassEffectStyle="regular">
-          <IconSymbol ios_icon_name="person.circle.fill" android_material_icon_name="person" size={80} color={theme.colors.primary} />
-          <Text style={[styles.name, { color: theme.colors.text }]}>John Doe</Text>
-          <Text style={[styles.email, { color: theme.dark ? '#98989D' : '#666' }]}>john.doe@example.com</Text>
-        </GlassView>
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            <IconSymbol
+              ios_icon_name="person.fill"
+              android_material_icon_name="person"
+              size={48}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={styles.userName}>{user?.name || 'Guest'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'guest@shopwell.ai'}</Text>
+        </View>
 
-        <GlassView style={[
-          styles.section,
-          Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-        ]} glassEffectStyle="regular">
-          <View style={styles.infoRow}>
-            <IconSymbol ios_icon_name="phone.fill" android_material_icon_name="phone" size={20} color={theme.dark ? '#98989D' : '#666'} />
-            <Text style={[styles.infoText, { color: theme.colors.text }]}>+1 (555) 123-4567</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+          <View style={styles.menuContainer}>
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={item.onPress}
+              >
+                <View style={styles.menuIconContainer}>
+                  <IconSymbol
+                    ios_icon_name={item.icon}
+                    android_material_icon_name={item.androidIcon}
+                    size={24}
+                    color={colors.primary}
+                  />
+                </View>
+                <Text style={styles.menuTitle}>{item.title}</Text>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron_right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
-          <View style={styles.infoRow}>
-            <IconSymbol ios_icon_name="location.fill" android_material_icon_name="location-on" size={20} color={theme.dark ? '#98989D' : '#666'} />
-            <Text style={[styles.infoText, { color: theme.colors.text }]}>San Francisco, CA</Text>
-          </View>
-        </GlassView>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Developer</Text>
+          <TouchableOpacity
+            style={[buttonStyles.outline, styles.testButton]}
+            onPress={handleTestNotification}
+          >
+            <IconSymbol
+              ios_icon_name="bell.badge.fill"
+              android_material_icon_name="notifications_active"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={[buttonStyles.text, { marginLeft: 8 }]}>
+              Test Notification
+            </Text>
+          </TouchableOpacity>
+          {expoPushToken && (
+            <Text style={styles.tokenText} numberOfLines={2}>
+              Push Token: {expoPushToken.substring(0, 40)}...
+            </Text>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={[buttonStyles.primary, styles.logoutButton, { backgroundColor: colors.error }]}
+          onPress={handleLogout}
+        >
+          <IconSymbol
+            ios_icon_name="arrow.right.square.fill"
+            android_material_icon_name="logout"
+            size={20}
+            color="#FFFFFF"
+          />
+          <Text style={[buttonStyles.textWhite, { marginLeft: 8 }]}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    // backgroundColor handled dynamically
-  },
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  contentContainer: {
-    padding: 20,
+  scrollView: {
+    flex: 1,
   },
-  contentContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
+  scrollContent: {
+    paddingTop: 60,
+    paddingBottom: 100,
   },
-  profileHeader: {
+  header: {
     alignItems: 'center',
-    borderRadius: 12,
-    padding: 32,
+    paddingHorizontal: 20,
+    paddingVertical: 32,
+    backgroundColor: colors.card,
+    marginBottom: 24,
+  },
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.highlight,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
-    gap: 12,
   },
-  name: {
+  userName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    // color handled dynamically
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: 4,
   },
-  email: {
+  userEmail: {
     fontSize: 16,
-    // color handled dynamically
+    color: colors.textSecondary,
   },
   section: {
-    borderRadius: 12,
-    padding: 20,
-    gap: 12,
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
-  infoRow: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  menuContainer: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    overflow: 'hidden',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+    elevation: 3,
+  },
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  infoText: {
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.highlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuTitle: {
+    flex: 1,
     fontSize: 16,
-    // color handled dynamically
+    fontWeight: '600',
+    color: colors.text,
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  tokenText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  logoutButton: {
+    marginHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
