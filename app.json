@@ -1,48 +1,113 @@
+
 {
   "expo": {
-    "name": "ShopWell Mobile",
-    "slug": "ShopWell Mobile",
+    "name": "ShopWell.ai",
+    "slug": "shopwell-ai",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/natively-dark.png",
+    "icon": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/natively-dark.png",
+      "image": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#1a1a2e"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.Natively",
+      "bundleIdentifier": "app.shopwell.ios",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "ShopWell.ai needs camera access to scan product barcodes and take photos for product search.",
+        "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to select product images for search.",
+        "NSPhotoLibraryAddUsageDescription": "ShopWell.ai needs permission to save product images to your photo library.",
+        "NSFaceIDUsageDescription": "ShopWell.ai uses Face ID to secure your account and shopping data.",
+        "UIBackgroundModes": ["remote-notification"]
+      },
+      "associatedDomains": [
+        "applinks:bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/natively-dark.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
+        "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.Natively"
+      "package": "app.shopwell.ios",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "READ_MEDIA_IMAGES"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com",
+              "pathPrefix": "/shared"
+            },
+            {
+              "scheme": "https",
+              "host": "bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com",
+              "pathPrefix": "/lists"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "SEND",
+          "data": [
+            {
+              "mimeType": "text/plain"
+            },
+            {
+              "mimeType": "image/*"
+            }
+          ],
+          "category": ["DEFAULT"]
+        }
+      ]
     },
     "web": {
-      "favicon": "./assets/images/final_quest_240x240.png",
+      "favicon": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
       "bundler": "metro"
     },
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
+          "color": "#29abe2",
+          "sounds": [],
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ShopWell.ai needs access to your photos to search for products by image.",
+          "cameraPermission": "ShopWell.ai needs camera access to scan product barcodes and take photos."
+        }
+      ]
     ],
-    "scheme": "natively",
+    "scheme": "shopwell",
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "your-project-id"
+      }
     }
-  },
-  "scheme": "ShopWell Mobile"
+  }
 }

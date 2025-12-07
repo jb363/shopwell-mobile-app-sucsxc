@@ -1,156 +1,281 @@
 
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { router } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
-import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { View, StyleSheet, ActivityIndicator, Platform, BackHandler } from 'react-native';
+import { WebView } from 'react-native-webview';
+import { useWebViewBridge } from '@/contexts/WebViewBridgeContext';
+import { colors } from '@/styles/commonStyles';
+import * as Linking from 'expo-linking';
+
+const WEBSITE_URL = 'https://bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com';
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const webViewRef = useRef<WebView>(null);
+  const {
+    registerWebView,
+    handleHapticFeedback,
+    handleClipboardRead,
+    handleClipboardWrite,
+    handleShare,
+    handleImagePicker,
+  } = useWebViewBridge();
+  
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const features = [
-    {
-      id: '1',
-      title: 'Scan Products',
-      description: 'Scan barcodes to get instant health insights',
-      icon: 'barcode.viewfinder',
-      androidIcon: 'qr_code_scanner',
-      route: '/(tabs)/(home)/scan',
-      color: colors.primary,
-    },
-    {
-      id: '2',
-      title: 'Shopping Lists',
-      description: 'Create and manage your healthy shopping lists',
-      icon: 'list.bullet',
-      androidIcon: 'list',
-      route: '/(tabs)/(home)/shopping-lists',
-      color: colors.accent,
-    },
-    {
-      id: '3',
-      title: 'Product Search',
-      description: 'Search and compare products',
-      icon: 'magnifyingglass',
-      androidIcon: 'search',
-      route: '/(tabs)/(home)/search',
-      color: colors.secondary,
-    },
-    {
-      id: '4',
-      title: 'Health Insights',
-      description: 'View your nutrition trends and insights',
-      icon: 'chart.bar.fill',
-      androidIcon: 'bar_chart',
-      route: '/(tabs)/(home)/insights',
-      color: colors.primary,
-    },
-  ];
+  useEffect(() => {
+    if (webViewRef.current) {
+      registerWebView(webViewRef.current);
+    }
+  }, [registerWebView]);
+
+  // Handle Android back button
+  const onAndroidBackPress = useCallback(() => {
+    if (canGoBack && webViewRef.current) {
+      webViewRef.current.goBack();
+      return true;
+    }
+    return false;
+  }, [canGoBack]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      BackHandler.addEventListener('hardwareBackPress', onAndroidBackPress);
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onAndroidBackPress);
+      };
+    }
+  }, [onAndroidBackPress]);
+
+  // Handle deep links
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      console.log('Deep link received:', event.url);
+      const { path, queryParams } = Linking.parse(event.url);
+      
+      if (path && webViewRef.current) {
+        const targetUrl = `${WEBSITE_URL}/${path}${queryParams ? '?' + new URLSearchParams(queryParams as any).toString() : ''}`;
+        webViewRef.current.injectJavaScript(`
+          window.location.href = '${targetUrl}';
+          true;
+        `);
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Check if app was opened with a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleMessage = useCallback(async (event: any) => {
+    try {
+      const message = JSON.parse(event.nativeEvent.data);
+      console.log('Message from WebView:', message);
+
+      switch (message.type) {
+        case 'natively.haptic.trigger':
+          handleHapticFeedback(message.payload?.type || 'medium');
+          sendResponse(message.id, { success: true });
+          break;
+
+        case 'natively.clipboard.read':
+          const clipboardText = await handleClipboardRead();
+          sendResponse(message.id, { text: clipboardText });
+          break;
+
+        case 'natively.clipboard.write':
+          await handleClipboardWrite(message.payload?.text || '');
+          sendResponse(message.id, { success: true });
+          break;
+
+        case 'natively.share':
+          await handleShare(message.payload);
+          sendResponse(message.id, { success: true });
+          break;
+
+        case 'natively.imagePicker':
+          const imageUri = await handleImagePicker();
+          sendResponse(message.id, { uri: imageUri });
+          break;
+
+        case 'natively.notification.register':
+          // This will be handled by NotificationContext
+          sendResponse(message.id, { success: true });
+          break;
+
+        case 'natively.notification.getToken':
+          // This will be handled by NotificationContext
+          sendResponse(message.id, { token: null });
+          break;
+
+        default:
+          console.log('Unknown message type:', message.type);
+      }
+    } catch (error) {
+      console.error('Error handling WebView message:', error);
+    }
+  }, [handleHapticFeedback, handleClipboardRead, handleClipboardWrite, handleShare, handleImagePicker]);
+
+  const sendResponse = (messageId: string, data: any) => {
+    if (webViewRef.current) {
+      const script = `
+        if (window.nativelyMessageHandlers && window.nativelyMessageHandlers['${messageId}']) {
+          window.nativelyMessageHandlers['${messageId}'](${JSON.stringify(data)});
+          delete window.nativelyMessageHandlers['${messageId}'];
+        }
+        true;
+      `;
+      webViewRef.current.injectJavaScript(script);
+    }
+  };
+
+  const injectedJavaScriptBeforeContentLoaded = `
+    (function() {
+      window.isNativeApp = true;
+      window.nativelyMessageHandlers = {};
+      
+      window.natively = {
+        haptic: {
+          trigger: function(type) {
+            return new Promise((resolve) => {
+              const messageId = 'msg_' + Date.now() + '_' + Math.random();
+              window.nativelyMessageHandlers[messageId] = resolve;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'natively.haptic.trigger',
+                id: messageId,
+                payload: { type: type || 'medium' }
+              }));
+            });
+          }
+        },
+        clipboard: {
+          read: function() {
+            return new Promise((resolve) => {
+              const messageId = 'msg_' + Date.now() + '_' + Math.random();
+              window.nativelyMessageHandlers[messageId] = resolve;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'natively.clipboard.read',
+                id: messageId
+              }));
+            });
+          },
+          write: function(text) {
+            return new Promise((resolve) => {
+              const messageId = 'msg_' + Date.now() + '_' + Math.random();
+              window.nativelyMessageHandlers[messageId] = resolve;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'natively.clipboard.write',
+                id: messageId,
+                payload: { text: text }
+              }));
+            });
+          }
+        },
+        share: function(data) {
+          return new Promise((resolve) => {
+            const messageId = 'msg_' + Date.now() + '_' + Math.random();
+            window.nativelyMessageHandlers[messageId] = resolve;
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'natively.share',
+              id: messageId,
+              payload: data
+            }));
+          });
+        },
+        imagePicker: function() {
+          return new Promise((resolve) => {
+            const messageId = 'msg_' + Date.now() + '_' + Math.random();
+            window.nativelyMessageHandlers[messageId] = resolve;
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'natively.imagePicker',
+              id: messageId
+            }));
+          });
+        },
+        notification: {
+          register: function() {
+            return new Promise((resolve) => {
+              const messageId = 'msg_' + Date.now() + '_' + Math.random();
+              window.nativelyMessageHandlers[messageId] = resolve;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'natively.notification.register',
+                id: messageId
+              }));
+            });
+          },
+          getToken: function() {
+            return new Promise((resolve) => {
+              const messageId = 'msg_' + Date.now() + '_' + Math.random();
+              window.nativelyMessageHandlers[messageId] = resolve;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'natively.notification.getToken',
+                id: messageId
+              }));
+            });
+          }
+        }
+      };
+      
+      console.log('Natively bridge initialized');
+    })();
+    true;
+  `;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Hello, {user?.name || 'Guest'}!</Text>
-            <Text style={styles.subtitle}>What would you like to do today?</Text>
+      <WebView
+        ref={webViewRef}
+        source={{ uri: WEBSITE_URL }}
+        style={styles.webview}
+        onMessage={handleMessage}
+        onLoadStart={() => setIsLoading(true)}
+        onLoadEnd={() => setIsLoading(false)}
+        onLoadProgress={(event) => {
+          setCanGoBack(event.nativeEvent.canGoBack);
+        }}
+        injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
+        allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
+        sharedCookiesEnabled={true}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        scalesPageToFit={true}
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
+        onShouldStartLoadWithRequest={(request) => {
+          // Allow navigation within the app domain
+          const url = request.url;
+          if (url.startsWith(WEBSITE_URL) || url.startsWith('about:blank')) {
+            return true;
+          }
+          
+          // Open external links in browser
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            Linking.openURL(url);
+            return false;
+          }
+          
+          return true;
+        }}
+        renderLoading={() => (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
-          <View style={styles.logoContainer}>
-            <IconSymbol
-              ios_icon_name="cart.fill"
-              android_material_icon_name="shopping_cart"
-              size={32}
-              color={colors.primary}
-            />
-          </View>
+        )}
+      />
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-
-        <View style={styles.featuredCard}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800' }}
-            style={styles.featuredImage}
-          />
-          <View style={styles.featuredOverlay}>
-            <Text style={styles.featuredTitle}>Shop Smarter</Text>
-            <Text style={styles.featuredText}>
-              Make healthier choices with AI-powered insights
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Features</Text>
-          <View style={styles.featuresGrid}>
-            {features.map((feature, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.featureCard, { borderLeftColor: feature.color }]}
-                onPress={() => router.push(feature.route as any)}
-              >
-                <View style={[styles.featureIconContainer, { backgroundColor: feature.color + '20' }]}>
-                  <IconSymbol
-                    ios_icon_name={feature.icon}
-                    android_material_icon_name={feature.androidIcon}
-                    size={28}
-                    color={feature.color}
-                  />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>{feature.title}</Text>
-                  <Text style={styles.featureDescription}>{feature.description}</Text>
-                </View>
-                <IconSymbol
-                  ios_icon_name="chevron.right"
-                  android_material_icon_name="chevron_right"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Stats</Text>
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <IconSymbol
-                ios_icon_name="checkmark.circle.fill"
-                android_material_icon_name="check_circle"
-                size={32}
-                color={colors.success}
-              />
-              <Text style={styles.statValue}>24</Text>
-              <Text style={styles.statLabel}>Products Scanned</Text>
-            </View>
-            <View style={styles.statCard}>
-              <IconSymbol
-                ios_icon_name="list.bullet.circle.fill"
-                android_material_icon_name="list"
-                size={32}
-                color={colors.primary}
-              />
-              <Text style={styles.statValue}>3</Text>
-              <Text style={styles.statLabel}>Shopping Lists</Text>
-            </View>
-            <View style={styles.statCard}>
-              <IconSymbol
-                ios_icon_name="heart.circle.fill"
-                android_material_icon_name="favorite"
-                size={32}
-                color={colors.accent}
-              />
-              <Text style={styles.statValue}>85%</Text>
-              <Text style={styles.statLabel}>Health Score</Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+      )}
     </View>
   );
 }
@@ -160,134 +285,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
+  webview: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  scrollContent: {
-    paddingTop: 60,
-    paddingBottom: 100,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  logoContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.highlight,
-    alignItems: 'center',
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
   },
-  featuredCard: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-    borderRadius: 20,
-    overflow: 'hidden',
-    height: 180,
-  },
-  featuredImage: {
-    width: '100%',
-    height: '100%',
-  },
-  featuredOverlay: {
+  loadingOverlay: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  featuredTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  featuredText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  featuresGrid: {
-    gap: 12,
-  },
-  featureCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
-    elevation: 2,
-  },
-  featureIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
+    bottom: 0,
     justifyContent: 'center',
-    marginRight: 16,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  featureDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
     alignItems: 'center',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    backgroundColor: colors.background,
   },
 });
