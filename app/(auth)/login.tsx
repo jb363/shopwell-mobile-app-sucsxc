@@ -11,6 +11,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,15 +54,14 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <IconSymbol
-              ios_icon_name="cart.fill"
-              android_material_icon_name="shopping_cart"
-              size={64}
-              color={colors.primary}
+            <Image
+              source={require('@/assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg')}
+              style={styles.logo}
+              resizeMode="contain"
             />
           </View>
           <Text style={styles.title}>ShopWell.ai</Text>
-          <Text style={styles.subtitle}>Shop Smarter, Live Healthier</Text>
+          <Text style={styles.subtitle}>Your Smart Shopping List Assistant</Text>
         </View>
 
         <View style={styles.form}>
@@ -124,7 +124,7 @@ export default function LoginScreen() {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={buttonStyles.textWhite}>Log In</Text>
+              <Text style={buttonStyles.textLight}>Log In</Text>
             )}
           </TouchableOpacity>
 
@@ -160,13 +160,20 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.highlight,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
+    overflow: 'hidden',
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    elevation: 4,
+  },
+  logo: {
+    width: 100,
+    height: 100,
   },
   title: {
     fontSize: 32,
@@ -177,6 +184,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
+    textAlign: 'center',
   },
   form: {
     width: '100%',

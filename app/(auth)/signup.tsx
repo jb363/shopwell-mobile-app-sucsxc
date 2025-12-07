@@ -11,6 +11,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,8 +78,17 @@ export default function SignupScreen() {
               color={colors.text}
             />
           </TouchableOpacity>
+          
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join ShopWell.ai today</Text>
+          <Text style={styles.subtitle}>Join ShopWell.ai and start organizing your shopping lists</Text>
         </View>
 
         <View style={styles.form}>
@@ -190,7 +200,7 @@ export default function SignupScreen() {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={buttonStyles.textWhite}>Sign Up</Text>
+              <Text style={buttonStyles.textLight}>Sign Up</Text>
             )}
           </TouchableOpacity>
 
@@ -221,6 +231,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
+    alignItems: 'center',
     marginBottom: 32,
   },
   backButton: {
@@ -231,6 +242,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    alignSelf: 'flex-start',
+  },
+  logoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    overflow: 'hidden',
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    elevation: 4,
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
   title: {
     fontSize: 32,
@@ -241,6 +269,8 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   form: {
     width: '100%',

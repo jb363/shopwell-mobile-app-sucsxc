@@ -83,6 +83,24 @@ export const commonStyles = StyleSheet.create({
     color: colors.textSecondaryDark,
     marginBottom: 16,
   },
+  textSecondary: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  input: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: colors.text,
+  },
+  inputFocused: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+  },
 });
 
 export const buttonStyles = StyleSheet.create({
@@ -118,6 +136,11 @@ export const buttonStyles = StyleSheet.create({
     fontWeight: '600',
   },
   textLight: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textWhite: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
