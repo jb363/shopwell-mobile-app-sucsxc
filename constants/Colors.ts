@@ -1,5 +1,6 @@
-const tintColorLight = "#0a7ea4";
-const tintColorDark = "#fff";
+
+const tintColorLight = "#00D9FF"; // Cyan from logo
+const tintColorDark = "#00D9FF";
 
 export const zincColors = {
   50: "#fafafa",
@@ -13,6 +14,16 @@ export const zincColors = {
   800: "#27272a",
   900: "#18181b",
   950: "#09090b",
+};
+
+// ShopWell.ai Brand Colors
+export const shopWellColors = {
+  cyan: "#00D9FF",
+  blue: "#0099FF",
+  purple: "#9D4EDD",
+  magenta: "#FF006E",
+  darkBg: "#1A1D2E",
+  gradient: ["#00D9FF", "#0099FF", "#9D4EDD", "#FF006E"],
 };
 
 export const appleBlue = "#007AFF";
@@ -31,7 +42,7 @@ export const Colors = {
   },
   dark: {
     text: "#ECEDEE",
-    background: "#151718",
+    background: "#1A1D2E", // ShopWell.ai dark background
     tint: tintColorDark,
     icon: "#9BA1A6",
     tabIconDefault: "#9BA1A6",
