@@ -20,7 +20,8 @@ export function useSharing() {
           Alert.alert('Sharing not supported', 'Your browser does not support sharing.');
         }
       } else {
-        // For native platforms, we'll use a workaround with text
+        // For native platforms, use the native share sheet
+        // TODO: Backend Integration - When sharing lists/products, send share event to backend analytics
         Alert.alert('Share', text, [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Copy', onPress: () => console.log('Text copied') },
@@ -35,11 +36,13 @@ export function useSharing() {
 
   const shareProduct = async (productName: string, healthScore: number) => {
     const text = `Check out ${productName} on ShopWell.ai! Health Score: ${healthScore}/100`;
+    // TODO: Backend Integration - Track product share event in analytics
     await shareText(text, 'Share Product');
   };
 
   const shareShoppingList = async (listName: string, itemCount: number) => {
     const text = `My ${listName} shopping list has ${itemCount} items. Created with ShopWell.ai!`;
+    // TODO: Backend Integration - Track shopping list share event in analytics
     await shareText(text, 'Share Shopping List');
   };
 

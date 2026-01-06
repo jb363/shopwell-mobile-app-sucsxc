@@ -5,44 +5,38 @@
     "slug": "shopwell-ai",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
+    "icon": "./assets/images/natively-dark.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
+      "image": "./assets/images/natively-dark.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.shopwell.ios",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "ShopWell.ai needs camera access to scan product barcodes and take photos for product search.",
-        "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to select product images for search.",
-        "NSPhotoLibraryAddUsageDescription": "ShopWell.ai needs permission to save product images to your photo library.",
-        "NSFaceIDUsageDescription": "ShopWell.ai uses Face ID to secure your account and shopping data.",
-        "UIBackgroundModes": ["remote-notification"]
+        "NSCameraUsageDescription": "ShopWell.ai needs camera access for product photo search",
+        "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to select product images",
+        "NSUserNotificationsUsageDescription": "ShopWell.ai needs notification access to send you updates about your shopping lists and products"
       },
       "associatedDomains": [
         "applinks:bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com"
-      ]
+      ],
+      "entitlements": {
+        "com.apple.developer.associated-domains": [
+          "applinks:bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
-        "backgroundColor": "#1a1a2e"
+        "foregroundImage": "./assets/images/natively-dark.png",
+        "backgroundColor": "#000000"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "app.shopwell.ios",
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT",
-        "READ_MEDIA_IMAGES"
-      ],
+      "package": "app.shopwell.android",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -50,64 +44,38 @@
           "data": [
             {
               "scheme": "https",
-              "host": "bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com",
-              "pathPrefix": "/shared"
-            },
-            {
-              "scheme": "https",
-              "host": "bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com",
-              "pathPrefix": "/lists"
+              "host": "bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         },
         {
           "action": "SEND",
+          "category": ["DEFAULT"],
           "data": [
-            {
-              "mimeType": "text/plain"
-            },
-            {
-              "mimeType": "image/*"
-            }
-          ],
-          "category": ["DEFAULT"]
+            { "mimeType": "text/plain" },
+            { "mimeType": "image/*" }
+          ]
         }
       ]
-    },
-    "web": {
-      "favicon": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
-      "bundler": "metro"
     },
     "plugins": [
       "expo-font",
       "expo-router",
+      "expo-web-browser",
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/e5d14017-e31e-46dd-98ae-0d080d12c875.jpeg",
-          "color": "#29abe2",
+          "icon": "./assets/images/natively-dark.png",
+          "color": "#000000",
           "sounds": [],
           "enableBackgroundRemoteNotifications": true
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "ShopWell.ai needs access to your photos to search for products by image.",
-          "cameraPermission": "ShopWell.ai needs camera access to scan product barcodes and take photos."
         }
       ]
     ],
     "scheme": "shopwell",
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "your-project-id"
-      }
     }
   }
 }

@@ -1,59 +1,64 @@
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Platform, BackHandler } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useWebViewBridge } from '@/contexts/WebViewBridgeContext';
+import { useNotifications } from '@/hooks/useNotifications';
 import { colors } from '@/styles/commonStyles';
 import * as Linking from 'expo-linking';
+import React, { useRef, useEffect, useState } from 'react';
 
 const WEBSITE_URL = 'https://bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com';
 
 export default function HomeScreen() {
+  const { registerWebView, handleBridgeMessage, injectJavaScript } = useWebViewBridge();
+  const { expoPushToken, notification } = useNotifications();
   const webViewRef = useRef<WebView>(null);
-  const {
-    registerWebView,
-    handleHapticFeedback,
-    handleClipboardRead,
-    handleClipboardWrite,
-    handleShare,
-    handleImagePicker,
-  } = useWebViewBridge();
-  
+  const [refreshing, setRefreshing] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (webViewRef.current) {
-      registerWebView(webViewRef.current);
-    }
+    registerWebView(webViewRef.current);
   }, [registerWebView]);
 
-  // Handle Android back button
-  const onAndroidBackPress = useCallback(() => {
-    if (canGoBack && webViewRef.current) {
-      webViewRef.current.goBack();
-      return true;
-    }
-    return false;
-  }, [canGoBack]);
-
+  // Send push token to WebView when available
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      BackHandler.addEventListener('hardwareBackPress', onAndroidBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onAndroidBackPress);
-      };
+    if (expoPushToken && webViewRef.current) {
+      const script = `
+        window.dispatchEvent(new CustomEvent('natively.notification.token', { 
+          detail: { token: '${expoPushToken}' } 
+        }));
+        true;
+      `;
+      webViewRef.current.injectJavaScript(script);
     }
-  }, [onAndroidBackPress]);
+  }, [expoPushToken]);
 
-  // Handle deep links
+  // Handle incoming notifications while app is open
+  useEffect(() => {
+    if (notification && webViewRef.current) {
+      const script = `
+        window.dispatchEvent(new CustomEvent('natively.notification.received', { 
+          detail: ${JSON.stringify(notification.request.content)} 
+        }));
+        true;
+      `;
+      webViewRef.current.injectJavaScript(script);
+    }
+  }, [notification]);
+
+  // Handle deep links and Universal Links
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
       console.log('Deep link received:', event.url);
       const { path, queryParams } = Linking.parse(event.url);
       
       if (path && webViewRef.current) {
-        const targetUrl = `${WEBSITE_URL}/${path}${queryParams ? '?' + new URLSearchParams(queryParams as any).toString() : ''}`;
+        let targetUrl = `${WEBSITE_URL}/${path}`;
+        if (queryParams) {
+          const params = new URLSearchParams(queryParams as any).toString();
+          targetUrl += `?${params}`;
+        }
+        
         webViewRef.current.injectJavaScript(`
           window.location.href = '${targetUrl}';
           true;
@@ -75,71 +80,37 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const handleMessage = useCallback(async (event: any) => {
-    try {
-      const message = JSON.parse(event.nativeEvent.data);
-      console.log('Message from WebView:', message);
-
-      switch (message.type) {
-        case 'natively.haptic.trigger':
-          handleHapticFeedback(message.payload?.type || 'medium');
-          sendResponse(message.id, { success: true });
-          break;
-
-        case 'natively.clipboard.read':
-          const clipboardText = await handleClipboardRead();
-          sendResponse(message.id, { text: clipboardText });
-          break;
-
-        case 'natively.clipboard.write':
-          await handleClipboardWrite(message.payload?.text || '');
-          sendResponse(message.id, { success: true });
-          break;
-
-        case 'natively.share':
-          await handleShare(message.payload);
-          sendResponse(message.id, { success: true });
-          break;
-
-        case 'natively.imagePicker':
-          const imageUri = await handleImagePicker();
-          sendResponse(message.id, { uri: imageUri });
-          break;
-
-        case 'natively.notification.register':
-          // This will be handled by NotificationContext
-          sendResponse(message.id, { success: true });
-          break;
-
-        case 'natively.notification.getToken':
-          // This will be handled by NotificationContext
-          sendResponse(message.id, { token: null });
-          break;
-
-        default:
-          console.log('Unknown message type:', message.type);
-      }
-    } catch (error) {
-      console.error('Error handling WebView message:', error);
-    }
-  }, [handleHapticFeedback, handleClipboardRead, handleClipboardWrite, handleShare, handleImagePicker]);
-
-  const sendResponse = (messageId: string, data: any) => {
-    if (webViewRef.current) {
-      const script = `
-        if (window.nativelyMessageHandlers && window.nativelyMessageHandlers['${messageId}']) {
-          window.nativelyMessageHandlers['${messageId}'](${JSON.stringify(data)});
-          delete window.nativelyMessageHandlers['${messageId}'];
+  // Handle iOS Share Extension data
+  useEffect(() => {
+    const handleSharedData = async () => {
+      const url = await Linking.getInitialURL();
+      if (url && url.includes('/share-target')) {
+        const { queryParams } = Linking.parse(url);
+        if (queryParams && webViewRef.current) {
+          const script = `
+            window.dispatchEvent(new CustomEvent('natively.share.received', { 
+              detail: ${JSON.stringify(queryParams)} 
+            }));
+            true;
+          `;
+          webViewRef.current.injectJavaScript(script);
         }
-        true;
-      `;
-      webViewRef.current.injectJavaScript(script);
-    }
+      }
+    };
+
+    handleSharedData();
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    webViewRef.current?.reload();
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   const injectedJavaScriptBeforeContentLoaded = `
     (function() {
       window.isNativeApp = true;
+      window.isIOSApp = true;
       window.nativelyMessageHandlers = {};
       
       window.natively = {
@@ -190,13 +161,14 @@ export default function HomeScreen() {
             }));
           });
         },
-        imagePicker: function() {
+        imagePicker: function(source) {
           return new Promise((resolve) => {
             const messageId = 'msg_' + Date.now() + '_' + Math.random();
             window.nativelyMessageHandlers[messageId] = resolve;
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'natively.imagePicker',
-              id: messageId
+              id: messageId,
+              payload: { source: source || 'library' }
             }));
           });
         },
@@ -224,10 +196,40 @@ export default function HomeScreen() {
         }
       };
       
-      console.log('Natively bridge initialized');
+      console.log('Natively iOS bridge initialized');
     })();
     true;
   `;
+
+  const handleMessage = (event: any) => {
+    try {
+      const message = JSON.parse(event.nativeEvent.data);
+      console.log('Message from WebView:', message);
+
+      const sendResponse = (data: any) => {
+        if (webViewRef.current) {
+          const script = `
+            if (window.nativelyMessageHandlers && window.nativelyMessageHandlers['${message.id}']) {
+              window.nativelyMessageHandlers['${message.id}'](${JSON.stringify(data)});
+              delete window.nativelyMessageHandlers['${message.id}'];
+            }
+            true;
+          `;
+          webViewRef.current.injectJavaScript(script);
+        }
+      };
+
+      // Handle the message through the bridge context
+      handleBridgeMessage(event);
+      
+      // Send token if requested
+      if (message.type === 'natively.notification.getToken') {
+        sendResponse({ token: expoPushToken });
+      }
+    } catch (error) {
+      console.error('Error handling WebView message:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -236,8 +238,6 @@ export default function HomeScreen() {
         source={{ uri: WEBSITE_URL }}
         style={styles.webview}
         onMessage={handleMessage}
-        onLoadStart={() => setIsLoading(true)}
-        onLoadEnd={() => setIsLoading(false)}
         onLoadProgress={(event) => {
           setCanGoBack(event.nativeEvent.canGoBack);
         }}
@@ -250,59 +250,48 @@ export default function HomeScreen() {
         scalesPageToFit={true}
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
+        renderLoading={() => <ActivityIndicator size="large" color={colors.primary} style={styles.loading} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         onShouldStartLoadWithRequest={(request) => {
-          // Allow navigation within the app domain
           const url = request.url;
+          
+          // Allow navigation within the app domain
           if (url.startsWith(WEBSITE_URL) || url.startsWith('about:blank')) {
             return true;
           }
           
-          // Open external links in browser
+          // Open external links in Safari
           if (url.startsWith('http://') || url.startsWith('https://')) {
+            Linking.openURL(url);
+            return false;
+          }
+          
+          // Handle custom URL schemes
+          if (url.startsWith('shopwell://')) {
             Linking.openURL(url);
             return false;
           }
           
           return true;
         }}
-        renderLoading={() => (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        )}
       />
-      {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  container: { 
+    flex: 1, 
+    backgroundColor: colors.background 
   },
-  webview: {
-    flex: 1,
-    backgroundColor: colors.background,
+  webview: { 
+    flex: 1 
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
+  loading: { 
+    position: 'absolute', 
+    top: '50%', 
+    left: '50%', 
+    marginLeft: -20, 
+    marginTop: -20 
   },
 });
