@@ -1,35 +1,90 @@
 
-import React from "react";
-import { Stack } from "expo-router";
-import { FlatList, StyleSheet, View } from "react-native";
-import { useTheme } from "@react-navigation/native";
-import { modalDemos } from "@/components/homeData";
-import { DemoCard } from "@/components/DemoCard";
-import { HeaderRightButton, HeaderLeftButton } from "@/components/HeaderButtons";
+import React, { useRef, useEffect } from 'react';
+import { StyleSheet, View, Platform } from 'react-native';
+import { Stack } from 'expo-router';
+import { WebView } from 'react-native-webview';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import * as ImagePicker from 'expo-image-picker';
+import { useNotifications } from '@/hooks/useNotifications';
+
+const SHOPWELL_URL = 'https://bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com';
 
 export default function HomeScreen() {
-  const theme = useTheme();
+  const webViewRef = useRef<WebView>(null);
+  const { expoPushToken } = useNotifications();
+
+  useEffect(() => {
+    if (expoPushToken && webViewRef.current) {
+      webViewRef.current.injectJavaScript(`
+        window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
+      `);
+    }
+  }, [expoPushToken]);
+
+  const handleMessage = async (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      
+      switch (data.type) {
+        case 'natively.clipboard.read':
+          const text = await Clipboard.getStringAsync();
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ type: 'CLIPBOARD_READ_RESPONSE', text: '${text}' }, '*');
+          `);
+          break;
+          
+        case 'natively.clipboard.write':
+          await Clipboard.setStringAsync(data.text);
+          break;
+          
+        case 'natively.haptic.trigger':
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          break;
+          
+        case 'natively.share':
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(data.url);
+          }
+          break;
+          
+        case 'natively.imagePicker':
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 1,
+          });
+          if (!result.canceled) {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'IMAGE_SELECTED', uri: '${result.assets[0].uri}' }, '*');
+            `);
+          }
+          break;
+          
+        default:
+          console.log('Unknown message type:', data.type);
+      }
+    } catch (error) {
+      console.error('Error handling message:', error);
+    }
+  };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "ShopWell.ai",
-          headerRight: () => <HeaderRightButton />,
-          headerLeft: () => <HeaderLeftButton />,
-        }}
+    <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <WebView
+        ref={webViewRef}
+        source={{ uri: SHOPWELL_URL }}
+        style={styles.webview}
+        onMessage={handleMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        pullToRefreshEnabled={true}
+        allowsBackForwardNavigationGestures={true}
+        sharedCookiesEnabled={true}
       />
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <FlatList
-          data={modalDemos}
-          renderItem={({ item }) => <DemoCard item={item} />}
-          keyExtractor={(item) => item.route}
-          contentContainerStyle={styles.listContainer}
-          contentInsetAdjustmentBehavior="automatic"
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
-    </>
+    </View>
   );
 }
 
@@ -37,8 +92,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+  webview: {
+    flex: 1,
   },
 });
