@@ -1,55 +1,35 @@
 
-import { useState } from 'react';
 import * as Sharing from 'expo-sharing';
-import { Platform, Alert } from 'react-native';
+import { Platform } from 'react-native';
 
-export function useSharing() {
-  const [isSharing, setIsSharing] = useState(false);
+export const useSharing = () => {
+  const shareContent = async (message: string, url?: string) => {
+    const fullMessage = url ? `${message}\n${url}` : message;
 
-  const shareText = async (text: string, title?: string) => {
-    try {
-      setIsSharing(true);
-      
-      if (Platform.OS === 'web') {
-        if (navigator.share) {
+    if (Platform.OS === 'web') {
+      // Web sharing using the navigator API
+      if (navigator.share) {
+        try {
           await navigator.share({
-            title: title || 'ShopWell.ai',
-            text: text,
+            title: 'ShopWell.ai',
+            text: fullMessage,
+            url: url || undefined,
           });
-        } else {
-          Alert.alert('Sharing not supported', 'Your browser does not support sharing.');
+          console.log('Shared successfully');
+        } catch (error) {
+          console.error('Error sharing:', error);
         }
       } else {
-        // For native platforms, use the native share sheet
-        // TODO: Backend Integration - When sharing lists/products, send share event to backend analytics
-        Alert.alert('Share', text, [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Copy', onPress: () => console.log('Text copied') },
-        ]);
+        console.warn('Web sharing is not supported on this browser.');
       }
-    } catch (error) {
-      console.log('Error sharing:', error);
-    } finally {
-      setIsSharing(false);
+    } else {
+      // Native sharing using Expo Sharing API
+      await Sharing.shareAsync(url || 'https://shopwell.ai', {
+        dialogTitle: message,
+        UTI: url ? 'public.url' : 'text/plain',
+      });
     }
   };
 
-  const shareProduct = async (productName: string, healthScore: number) => {
-    const text = `Check out ${productName} on ShopWell.ai! Health Score: ${healthScore}/100`;
-    // TODO: Backend Integration - Track product share event in analytics
-    await shareText(text, 'Share Product');
-  };
-
-  const shareShoppingList = async (listName: string, itemCount: number) => {
-    const text = `My ${listName} shopping list has ${itemCount} items. Created with ShopWell.ai!`;
-    // TODO: Backend Integration - Track shopping list share event in analytics
-    await shareText(text, 'Share Shopping List');
-  };
-
-  return {
-    isSharing,
-    shareText,
-    shareProduct,
-    shareShoppingList,
-  };
-}
+  return { shareContent };
+};
