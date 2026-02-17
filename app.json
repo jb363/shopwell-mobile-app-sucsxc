@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "ShopWell.ai",
-    "slug": "shopwell-ai",
+    "name": "ShopWell.ai Mobile",
+    "slug": "ShopWell.ai Mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/ShopWell.ai Logo.png",
@@ -24,7 +23,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
         "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to search products from images",
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "CFBundleAllowMixedLocalizations": true
       },
       "associatedDomains": [
@@ -65,21 +66,28 @@
               "pathPrefix": "/lists"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "SEND",
           "data": {
             "mimeType": "text/plain"
           },
-          "category": ["DEFAULT"]
+          "category": [
+            "DEFAULT"
+          ]
         },
         {
           "action": "SEND",
           "data": {
             "mimeType": "image/*"
           },
-          "category": ["DEFAULT"]
+          "category": [
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -92,7 +100,7 @@
       "expo-router",
       "expo-web-browser"
     ],
-    "scheme": "shopwell",
+    "scheme": "ShopWell.ai Mobile",
     "experiments": {
       "typedRoutes": true
     },
