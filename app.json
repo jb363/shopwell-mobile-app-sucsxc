@@ -1,7 +1,7 @@
 
 {
   "expo": {
-    "name": "ShopWell.ai Mobile",
+    "name": "ShopWell.ai",
     "slug": "shopwell-ai-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -108,11 +108,11 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "2660e422-ff9f-4525-8ca0-080bf290cdf4"
       }
     },
     "updates": {
-      "url": "https://u.expo.dev/your-eas-project-id"
+      "url": "https://u.expo.dev/2660e422-ff9f-4525-8ca0-080bf290cdf4"
     },
     "runtimeVersion": {
       "policy": "appVersion"
