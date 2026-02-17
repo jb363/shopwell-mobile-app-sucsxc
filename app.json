@@ -101,7 +101,7 @@
       "expo-router",
       "expo-web-browser"
     ],
-    "scheme": "shopwell",
+    "scheme": "shopwellai",
     "experiments": {
       "typedRoutes": true
     },
