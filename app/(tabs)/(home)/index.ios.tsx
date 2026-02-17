@@ -11,7 +11,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import * as OfflineStorage from '@/utils/offlineStorage';
 
-const SHOPWELL_URL = 'https://bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com';
+const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
   const webViewRef = useRef<WebView>(null);

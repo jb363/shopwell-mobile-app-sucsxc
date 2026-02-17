@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 
-const SHOPWELL_URL = 'https://bda3e11e-68e8-45b3-9d3c-7c4fff44599c.lovableproject.com';
+const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
   const openWebsite = () => {
