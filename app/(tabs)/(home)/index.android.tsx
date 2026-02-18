@@ -189,6 +189,51 @@ export default function HomeScreen() {
     }
   };
 
+  // JavaScript to inject that tells the website it's running in native app
+  const injectedJavaScript = `
+    (function() {
+      // Set flag that we're in native app
+      window.isNativeApp = true;
+      window.nativeAppPlatform = 'android';
+      
+      // Hide any "Download App" banners or prompts
+      const hideDownloadPrompts = () => {
+        // Common selectors for app download banners
+        const selectors = [
+          '[data-download-app]',
+          '[class*="download-app"]',
+          '[class*="app-banner"]',
+          '[class*="install-app"]',
+          '[id*="download-app"]',
+          '[id*="app-banner"]',
+          '.app-download-banner',
+          '.download-banner',
+          '.install-banner'
+        ];
+        
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            el.style.display = 'none';
+          });
+        });
+      };
+      
+      // Run immediately and after DOM loads
+      hideDownloadPrompts();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideDownloadPrompts);
+      }
+      
+      // Also run periodically to catch dynamically added elements
+      setInterval(hideDownloadPrompts, 1000);
+      
+      // Notify the website that we're in native app
+      window.postMessage({ type: 'NATIVE_APP_READY', platform: 'android' }, '*');
+    })();
+    true;
+  `;
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -202,6 +247,13 @@ export default function HomeScreen() {
         startInLoadingState={true}
         pullToRefreshEnabled={true}
         sharedCookiesEnabled={true}
+        injectedJavaScript={injectedJavaScript}
+        onLoadEnd={() => {
+          // Re-inject after page loads to ensure it takes effect
+          if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(injectedJavaScript);
+          }
+        }}
       />
     </View>
   );

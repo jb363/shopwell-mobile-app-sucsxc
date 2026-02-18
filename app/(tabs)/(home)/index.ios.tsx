@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
@@ -17,6 +18,7 @@ export default function HomeScreen() {
   const webViewRef = useRef<WebView>(null);
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
@@ -189,8 +191,53 @@ export default function HomeScreen() {
     }
   };
 
+  // JavaScript to inject that tells the website it's running in native app
+  const injectedJavaScript = `
+    (function() {
+      // Set flag that we're in native app
+      window.isNativeApp = true;
+      window.nativeAppPlatform = 'ios';
+      
+      // Hide any "Download App" banners or prompts
+      const hideDownloadPrompts = () => {
+        // Common selectors for app download banners
+        const selectors = [
+          '[data-download-app]',
+          '[class*="download-app"]',
+          '[class*="app-banner"]',
+          '[class*="install-app"]',
+          '[id*="download-app"]',
+          '[id*="app-banner"]',
+          '.app-download-banner',
+          '.download-banner',
+          '.install-banner'
+        ];
+        
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            el.style.display = 'none';
+          });
+        });
+      };
+      
+      // Run immediately and after DOM loads
+      hideDownloadPrompts();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideDownloadPrompts);
+      }
+      
+      // Also run periodically to catch dynamically added elements
+      setInterval(hideDownloadPrompts, 1000);
+      
+      // Notify the website that we're in native app
+      window.postMessage({ type: 'NATIVE_APP_READY', platform: 'ios' }, '*');
+    })();
+    true;
+  `;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <WebView
         ref={webViewRef}
@@ -203,6 +250,13 @@ export default function HomeScreen() {
         pullToRefreshEnabled={true}
         allowsBackForwardNavigationGestures={true}
         sharedCookiesEnabled={true}
+        injectedJavaScript={injectedJavaScript}
+        onLoadEnd={() => {
+          // Re-inject after page loads to ensure it takes effect
+          if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(injectedJavaScript);
+          }
+        }}
       />
     </View>
   );
