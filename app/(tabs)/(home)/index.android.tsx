@@ -196,8 +196,8 @@ export default function HomeScreen() {
       window.isNativeApp = true;
       window.nativeAppPlatform = 'android';
       
-      // Hide any "Download App" banners or prompts
-      const hideDownloadPrompts = () => {
+      // Hide any "Download App" banners, prompts, and "Products in the News"
+      const hideUnwantedElements = () => {
         // Common selectors for app download banners
         const selectors = [
           '[data-download-app]',
@@ -208,7 +208,15 @@ export default function HomeScreen() {
           '[id*="app-banner"]',
           '.app-download-banner',
           '.download-banner',
-          '.install-banner'
+          '.install-banner',
+          // Products in the News selectors
+          '[data-products-news]',
+          '[class*="products-news"]',
+          '[class*="products-in-news"]',
+          '[id*="products-news"]',
+          '[id*="products-in-news"]',
+          'a[href*="/news"]',
+          'a[href*="/products-news"]'
         ];
         
         selectors.forEach(selector => {
@@ -217,16 +225,29 @@ export default function HomeScreen() {
             el.style.display = 'none';
           });
         });
+        
+        // Also hide by text content (for "Products in the News" links)
+        const allLinks = document.querySelectorAll('a, button, div[role="button"]');
+        allLinks.forEach(el => {
+          const text = el.textContent?.toLowerCase() || '';
+          if (text.includes('products in the news') || text.includes('products in news')) {
+            el.style.display = 'none';
+            // Also hide parent if it's a list item
+            if (el.parentElement?.tagName === 'LI') {
+              el.parentElement.style.display = 'none';
+            }
+          }
+        });
       };
       
       // Run immediately and after DOM loads
-      hideDownloadPrompts();
+      hideUnwantedElements();
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', hideDownloadPrompts);
+        document.addEventListener('DOMContentLoaded', hideUnwantedElements);
       }
       
       // Also run periodically to catch dynamically added elements
-      setInterval(hideDownloadPrompts, 1000);
+      setInterval(hideUnwantedElements, 1000);
       
       // Notify the website that we're in native app
       window.postMessage({ type: 'NATIVE_APP_READY', platform: 'android' }, '*');
