@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import * as OfflineStorage from '@/utils/offlineStorage';
+import * as ContactsHandler from '@/utils/contactsHandler';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -98,6 +99,61 @@ export default function HomeScreen() {
         case 'natively.scanner.open':
           // Navigate to scanner screen
           router.push('/scanner');
+          break;
+          
+        case 'natively.contacts.requestPermission':
+          console.log('User requested contacts permission from web');
+          const permissionGranted = await ContactsHandler.requestContactsPermission();
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'CONTACTS_PERMISSION_RESPONSE', 
+              granted: ${permissionGranted}
+            }, '*');
+          `);
+          break;
+          
+        case 'natively.contacts.getAll':
+          console.log('User requested to import all contacts from web');
+          const hasPermission = await ContactsHandler.hasContactsPermission();
+          if (!hasPermission) {
+            console.log('No contacts permission, requesting...');
+            const granted = await ContactsHandler.requestContactsPermission();
+            if (!granted) {
+              console.log('Contacts permission denied by user');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CONTACTS_GET_ALL_RESPONSE', 
+                  contacts: [],
+                  error: 'Permission denied'
+                }, '*');
+              `);
+              break;
+            }
+          }
+          
+          const allContacts = await ContactsHandler.getAllContacts();
+          console.log(`Sending ${allContacts.length} contacts to web`);
+          // Escape JSON for injection
+          const contactsJson = JSON.stringify(allContacts).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'CONTACTS_GET_ALL_RESPONSE', 
+              contacts: ${JSON.stringify(allContacts)}
+            }, '*');
+          `);
+          break;
+          
+        case 'natively.contacts.search':
+          console.log('User searching contacts with query:', data.query);
+          const searchResults = await ContactsHandler.searchContacts(data.query || '');
+          console.log(`Found ${searchResults.length} matching contacts`);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'CONTACTS_SEARCH_RESPONSE', 
+              contacts: ${JSON.stringify(searchResults)},
+              query: '${data.query || ''}'
+            }, '*');
+          `);
           break;
           
         case 'natively.storage.get':
@@ -251,8 +307,12 @@ export default function HomeScreen() {
       // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
-      // Notify the website that we're in native app
-      window.postMessage({ type: 'NATIVE_APP_READY', platform: 'ios' }, '*');
+      // Notify the website that we're in native app with contacts support
+      window.postMessage({ 
+        type: 'NATIVE_APP_READY', 
+        platform: 'ios',
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline']
+      }, '*');
     })();
     true;
   `;

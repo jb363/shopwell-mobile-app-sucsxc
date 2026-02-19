@@ -24,6 +24,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
         "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to search products from images",
+        "NSContactsUsageDescription": "ShopWell.ai needs access to your contacts to help you connect with friends and family on the platform",
         "UIBackgroundModes": [
           "remote-notification"
         ],
@@ -46,7 +47,8 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "NOTIFICATIONS"
+        "NOTIFICATIONS",
+        "READ_CONTACTS"
       ],
       "intentFilters": [
         {
