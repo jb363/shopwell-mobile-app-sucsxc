@@ -1,15 +1,14 @@
-
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
     "slug": "shopwell-ai-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/9f690794-ae21-4465-a1f1-dd1f8d6a46e5.png",
+    "icon": "./assets/images/shopwell-ai-app-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/9f690794-ae21-4465-a1f1-dd1f8d6a46e5.png",
+      "image": "./assets/images/shopwell-ai-app-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#1A1D2E"
     },
@@ -37,7 +36,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/9f690794-ae21-4465-a1f1-dd1f8d6a46e5.png",
+        "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
         "backgroundColor": "#1A1D2E"
       },
       "edgeToEdgeEnabled": true,
