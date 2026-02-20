@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect } from 'react';
-import { StyleSheet, View, Platform } from 'react-native';
+import { StyleSheet, View, Platform, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as Clipboard from 'expo-clipboard';
@@ -46,6 +46,48 @@ export default function HomeScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       
       switch (data.type) {
+        case 'natively.account.delete':
+          console.log('User initiated account deletion from web');
+          // The website should handle the actual deletion
+          // We just need to acknowledge and clear local data
+          Alert.alert(
+            'Delete Account',
+            'Your account will be permanently deleted. This action cannot be undone. All your data will be removed from our servers.',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+                onPress: () => {
+                  webViewRef.current?.injectJavaScript(`
+                    window.postMessage({ 
+                      type: 'ACCOUNT_DELETE_RESPONSE', 
+                      cancelled: true
+                    }, '*');
+                  `);
+                }
+              },
+              {
+                text: 'Delete Account',
+                style: 'destructive',
+                onPress: async () => {
+                  console.log('User confirmed account deletion');
+                  // Clear all local data
+                  await OfflineStorage.clearAll();
+                  console.log('Cleared all local storage');
+                  
+                  // Notify web to proceed with server-side deletion
+                  webViewRef.current?.injectJavaScript(`
+                    window.postMessage({ 
+                      type: 'ACCOUNT_DELETE_RESPONSE', 
+                      confirmed: true
+                    }, '*');
+                  `);
+                }
+              }
+            ]
+          );
+          break;
+
         case 'natively.clipboard.read':
           const text = await Clipboard.getStringAsync();
           webViewRef.current?.injectJavaScript(`
@@ -305,11 +347,11 @@ export default function HomeScreen() {
       // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
-      // Notify the website that we're in native app with contacts support
+      // Notify the website that we're in native app with all features
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'android',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion']
       }, '*');
     })();
     true;

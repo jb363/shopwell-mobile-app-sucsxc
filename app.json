@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -18,12 +19,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.shopwell.ios",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
         "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to search products from images",
         "NSContactsUsageDescription": "ShopWell.ai needs access to your contacts to help you connect with friends and family on the platform",
+        "NSUserTrackingUsageDescription": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers.",
         "UIBackgroundModes": [
           "remote-notification"
         ],
@@ -41,7 +43,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "app.shopwell.android",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
@@ -97,7 +99,13 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers."
+        }
+      ]
     ],
     "scheme": "shopwell-ai-mobile",
     "experiments": {
