@@ -24,6 +24,7 @@
         "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
         "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to search products from images",
         "NSContactsUsageDescription": "ShopWell.ai needs access to your contacts to help you connect with friends and family on the platform",
+        "NSMicrophoneUsageDescription": "ShopWell.ai needs microphone access for voice planning and audio features",
         "NSUserTrackingUsageDescription": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers.",
         "UIBackgroundModes": [
           "remote-notification"
@@ -48,7 +49,8 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "NOTIFICATIONS",
-        "READ_CONTACTS"
+        "READ_CONTACTS",
+        "RECORD_AUDIO"
       ],
       "intentFilters": [
         {

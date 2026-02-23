@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { StyleSheet, View, Platform, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
@@ -7,10 +7,12 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
+import { Audio } from 'expo-audio';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
+import * as AudioHandler from '@/utils/audioHandler';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -18,6 +20,7 @@ export default function HomeScreen() {
   const webViewRef = useRef<WebView>(null);
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
+  const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
@@ -46,10 +49,114 @@ export default function HomeScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       
       switch (data.type) {
+        case 'natively.microphone.requestPermission':
+          console.log('User requested microphone permission from web');
+          const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'MICROPHONE_PERMISSION_RESPONSE', 
+              granted: ${micPermissionGranted}
+            }, '*');
+          `);
+          break;
+
+        case 'natively.audio.startRecording':
+          console.log('User initiated audio recording from web');
+          const recording = await AudioHandler.startRecording();
+          if (recording) {
+            setCurrentRecording(recording);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'AUDIO_RECORDING_STARTED', 
+                success: true
+              }, '*');
+            `);
+          } else {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'AUDIO_RECORDING_STARTED', 
+                success: false,
+                error: 'Failed to start recording'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.audio.stopRecording':
+          console.log('User stopped audio recording from web');
+          if (currentRecording) {
+            const uri = await AudioHandler.stopRecording(currentRecording);
+            setCurrentRecording(null);
+            if (uri) {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_STOPPED', 
+                  success: true,
+                  uri: '${uri}'
+                }, '*');
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_STOPPED', 
+                  success: false,
+                  error: 'Failed to stop recording'
+                }, '*');
+              `);
+            }
+          } else {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'AUDIO_RECORDING_STOPPED', 
+                success: false,
+                error: 'No active recording'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.audio.pauseRecording':
+          console.log('User paused audio recording from web');
+          if (currentRecording) {
+            const paused = await AudioHandler.pauseRecording(currentRecording);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'AUDIO_RECORDING_PAUSED', 
+                success: ${paused}
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.audio.resumeRecording':
+          console.log('User resumed audio recording from web');
+          if (currentRecording) {
+            const resumed = await AudioHandler.resumeRecording(currentRecording);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'AUDIO_RECORDING_RESUMED', 
+                success: ${resumed}
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.audio.getStatus':
+          if (currentRecording) {
+            const status = await AudioHandler.getRecordingStatus(currentRecording);
+            if (status) {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_STATUS', 
+                  status: ${JSON.stringify(status)}
+                }, '*');
+              `);
+            }
+          }
+          break;
+
         case 'natively.account.delete':
           console.log('User initiated account deletion from web');
-          // The website should handle the actual deletion
-          // We just need to acknowledge and clear local data
           Alert.alert(
             'Delete Account',
             'Your account will be permanently deleted. This action cannot be undone. All your data will be removed from our servers.',
@@ -71,11 +178,9 @@ export default function HomeScreen() {
                 style: 'destructive',
                 onPress: async () => {
                   console.log('User confirmed account deletion');
-                  // Clear all local data
                   await OfflineStorage.clearAll();
                   console.log('Cleared all local storage');
                   
-                  // Notify web to proceed with server-side deletion
                   webViewRef.current?.injectJavaScript(`
                     window.postMessage({ 
                       type: 'ACCOUNT_DELETE_RESPONSE', 
@@ -137,7 +242,6 @@ export default function HomeScreen() {
           break;
           
         case 'natively.scanner.open':
-          // Navigate to scanner screen
           router.push('/scanner');
           break;
           
@@ -173,8 +277,6 @@ export default function HomeScreen() {
           
           const allContacts = await ContactsHandler.getAllContacts();
           console.log(`Sending ${allContacts.length} contacts to web`);
-          // Escape JSON for injection
-          const contactsJson = JSON.stringify(allContacts).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -287,16 +389,12 @@ export default function HomeScreen() {
     }
   };
 
-  // JavaScript to inject that tells the website it's running in native app
   const injectedJavaScript = `
     (function() {
-      // Set flag that we're in native app
       window.isNativeApp = true;
       window.nativeAppPlatform = 'android';
       
-      // Hide any "Download App" banners, prompts, and "Products in the News"
       const hideUnwantedElements = () => {
-        // Common selectors for app download banners
         const selectors = [
           '[data-download-app]',
           '[class*="download-app"]',
@@ -307,7 +405,6 @@ export default function HomeScreen() {
           '.app-download-banner',
           '.download-banner',
           '.install-banner',
-          // Products in the News selectors
           '[data-products-news]',
           '[class*="products-news"]',
           '[class*="products-in-news"]',
@@ -324,13 +421,11 @@ export default function HomeScreen() {
           });
         });
         
-        // Also hide by text content (for "Products in the News" links)
         const allLinks = document.querySelectorAll('a, button, div[role="button"]');
         allLinks.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
           if (text.includes('products in the news') || text.includes('products in news')) {
             el.style.display = 'none';
-            // Also hide parent if it's a list item
             if (el.parentElement?.tagName === 'LI') {
               el.parentElement.style.display = 'none';
             }
@@ -338,20 +433,17 @@ export default function HomeScreen() {
         });
       };
       
-      // Run immediately and after DOM loads
       hideUnwantedElements();
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideUnwantedElements);
       }
       
-      // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
-      // Notify the website that we're in native app with all features
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'android',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording']
       }, '*');
     })();
     true;
@@ -369,10 +461,10 @@ export default function HomeScreen() {
         domStorageEnabled={true}
         startInLoadingState={true}
         pullToRefreshEnabled={true}
+        allowsBackForwardNavigationGestures={true}
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
         onLoadEnd={() => {
-          // Re-inject after page loads to ensure it takes effect
           if (webViewRef.current) {
             webViewRef.current.injectJavaScript(injectedJavaScript);
           }
