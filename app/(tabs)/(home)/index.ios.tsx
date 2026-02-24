@@ -13,6 +13,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useTrackingPermission } from '@/hooks/useTrackingPermission';
 import { useGeofencing } from '@/hooks/useGeofencing';
+import { useQuickActions } from '@/hooks/useQuickActions';
 import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
 import * as AudioHandler from '@/utils/audioHandler';
@@ -38,6 +39,9 @@ export default function HomeScreen() {
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+
+  // Set up quick actions (app shortcuts)
+  useQuickActions(webViewRef);
 
   // Check initial permission statuses
   useEffect(() => {
@@ -699,17 +703,27 @@ export default function HomeScreen() {
       
       // Hide any "Download App" banners, prompts, "Products in the News", and "Quick Tip" messages
       const hideUnwantedElements = () => {
-        // Common selectors for app download banners
+        // Common selectors for app download banners and unwanted elements
         const selectors = [
           '[data-download-app]',
           '[class*="download-app"]',
           '[class*="app-banner"]',
           '[class*="install-app"]',
+          '[class*="get-app"]',
+          '[class*="mobile-app"]',
           '[id*="download-app"]',
           '[id*="app-banner"]',
+          '[id*="install-app"]',
+          '[id*="get-app"]',
           '.app-download-banner',
           '.download-banner',
           '.install-banner',
+          '.get-app-banner',
+          '.mobile-app-banner',
+          'a[href*="download"]',
+          'a[href*="get-app"]',
+          'button[class*="download"]',
+          'button[class*="get-app"]',
           // Products in the News selectors
           '[data-products-news]',
           '[class*="products-news"]',
@@ -732,23 +746,56 @@ export default function HomeScreen() {
           const elements = document.querySelectorAll(selector);
           elements.forEach(el => {
             el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.height = '0';
+            el.style.overflow = 'hidden';
+            el.remove();
           });
         });
         
-        // Also hide by text content
-        const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article');
+        // Also hide by text content (more aggressive)
+        const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article, nav, header');
         allElements.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
-          // Hide "Products in the News" links
-          if (text.includes('products in the news') || text.includes('products in news')) {
+          const ariaLabel = el.getAttribute('aria-label')?.toLowerCase() || '';
+          const title = el.getAttribute('title')?.toLowerCase() || '';
+          const combinedText = text + ' ' + ariaLabel + ' ' + title;
+          
+          // Hide "Download App" or "Get App" elements
+          if (combinedText.includes('download app') || 
+              combinedText.includes('get app') || 
+              combinedText.includes('install app') ||
+              combinedText.includes('download the app') ||
+              combinedText.includes('get the app')) {
             el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.height = '0';
+            el.style.overflow = 'hidden';
+            
+            // Also hide parent if it's a list item or nav item
+            if (el.parentElement?.tagName === 'LI' || el.parentElement?.tagName === 'NAV') {
+              el.parentElement.style.display = 'none';
+            }
+          }
+          
+          // Hide "Products in the News" links
+          if (combinedText.includes('products in the news') || combinedText.includes('products in news')) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
             if (el.parentElement?.tagName === 'LI') {
               el.parentElement.style.display = 'none';
             }
           }
+          
           // Hide "Quick Tip" messages about Click-&-Add
-          if (text.includes('quick tip') && (text.includes('click') || text.includes('add') || text.includes('install'))) {
+          if (combinedText.includes('quick tip') && (combinedText.includes('click') || combinedText.includes('add') || combinedText.includes('install'))) {
             el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.height = '0';
+            el.style.overflow = 'hidden';
             if (el.parentElement?.tagName === 'LI') {
               el.parentElement.style.display = 'none';
             }
@@ -765,11 +812,18 @@ export default function HomeScreen() {
       // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
+      // Use MutationObserver for more efficient detection
+      const observer = new MutationObserver(hideUnwantedElements);
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
       // Notify the website that we're in native app with all features including geofencing
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'ios',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions']
       }, '*');
     })();
     true;

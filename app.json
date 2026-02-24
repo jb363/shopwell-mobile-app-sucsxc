@@ -1,7 +1,8 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "ShopWell.ai Mobile",
+    "slug": "ShopWell-ai-Mobile",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
@@ -97,7 +98,7 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
     },
     "web": {
       "favicon": "./assets/images/9f690794-ae21-4465-a1f1-dd1f8d6a46e5.png",
@@ -121,9 +122,28 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "voice-planner": {
+              "foregroundImage": "./assets/images/shortcut-voice.png",
+              "backgroundColor": "#1A1D2E"
+            },
+            "product-search": {
+              "foregroundImage": "./assets/images/shortcut-search.png",
+              "backgroundColor": "#1A1D2E"
+            },
+            "photo-search": {
+              "foregroundImage": "./assets/images/shortcut-camera.png",
+              "backgroundColor": "#1A1D2E"
+            }
+          }
+        }
       ]
     ],
-    "scheme": "ShopWell.ai Mobile",
+    "scheme": "shopwell",
     "experiments": {
       "typedRoutes": true
     },
