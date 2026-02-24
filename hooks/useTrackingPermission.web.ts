@@ -1,19 +1,19 @@
 
 import { useEffect, useState } from 'react';
 
-// Fallback implementation for any other platforms
-// This is a no-op implementation
+// Web doesn't require App Tracking Transparency
+// This is a no-op implementation for Web
 export function useTrackingPermission() {
   const [trackingStatus, setTrackingStatus] = useState<string>('not-applicable');
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
 
   useEffect(() => {
-    console.log('Tracking permission not needed on this platform');
+    console.log('Tracking permission not needed on Web');
     setTrackingStatus('not-applicable');
   }, []);
 
   const requestTrackingPermission = async () => {
-    console.log('Tracking permission not applicable on this platform');
+    console.log('Tracking permission not applicable on Web');
     setTrackingStatus('not-applicable');
   };
 
