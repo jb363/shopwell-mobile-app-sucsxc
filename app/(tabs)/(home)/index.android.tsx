@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { StyleSheet, View, Platform, Alert } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +21,7 @@ const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
   const webViewRef = useRef<WebView>(null);
+  const params = useLocalSearchParams();
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
   const { 
@@ -39,6 +40,25 @@ export default function HomeScreen() {
 
   // Set up quick actions (app shortcuts)
   useQuickActions(webViewRef);
+
+  // Handle shared content from share-target screen
+  useEffect(() => {
+    if (params.sharedContent && params.sharedType && webViewRef.current) {
+      console.log('Received shared content:', { type: params.sharedType, content: params.sharedContent });
+      
+      // Send shared content to the web app
+      const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
+      const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
+      
+      webViewRef.current.injectJavaScript(`
+        window.postMessage({ 
+          type: 'SHARED_CONTENT', 
+          contentType: '${sharedTypeStr}',
+          content: ${JSON.stringify(sharedContentStr)}
+        }, '*');
+      `);
+    }
+  }, [params.sharedContent, params.sharedType]);
 
   // Check initial permission statuses
   useEffect(() => {

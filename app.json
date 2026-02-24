@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -81,18 +82,33 @@
         },
         {
           "action": "SEND",
-          "data": {
-            "mimeType": "text/plain"
-          },
+          "data": [
+            {
+              "mimeType": "text/plain"
+            }
+          ],
           "category": [
             "DEFAULT"
           ]
         },
         {
           "action": "SEND",
-          "data": {
-            "mimeType": "image/*"
-          },
+          "data": [
+            {
+              "mimeType": "image/*"
+            }
+          ],
+          "category": [
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "SEND_MULTIPLE",
+          "data": [
+            {
+              "mimeType": "image/*"
+            }
+          ],
           "category": [
             "DEFAULT"
           ]

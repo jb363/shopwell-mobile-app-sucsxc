@@ -3,6 +3,7 @@ import "react-native-reanimated";
 import React, { useEffect } from "react";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Linking from 'expo-linking';
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useColorScheme, Alert } from "react-native";
@@ -29,6 +30,45 @@ export default function RootLayout() {
 
   useEffect(() => {
     SplashScreen.hideAsync();
+  }, []);
+
+  // Handle deep linking and share intents
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      console.log('Deep link received:', event.url);
+      
+      const url = Linking.parse(event.url);
+      console.log('Parsed URL:', url);
+
+      // Handle share target deep links
+      if (url.path === 'share-target' || url.hostname === 'share-target') {
+        console.log('Navigating to share-target with params:', url.queryParams);
+        router.push({
+          pathname: '/share-target',
+          params: url.queryParams || {},
+        });
+      }
+      // Handle other deep links
+      else if (url.path) {
+        console.log('Navigating to path:', url.path);
+        router.push(url.path as any);
+      }
+    };
+
+    // Get initial URL (app opened via deep link)
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        console.log('Initial URL:', url);
+        handleDeepLink({ url });
+      }
+    });
+
+    // Listen for deep links while app is running
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   React.useEffect(() => {
@@ -78,6 +118,15 @@ export default function RootLayout() {
           <Stack>
             {/* Main app with tabs */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+            {/* Share Target Screen */}
+            <Stack.Screen 
+              name="share-target" 
+              options={{ 
+                headerShown: false,
+                presentation: 'modal',
+              }} 
+            />
 
             {/* Modal Demo Screens */}
             <Stack.Screen
