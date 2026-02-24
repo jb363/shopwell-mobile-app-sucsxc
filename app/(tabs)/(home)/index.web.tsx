@@ -10,14 +10,37 @@ export default function HomeScreen() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { 
     storeLocations, 
-    isGeofencingActive, 
-    geofencePermissionStatus,
+    isActive: isGeofencingActive, 
+    hasPermission: geofencePermissionStatus,
     startGeofencing,
     stopGeofencing,
     addStoreLocation,
     removeStoreLocation,
-    getMonitoredStoreLocations
+    loadStoreLocations
   } = useGeofencing();
+
+  const [iframeReady, setIframeReady] = useState(false);
+
+  // Send status to web when iframe is ready or status changes
+  useEffect(() => {
+    if (!iframeReady || !iframeRef.current?.contentWindow) return;
+
+    console.log('Sending geofencing status to web:', {
+      isActive: isGeofencingActive,
+      permissionStatus: geofencePermissionStatus ? 'granted' : 'denied',
+      locationCount: storeLocations.length
+    });
+
+    // Send initial status to web
+    iframeRef.current.contentWindow.postMessage({
+      type: 'GEOFENCING_STATUS',
+      isActive: isGeofencingActive,
+      permissionStatus: geofencePermissionStatus ? 'granted' : 'denied',
+      locationCount: storeLocations.length,
+      locations: storeLocations,
+      platform: 'web'
+    }, SHOPWELL_URL);
+  }, [iframeReady, isGeofencingActive, geofencePermissionStatus, storeLocations]);
 
   useEffect(() => {
     console.log('Web home screen mounted');
@@ -30,6 +53,31 @@ export default function HomeScreen() {
       console.log('Received message from web:', data);
       
       switch (data.type) {
+        case 'natively.geofence.requestPermission':
+          console.log('Web requesting location permission');
+          try {
+            // On web, we simulate permission request
+            // In a real scenario, this would trigger browser geolocation permission
+            const granted = true; // Web always has "permission" for localStorage-based geofencing
+            
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_PERMISSION_RESPONSE',
+              foreground: granted,
+              background: granted,
+              permissionStatus: granted ? 'granted' : 'denied'
+            }, SHOPWELL_URL);
+          } catch (error) {
+            console.error('Error requesting permission:', error);
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_PERMISSION_RESPONSE',
+              foreground: false,
+              background: false,
+              permissionStatus: 'denied',
+              error: 'Failed to request permission'
+            }, SHOPWELL_URL);
+          }
+          break;
+
         case 'natively.geofence.enableNotifications':
           console.log('Web requesting to toggle location notifications:', data.enabled);
           try {
@@ -40,12 +88,30 @@ export default function HomeScreen() {
                 success: started,
                 enabled: started
               }, SHOPWELL_URL);
+              
+              // Send updated status
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'GEOFENCING_STATUS',
+                isActive: started,
+                permissionStatus: 'granted',
+                locationCount: storeLocations.length,
+                locations: storeLocations
+              }, SHOPWELL_URL);
             } else {
               await stopGeofencing();
               iframeRef.current?.contentWindow?.postMessage({
                 type: 'GEOFENCE_ENABLE_RESPONSE',
                 success: true,
                 enabled: false
+              }, SHOPWELL_URL);
+              
+              // Send updated status
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'GEOFENCING_STATUS',
+                isActive: false,
+                permissionStatus: 'granted',
+                locationCount: storeLocations.length,
+                locations: storeLocations
               }, SHOPWELL_URL);
             }
           } catch (error) {
@@ -60,11 +126,11 @@ export default function HomeScreen() {
 
         case 'natively.geofence.getStatus':
           console.log('Web requesting geofencing status');
-          const locations = await getMonitoredStoreLocations();
+          const locations = await loadStoreLocations();
           iframeRef.current?.contentWindow?.postMessage({
             type: 'GEOFENCE_STATUS_RESPONSE',
             isActive: isGeofencingActive,
-            permissionStatus: geofencePermissionStatus,
+            permissionStatus: geofencePermissionStatus ? 'granted' : 'denied',
             locationCount: locations.length,
             locations: locations
           }, SHOPWELL_URL);
@@ -78,6 +144,16 @@ export default function HomeScreen() {
               type: 'GEOFENCE_ADD_RESPONSE',
               success: true,
               locationId: data.location.id
+            }, SHOPWELL_URL);
+            
+            // Send updated status
+            const updatedLocations = await loadStoreLocations();
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCING_STATUS',
+              isActive: isGeofencingActive,
+              permissionStatus: 'granted',
+              locationCount: updatedLocations.length,
+              locations: updatedLocations
             }, SHOPWELL_URL);
           } catch (error) {
             console.error('Error adding geofence:', error);
@@ -98,6 +174,16 @@ export default function HomeScreen() {
               success: true,
               locationId: data.locationId
             }, SHOPWELL_URL);
+            
+            // Send updated status
+            const updatedLocations = await loadStoreLocations();
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCING_STATUS',
+              isActive: isGeofencingActive,
+              permissionStatus: 'granted',
+              locationCount: updatedLocations.length,
+              locations: updatedLocations
+            }, SHOPWELL_URL);
           } catch (error) {
             console.error('Error removing geofence:', error);
             iframeRef.current?.contentWindow?.postMessage({
@@ -110,7 +196,7 @@ export default function HomeScreen() {
 
         case 'natively.geofence.getAll':
           console.log('Web requesting all monitored locations');
-          const allLocations = await getMonitoredStoreLocations();
+          const allLocations = await loadStoreLocations();
           iframeRef.current?.contentWindow?.postMessage({
             type: 'GEOFENCE_LIST_RESPONSE',
             locations: allLocations
@@ -241,12 +327,15 @@ export default function HomeScreen() {
                 features: ['geofencing', 'locationNotifications']
               }, '*');
               
-              console.log('Quick Tip hiding script injected and running');
+              console.log('Native app ready - geofencing features available');
             })();
           `;
           
           iframeRef.current.contentWindow.eval(script);
-          console.log('Injected hide script into iframe');
+          console.log('Injected native app script into iframe');
+          
+          // Mark iframe as ready after script injection
+          setIframeReady(true);
         } catch (error) {
           console.error('Error injecting script:', error);
         }
@@ -256,7 +345,7 @@ export default function HomeScreen() {
     const iframe = iframeRef.current;
     if (iframe) {
       iframe.addEventListener('load', () => {
-        console.log('Iframe loaded, injecting hide script');
+        console.log('Iframe loaded, injecting native app script');
         setTimeout(injectHideScript, 100);
         setTimeout(injectHideScript, 500);
         setTimeout(injectHideScript, 1000);
@@ -267,7 +356,7 @@ export default function HomeScreen() {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [isGeofencingActive, geofencePermissionStatus, startGeofencing, stopGeofencing, addStoreLocation, removeStoreLocation, getMonitoredStoreLocations]);
+  }, [isGeofencingActive, geofencePermissionStatus, storeLocations, startGeofencing, stopGeofencing, addStoreLocation, removeStoreLocation, loadStoreLocations]);
 
   return (
     <View style={styles.container}>

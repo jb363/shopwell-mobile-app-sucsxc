@@ -10,54 +10,56 @@ import * as OfflineStorage from '@/utils/offlineStorage';
 const GEOFENCING_TASK = 'SHOPWELL_GEOFENCING_TASK';
 const STORE_LOCATIONS_KEY = '@shopwell/store_locations';
 
-// Define the geofencing task
-TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
-  if (error) {
-    console.error('Geofencing task error:', error);
-    return;
-  }
+// Define the geofencing task (only on native platforms)
+if (Platform.OS !== 'web') {
+  TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
+    if (error) {
+      console.error('Geofencing task error:', error);
+      return;
+    }
 
-  if (data) {
-    const { eventType, region } = data as any;
-    console.log('Geofencing event:', eventType, 'for region:', region.identifier);
+    if (data) {
+      const { eventType, region } = data as any;
+      console.log('Geofencing event:', eventType, 'for region:', region.identifier);
 
-    if (eventType === 1) { // Enter event
-      console.log('User entered geofence:', region.identifier);
-      
-      // Get store information from storage
-      const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
-      const storeLocations = storeLocationsData || [];
-      const store = storeLocations.find(s => s.id === region.identifier);
-
-      if (store) {
-        console.log('Triggering notification for store:', store.name);
+      if (eventType === 1) { // Enter event
+        console.log('User entered geofence:', region.identifier);
         
-        // Schedule notification
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
-            body: store.listName 
-              ? `You're near ${store.name}! Tap to view your list.`
-              : store.reservationNumber
-              ? `Reservation #${store.reservationNumber} - Tap to view details.`
-              : `You're near ${store.name}`,
-            data: {
-              type: 'geofence',
-              storeId: store.id,
-              storeName: store.name,
-              listId: store.listId,
-              listName: store.listName,
-              reservationNumber: store.reservationNumber,
+        // Get store information from storage
+        const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
+        const storeLocations = storeLocationsData || [];
+        const store = storeLocations.find(s => s.id === region.identifier);
+
+        if (store) {
+          console.log('Triggering notification for store:', store.name);
+          
+          // Schedule notification
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
+              body: store.listName 
+                ? `You're near ${store.name}! Tap to view your list.`
+                : store.reservationNumber
+                ? `Reservation #${store.reservationNumber} - Tap to view details.`
+                : `You're near ${store.name}`,
+              data: {
+                type: 'geofence',
+                storeId: store.id,
+                storeName: store.name,
+                listId: store.listId,
+                listName: store.listName,
+                reservationNumber: store.reservationNumber,
+              },
+              sound: true,
+              badge: 1,
             },
-            sound: true,
-            badge: 1,
-          },
-          trigger: null, // Immediate notification
-        });
+            trigger: null, // Immediate notification
+          });
+        }
       }
     }
-  }
-});
+  });
+}
 
 export function useGeofencing() {
   const [isActive, setIsActive] = useState(false);
@@ -98,8 +100,8 @@ export function useGeofencing() {
       const updatedLocations = [...currentLocations, store];
       await saveStoreLocations(updatedLocations);
       
-      // Restart geofencing with updated locations
-      if (hasPermission && isActive) {
+      // Restart geofencing with updated locations (only on native)
+      if (Platform.OS !== 'web' && hasPermission && isActive) {
         await LocationHandler.stopGeofencing();
         await LocationHandler.startGeofencing(updatedLocations);
       }
@@ -116,8 +118,8 @@ export function useGeofencing() {
       const updatedLocations = currentLocations.filter(s => s.id !== storeId);
       await saveStoreLocations(updatedLocations);
       
-      // Restart geofencing with updated locations
-      if (hasPermission && isActive) {
+      // Restart geofencing with updated locations (only on native)
+      if (Platform.OS !== 'web' && hasPermission && isActive) {
         await LocationHandler.stopGeofencing();
         if (updatedLocations.length > 0) {
           await LocationHandler.startGeofencing(updatedLocations);
@@ -133,7 +135,15 @@ export function useGeofencing() {
     try {
       console.log('Starting geofencing...');
       
-      // Check permission
+      // On web, we just simulate it with localStorage
+      if (Platform.OS === 'web') {
+        console.log('Web platform - simulating geofencing with localStorage');
+        setHasPermission(true);
+        setIsActive(true);
+        return true;
+      }
+
+      // Check permission (native only)
       const permission = await LocationHandler.hasLocationPermission();
       if (!permission) {
         console.log('Requesting location permission...');
@@ -168,6 +178,14 @@ export function useGeofencing() {
   const stopGeofencing = useCallback(async () => {
     try {
       console.log('Stopping geofencing...');
+      
+      // On web, just update state
+      if (Platform.OS === 'web') {
+        console.log('Web platform - stopping simulated geofencing');
+        setIsActive(false);
+        return;
+      }
+
       await LocationHandler.stopGeofencing();
       setIsActive(false);
     } catch (error) {
@@ -178,7 +196,9 @@ export function useGeofencing() {
   // Check geofencing status on mount
   useEffect(() => {
     if (Platform.OS === 'web') {
-      console.log('Geofencing not supported on web');
+      console.log('Web platform - geofencing available via localStorage');
+      setHasPermission(true); // Web always has "permission"
+      loadStoreLocations();
       return;
     }
 
