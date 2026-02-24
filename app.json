@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -141,15 +142,15 @@
         "expo-quick-actions",
         {
           "androidIcons": {
-            "voice-planner": {
+            "voice_planner": {
               "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
               "backgroundColor": "#1A1D2E"
             },
-            "product-search": {
+            "product_search": {
               "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
               "backgroundColor": "#1A1D2E"
             },
-            "photo-search": {
+            "photo_search": {
               "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
               "backgroundColor": "#1A1D2E"
             }

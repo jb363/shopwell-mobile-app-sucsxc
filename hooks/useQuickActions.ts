@@ -16,25 +16,25 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
     // Define quick actions for iOS and Android
     const quickActions: QuickActions.Action[] = [
       {
-        id: 'voice-planner',
+        id: 'voice_planner',
         title: 'Voice Planner',
         subtitle: 'Start voice planning',
         icon: Platform.OS === 'ios' ? 'symbol:mic.fill' : 'mic',
-        params: { action: 'voice-planner' },
+        params: { action: 'voice_planner' },
       },
       {
-        id: 'product-search',
+        id: 'product_search',
         title: 'Product Search',
         subtitle: 'Search for products',
         icon: Platform.OS === 'ios' ? 'symbol:magnifyingglass' : 'search',
-        params: { action: 'product-search' },
+        params: { action: 'product_search' },
       },
       {
-        id: 'photo-search',
+        id: 'photo_search',
         title: 'Photo Search',
         subtitle: 'Search by photo',
         icon: Platform.OS === 'ios' ? 'symbol:camera.fill' : 'camera',
-        params: { action: 'photo-search' },
+        params: { action: 'photo_search' },
       },
     ];
 
@@ -53,7 +53,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
 
       // Inject JavaScript to trigger the appropriate action on the web page
       switch (action.id) {
-        case 'voice-planner':
+        case 'voice_planner':
           console.log('Triggering voice planner...');
           webViewRef.current.injectJavaScript(`
             (function() {
@@ -73,14 +73,14 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
               // Notify native app
               window.postMessage({ 
                 type: 'QUICK_ACTION_EXECUTED', 
-                action: 'voice-planner' 
+                action: 'voice_planner' 
               }, '*');
             })();
             true;
           `);
           break;
 
-        case 'product-search':
+        case 'product_search':
           console.log('Triggering product search...');
           webViewRef.current.injectJavaScript(`
             (function() {
@@ -100,14 +100,14 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
               // Notify native app
               window.postMessage({ 
                 type: 'QUICK_ACTION_EXECUTED', 
-                action: 'product-search' 
+                action: 'product_search' 
               }, '*');
             })();
             true;
           `);
           break;
 
-        case 'photo-search':
+        case 'photo_search':
           console.log('Triggering photo search...');
           webViewRef.current.injectJavaScript(`
             (function() {
@@ -127,7 +127,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
               // Notify native app
               window.postMessage({ 
                 type: 'QUICK_ACTION_EXECUTED', 
-                action: 'photo-search' 
+                action: 'photo_search' 
               }, '*');
             })();
             true;
