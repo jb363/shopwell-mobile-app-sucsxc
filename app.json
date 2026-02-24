@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "ShopWell.ai Mobile",
-    "version": "1.0.0",
+    "slug": "shopwell-mobile-app-sucsxc",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
     "userInterfaceStyle": "automatic",
@@ -42,8 +42,8 @@
         "backgroundColor": "#1A1D2E"
       },
       "edgeToEdgeEnabled": true,
-      "package": "app.shopwell.android",
-      "versionCode": 3,
+      "package": "com.axiomstrategies.shopwellai",
+      "versionCode": 2,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
