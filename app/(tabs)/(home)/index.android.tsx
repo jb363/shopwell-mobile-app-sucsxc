@@ -25,11 +25,12 @@ export default function HomeScreen() {
   const { 
     addStoreLocation, 
     removeStoreLocation, 
-    getMonitoredStoreLocations,
-    isGeofencingActive,
+    loadStoreLocations,
+    storeLocations,
+    isActive: isGeofencingActive,
     startGeofencing,
     stopGeofencing,
-    geofencePermissionStatus
+    hasPermission: geofencePermissionStatus
   } = useGeofencing();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
 
@@ -59,22 +60,45 @@ export default function HomeScreen() {
   useEffect(() => {
     // Send geofencing status to web
     if (webViewRef.current) {
-      console.log('Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
+      console.log('Sending geofencing status to web:', { 
+        isGeofencingActive, 
+        geofencePermissionStatus,
+        locationCount: storeLocations.length 
+      });
       webViewRef.current.injectJavaScript(`
         window.postMessage({ 
           type: 'GEOFENCING_STATUS', 
           isActive: ${isGeofencingActive},
-          permissionStatus: '${geofencePermissionStatus}'
+          permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
+          locationCount: ${storeLocations.length},
+          locations: ${JSON.stringify(storeLocations)},
+          platform: 'android'
         }, '*');
       `);
     }
-  }, [isGeofencingActive, geofencePermissionStatus]);
+  }, [isGeofencingActive, geofencePermissionStatus, storeLocations]);
 
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      console.log('Android received message from web:', data.type);
       
       switch (data.type) {
+        case 'WEB_PAGE_READY':
+          console.log('Web page is ready, sending initial status');
+          // Web page is ready to receive messages
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'GEOFENCING_STATUS', 
+              isActive: ${isGeofencingActive},
+              permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
+              locationCount: ${storeLocations.length},
+              locations: ${JSON.stringify(storeLocations)},
+              platform: 'android'
+            }, '*');
+          `);
+          break;
+
         case 'natively.geofence.enableNotifications':
           console.log('User toggling location-based notifications from web:', data.enabled);
           try {
@@ -88,6 +112,19 @@ export default function HomeScreen() {
                   enabled: ${started}
                 }, '*');
               `);
+              
+              // Send updated status
+              const updatedLocations = await loadStoreLocations();
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCING_STATUS', 
+                  isActive: ${started},
+                  permissionStatus: 'granted',
+                  locationCount: ${updatedLocations.length},
+                  locations: ${JSON.stringify(updatedLocations)},
+                  platform: 'android'
+                }, '*');
+              `);
             } else {
               await stopGeofencing();
               console.log('Geofencing stopped');
@@ -96,6 +133,19 @@ export default function HomeScreen() {
                   type: 'GEOFENCE_ENABLE_RESPONSE', 
                   success: true,
                   enabled: false
+                }, '*');
+              `);
+              
+              // Send updated status
+              const updatedLocations = await loadStoreLocations();
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCING_STATUS', 
+                  isActive: false,
+                  permissionStatus: 'granted',
+                  locationCount: ${updatedLocations.length},
+                  locations: ${JSON.stringify(updatedLocations)},
+                  platform: 'android'
                 }, '*');
               `);
             }
@@ -119,7 +169,9 @@ export default function HomeScreen() {
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                granted: ${permissionGranted}
+                foreground: ${permissionGranted},
+                background: ${permissionGranted},
+                permissionStatus: '${permissionGranted ? 'granted' : 'denied'}'
               }, '*');
             `);
           } catch (error) {
@@ -127,7 +179,9 @@ export default function HomeScreen() {
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                granted: false,
+                foreground: false,
+                background: false,
+                permissionStatus: 'denied',
                 error: 'Failed to request permission'
               }, '*');
             `);
@@ -136,14 +190,15 @@ export default function HomeScreen() {
 
         case 'natively.geofence.getStatus':
           console.log('Web requesting geofencing status');
-          const locations = await getMonitoredStoreLocations();
+          const locations = await loadStoreLocations();
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'GEOFENCE_STATUS_RESPONSE', 
               isActive: ${isGeofencingActive},
-              permissionStatus: '${geofencePermissionStatus}',
+              permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
               locationCount: ${locations.length},
-              locations: ${JSON.stringify(locations)}
+              locations: ${JSON.stringify(locations)},
+              platform: 'android'
             }, '*');
           `);
           break;
@@ -157,6 +212,19 @@ export default function HomeScreen() {
                 type: 'GEOFENCE_ADD_RESPONSE', 
                 success: true,
                 locationId: '${data.location.id}'
+              }, '*');
+            `);
+            
+            // Send updated status
+            const updatedLocations = await loadStoreLocations();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCING_STATUS', 
+                isActive: ${isGeofencingActive},
+                permissionStatus: 'granted',
+                locationCount: ${updatedLocations.length},
+                locations: ${JSON.stringify(updatedLocations)},
+                platform: 'android'
               }, '*');
             `);
           } catch (error) {
@@ -182,6 +250,19 @@ export default function HomeScreen() {
                 locationId: '${data.locationId}'
               }, '*');
             `);
+            
+            // Send updated status
+            const updatedLocations = await loadStoreLocations();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCING_STATUS', 
+                isActive: ${isGeofencingActive},
+                permissionStatus: 'granted',
+                locationCount: ${updatedLocations.length},
+                locations: ${JSON.stringify(updatedLocations)},
+                platform: 'android'
+              }, '*');
+            `);
           } catch (error) {
             console.error('Error removing geofence:', error);
             webViewRef.current?.injectJavaScript(`
@@ -196,7 +277,7 @@ export default function HomeScreen() {
 
         case 'natively.geofence.getAll':
           console.log('Web requesting all monitored locations');
-          const allLocations = await getMonitoredStoreLocations();
+          const allLocations = await loadStoreLocations();
           console.log(`Sending ${allLocations.length} monitored locations to web`);
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
@@ -577,12 +658,31 @@ export default function HomeScreen() {
     }
   };
 
+  // JavaScript to inject that tells the website it's running in native app
   const injectedJavaScript = `
     (function() {
+      console.log('[Native App Android] Initializing native app bridge...');
+      
+      // Set flag that we're in native app
       window.isNativeApp = true;
       window.nativeAppPlatform = 'android';
       
+      // Store for tracking if we've already sent ready message
+      if (!window.nativeAppInitialized) {
+        window.nativeAppInitialized = true;
+        
+        // Notify parent that web page is ready to receive messages
+        window.postMessage({ 
+          type: 'WEB_PAGE_READY',
+          timestamp: Date.now()
+        }, '*');
+        
+        console.log('[Native App Android] Sent WEB_PAGE_READY message');
+      }
+      
+      // Hide any "Download App" banners, prompts, "Products in the News", and "Quick Tip" messages
       const hideUnwantedElements = () => {
+        // Common selectors for app download banners
         const selectors = [
           '[data-download-app]',
           '[class*="download-app"]',
@@ -593,6 +693,7 @@ export default function HomeScreen() {
           '.app-download-banner',
           '.download-banner',
           '.install-banner',
+          // Products in the News selectors
           '[data-products-news]',
           '[class*="products-news"]',
           '[class*="products-in-news"]',
@@ -600,6 +701,7 @@ export default function HomeScreen() {
           '[id*="products-in-news"]',
           'a[href*="/news"]',
           'a[href*="/products-news"]',
+          // Quick Tip selectors
           '[data-quick-tip]',
           '[class*="quick-tip"]',
           '[class*="quicktip"]',
@@ -616,15 +718,18 @@ export default function HomeScreen() {
           });
         });
         
+        // Also hide by text content
         const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article');
         allElements.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
+          // Hide "Products in the News" links
           if (text.includes('products in the news') || text.includes('products in news')) {
             el.style.display = 'none';
             if (el.parentElement?.tagName === 'LI') {
               el.parentElement.style.display = 'none';
             }
           }
+          // Hide "Quick Tip" messages about Click-&-Add
           if (text.includes('quick tip') && (text.includes('click') || text.includes('add') || text.includes('install'))) {
             el.style.display = 'none';
             if (el.parentElement?.tagName === 'LI') {
@@ -634,18 +739,23 @@ export default function HomeScreen() {
         });
       };
       
+      // Run immediately and after DOM loads
       hideUnwantedElements();
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideUnwantedElements);
       }
       
+      // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
+      // Notify the website that we're in native app with all features including geofencing
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'android',
         features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications']
       }, '*');
+      
+      console.log('[Native App Android] Native app bridge initialized - geofencing features available');
     })();
     true;
   `;
@@ -662,10 +772,10 @@ export default function HomeScreen() {
         domStorageEnabled={true}
         startInLoadingState={true}
         pullToRefreshEnabled={true}
-        allowsBackForwardNavigationGestures={true}
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
         onLoadEnd={() => {
+          // Re-inject after page loads to ensure it takes effect
           if (webViewRef.current) {
             webViewRef.current.injectJavaScript(injectedJavaScript);
           }

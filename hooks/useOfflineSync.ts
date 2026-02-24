@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNetworkState } from 'expo-network';
 import { processOfflineQueue, getOfflineQueue } from '@/utils/offlineStorage';
 
@@ -8,23 +8,12 @@ export function useOfflineSync() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [queueSize, setQueueSize] = useState(0);
 
-  useEffect(() => {
-    updateQueueSize();
-  }, []);
-
-  useEffect(() => {
-    if (networkState.isConnected && networkState.isInternetReachable && queueSize > 0) {
-      console.log('Network connected, syncing offline queue...');
-      syncOfflineData();
-    }
-  }, [networkState.isConnected, networkState.isInternetReachable, queueSize]);
-
-  const updateQueueSize = async () => {
+  const updateQueueSize = useCallback(async () => {
     const queue = await getOfflineQueue();
     setQueueSize(queue.length);
-  };
+  }, []);
 
-  const syncOfflineData = async () => {
+  const syncOfflineData = useCallback(async () => {
     if (isSyncing) {
       console.log('Sync already in progress');
       return;
@@ -41,16 +30,27 @@ export function useOfflineSync() {
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [isSyncing, updateQueueSize]);
 
-  const manualSync = async () => {
+  useEffect(() => {
+    updateQueueSize();
+  }, [updateQueueSize]);
+
+  useEffect(() => {
+    if (networkState.isConnected && networkState.isInternetReachable && queueSize > 0) {
+      console.log('Network connected, syncing offline queue...');
+      syncOfflineData();
+    }
+  }, [networkState.isConnected, networkState.isInternetReachable, queueSize, syncOfflineData]);
+
+  const manualSync = useCallback(async () => {
     if (!networkState.isConnected) {
       console.warn('Cannot sync: No network connection');
       return false;
     }
     await syncOfflineData();
     return true;
-  };
+  }, [networkState.isConnected, syncOfflineData]);
 
   return {
     isSyncing,
