@@ -1,11 +1,9 @@
 
 import React from 'react';
 import { Platform } from 'react-native';
-
-// Platform-specific implementations
-const HomeScreenIOS = require('./index.ios').default;
-const HomeScreenAndroid = require('./index.android').default;
-const HomeScreenWeb = require('./index.web').default;
+import HomeScreenIOS from './index.ios';
+import HomeScreenAndroid from './index.android';
+import HomeScreenWeb from './index.web';
 
 export default function HomeScreen() {
   if (Platform.OS === 'ios') {
