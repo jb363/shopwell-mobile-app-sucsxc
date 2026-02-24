@@ -475,7 +475,7 @@ export default function HomeScreen() {
       window.isNativeApp = true;
       window.nativeAppPlatform = 'ios';
       
-      // Hide any "Download App" banners, prompts, and "Products in the News"
+      // Hide any "Download App" banners, prompts, "Products in the News", and "Quick Tip" messages
       const hideUnwantedElements = () => {
         // Common selectors for app download banners
         const selectors = [
@@ -495,7 +495,15 @@ export default function HomeScreen() {
           '[id*="products-news"]',
           '[id*="products-in-news"]',
           'a[href*="/news"]',
-          'a[href*="/products-news"]'
+          'a[href*="/products-news"]',
+          // Quick Tip selectors
+          '[data-quick-tip]',
+          '[class*="quick-tip"]',
+          '[class*="quicktip"]',
+          '[id*="quick-tip"]',
+          '[id*="quicktip"]',
+          '.tip-banner',
+          '.tip-message'
         ];
         
         selectors.forEach(selector => {
@@ -505,13 +513,20 @@ export default function HomeScreen() {
           });
         });
         
-        // Also hide by text content (for "Products in the News" links)
-        const allLinks = document.querySelectorAll('a, button, div[role="button"]');
-        allLinks.forEach(el => {
+        // Also hide by text content
+        const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article');
+        allElements.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
+          // Hide "Products in the News" links
           if (text.includes('products in the news') || text.includes('products in news')) {
             el.style.display = 'none';
-            // Also hide parent if it's a list item
+            if (el.parentElement?.tagName === 'LI') {
+              el.parentElement.style.display = 'none';
+            }
+          }
+          // Hide "Quick Tip" messages about Click-&-Add
+          if (text.includes('quick tip') && (text.includes('click') || text.includes('add') || text.includes('install'))) {
+            el.style.display = 'none';
             if (el.parentElement?.tagName === 'LI') {
               el.parentElement.style.display = 'none';
             }

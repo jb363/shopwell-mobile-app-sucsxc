@@ -466,7 +466,14 @@ export default function HomeScreen() {
           '[id*="products-news"]',
           '[id*="products-in-news"]',
           'a[href*="/news"]',
-          'a[href*="/products-news"]'
+          'a[href*="/products-news"]',
+          '[data-quick-tip]',
+          '[class*="quick-tip"]',
+          '[class*="quicktip"]',
+          '[id*="quick-tip"]',
+          '[id*="quicktip"]',
+          '.tip-banner',
+          '.tip-message'
         ];
         
         selectors.forEach(selector => {
@@ -476,10 +483,16 @@ export default function HomeScreen() {
           });
         });
         
-        const allLinks = document.querySelectorAll('a, button, div[role="button"]');
-        allLinks.forEach(el => {
+        const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article');
+        allElements.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
           if (text.includes('products in the news') || text.includes('products in news')) {
+            el.style.display = 'none';
+            if (el.parentElement?.tagName === 'LI') {
+              el.parentElement.style.display = 'none';
+            }
+          }
+          if (text.includes('quick tip') && (text.includes('click') || text.includes('add') || text.includes('install'))) {
             el.style.display = 'none';
             if (el.parentElement?.tagName === 'LI') {
               el.parentElement.style.display = 'none';
