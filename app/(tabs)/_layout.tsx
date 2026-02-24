@@ -1,32 +1,15 @@
 
 import React from 'react';
-import { Tabs } from 'expo-router';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
+import { Stack } from 'expo-router';
 
 export default function TabLayout() {
   return (
-    <Tabs
+    <Stack
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
         headerShown: false,
       }}
     >
-      <Tabs.Screen
-        name="(home)"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <IconSymbol
-              ios_icon_name="house.fill"
-              android_material_icon_name="home"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+      <Stack.Screen name="(home)/index" />
+    </Stack>
   );
 }
