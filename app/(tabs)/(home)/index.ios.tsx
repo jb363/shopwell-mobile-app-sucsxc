@@ -25,12 +25,21 @@ export default function HomeScreen() {
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
   const { trackingStatus } = useTrackingPermission();
-  const { addStoreLocation } = useGeofencing();
+  const { 
+    addStoreLocation, 
+    removeStoreLocation, 
+    getMonitoredStoreLocations,
+    isGeofencingActive,
+    startGeofencing,
+    stopGeofencing,
+    geofencePermissionStatus
+  } = useGeofencing();
   const insets = useSafeAreaInsets();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
+      console.log('Sending push token to web:', expoPushToken);
       webViewRef.current.injectJavaScript(`
         window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
       `);
@@ -64,11 +73,156 @@ export default function HomeScreen() {
     }
   }, [isSyncing, queueSize, isOnline]);
 
+  useEffect(() => {
+    // Send geofencing status to web
+    if (webViewRef.current) {
+      console.log('Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
+      webViewRef.current.injectJavaScript(`
+        window.postMessage({ 
+          type: 'GEOFENCING_STATUS', 
+          isActive: ${isGeofencingActive},
+          permissionStatus: '${geofencePermissionStatus}'
+        }, '*');
+      `);
+    }
+  }, [isGeofencingActive, geofencePermissionStatus]);
+
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       
       switch (data.type) {
+        case 'natively.geofence.enableNotifications':
+          console.log('User toggling location-based notifications from web:', data.enabled);
+          try {
+            if (data.enabled) {
+              const started = await startGeofencing();
+              console.log('Geofencing started:', started);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCE_ENABLE_RESPONSE', 
+                  success: ${started},
+                  enabled: ${started}
+                }, '*');
+              `);
+            } else {
+              await stopGeofencing();
+              console.log('Geofencing stopped');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCE_ENABLE_RESPONSE', 
+                  success: true,
+                  enabled: false
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error toggling geofencing:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_ENABLE_RESPONSE', 
+                success: false,
+                error: 'Failed to toggle notifications'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.geofence.requestPermission':
+          console.log('User requesting location permission from web');
+          try {
+            const permissionGranted = await LocationHandler.requestLocationPermission();
+            console.log('Location permission granted:', permissionGranted);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_PERMISSION_RESPONSE', 
+                granted: ${permissionGranted}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error requesting location permission:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_PERMISSION_RESPONSE', 
+                granted: false,
+                error: 'Failed to request permission'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.geofence.getStatus':
+          console.log('Web requesting geofencing status');
+          const locations = await getMonitoredStoreLocations();
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'GEOFENCE_STATUS_RESPONSE', 
+              isActive: ${isGeofencingActive},
+              permissionStatus: '${geofencePermissionStatus}',
+              locationCount: ${locations.length},
+              locations: ${JSON.stringify(locations)}
+            }, '*');
+          `);
+          break;
+
+        case 'natively.geofence.add':
+          console.log('User adding geofence from web:', data.location);
+          try {
+            await addStoreLocation(data.location);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_ADD_RESPONSE', 
+                success: true,
+                locationId: '${data.location.id}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error adding geofence:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_ADD_RESPONSE', 
+                success: false,
+                error: 'Failed to add location'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.geofence.remove':
+          console.log('User removing geofence from web:', data.locationId);
+          try {
+            await removeStoreLocation(data.locationId);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_REMOVE_RESPONSE', 
+                success: true,
+                locationId: '${data.locationId}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error removing geofence:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_REMOVE_RESPONSE', 
+                success: false,
+                error: 'Failed to remove location'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.geofence.getAll':
+          console.log('Web requesting all monitored locations');
+          const allLocations = await getMonitoredStoreLocations();
+          console.log(`Sending ${allLocations.length} monitored locations to web`);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'GEOFENCE_LIST_RESPONSE', 
+              locations: ${JSON.stringify(allLocations)}
+            }, '*');
+          `);
+          break;
+
         case 'natively.microphone.requestPermission':
           console.log('User requested microphone permission from web');
           const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
@@ -177,8 +331,6 @@ export default function HomeScreen() {
 
         case 'natively.account.delete':
           console.log('User initiated account deletion from web');
-          // The website should handle the actual deletion
-          // We just need to acknowledge and clear local data
           Alert.alert(
             'Delete Account',
             'Your account will be permanently deleted. This action cannot be undone. All your data will be removed from our servers.',
@@ -200,11 +352,9 @@ export default function HomeScreen() {
                 style: 'destructive',
                 onPress: async () => {
                   console.log('User confirmed account deletion');
-                  // Clear all local data
                   await OfflineStorage.clearAll();
                   console.log('Cleared all local storage');
                   
-                  // Notify web to proceed with server-side deletion
                   webViewRef.current?.injectJavaScript(`
                     window.postMessage({ 
                       type: 'ACCOUNT_DELETE_RESPONSE', 
@@ -266,7 +416,6 @@ export default function HomeScreen() {
           break;
           
         case 'natively.scanner.open':
-          // Navigate to scanner screen
           router.push('/scanner');
           break;
           
@@ -302,8 +451,6 @@ export default function HomeScreen() {
           
           const allContacts = await ContactsHandler.getAllContacts();
           console.log(`Sending ${allContacts.length} contacts to web`);
-          // Escape JSON for injection
-          const contactsJson = JSON.stringify(allContacts).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -424,23 +571,6 @@ export default function HomeScreen() {
           }
           break;
           
-        case 'natively.geofence.add':
-          console.log('User adding geofence from web:', data.store);
-          await addStoreLocation(data.store);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'GEOFENCE_ADD_RESPONSE', 
-              success: true,
-              storeId: '${data.store.id}'
-            }, '*');
-          `);
-          break;
-          
-        case 'natively.geofence.openManager':
-          console.log('User opened location manager from web - redirecting to profile');
-          router.push('/(tabs)/profile');
-          break;
-          
         case 'natively.product.cache':
           await OfflineStorage.cacheProduct(data.product);
           break;
@@ -539,11 +669,11 @@ export default function HomeScreen() {
       // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
-      // Notify the website that we're in native app with all features
+      // Notify the website that we're in native app with all features including geofencing
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'ios',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications']
       }, '*');
     })();
     true;

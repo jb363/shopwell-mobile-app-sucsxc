@@ -8,10 +8,118 @@ const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { storeLocations } = useGeofencing();
+  const { 
+    storeLocations, 
+    isGeofencingActive, 
+    geofencePermissionStatus,
+    startGeofencing,
+    stopGeofencing,
+    addStoreLocation,
+    removeStoreLocation,
+    getMonitoredStoreLocations
+  } = useGeofencing();
 
   useEffect(() => {
     console.log('Web home screen mounted');
+    
+    // Listen for messages from the iframe
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== new URL(SHOPWELL_URL).origin) return;
+      
+      const data = event.data;
+      console.log('Received message from web:', data);
+      
+      switch (data.type) {
+        case 'natively.geofence.enableNotifications':
+          console.log('Web requesting to toggle location notifications:', data.enabled);
+          try {
+            if (data.enabled) {
+              const started = await startGeofencing();
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'GEOFENCE_ENABLE_RESPONSE',
+                success: started,
+                enabled: started
+              }, SHOPWELL_URL);
+            } else {
+              await stopGeofencing();
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'GEOFENCE_ENABLE_RESPONSE',
+                success: true,
+                enabled: false
+              }, SHOPWELL_URL);
+            }
+          } catch (error) {
+            console.error('Error toggling geofencing:', error);
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_ENABLE_RESPONSE',
+              success: false,
+              error: 'Failed to toggle notifications'
+            }, SHOPWELL_URL);
+          }
+          break;
+
+        case 'natively.geofence.getStatus':
+          console.log('Web requesting geofencing status');
+          const locations = await getMonitoredStoreLocations();
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'GEOFENCE_STATUS_RESPONSE',
+            isActive: isGeofencingActive,
+            permissionStatus: geofencePermissionStatus,
+            locationCount: locations.length,
+            locations: locations
+          }, SHOPWELL_URL);
+          break;
+
+        case 'natively.geofence.add':
+          console.log('Web adding geofence:', data.location);
+          try {
+            await addStoreLocation(data.location);
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_ADD_RESPONSE',
+              success: true,
+              locationId: data.location.id
+            }, SHOPWELL_URL);
+          } catch (error) {
+            console.error('Error adding geofence:', error);
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_ADD_RESPONSE',
+              success: false,
+              error: 'Failed to add location'
+            }, SHOPWELL_URL);
+          }
+          break;
+
+        case 'natively.geofence.remove':
+          console.log('Web removing geofence:', data.locationId);
+          try {
+            await removeStoreLocation(data.locationId);
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_REMOVE_RESPONSE',
+              success: true,
+              locationId: data.locationId
+            }, SHOPWELL_URL);
+          } catch (error) {
+            console.error('Error removing geofence:', error);
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'GEOFENCE_REMOVE_RESPONSE',
+              success: false,
+              error: 'Failed to remove location'
+            }, SHOPWELL_URL);
+          }
+          break;
+
+        case 'natively.geofence.getAll':
+          console.log('Web requesting all monitored locations');
+          const allLocations = await getMonitoredStoreLocations();
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'GEOFENCE_LIST_RESPONSE',
+            locations: allLocations
+          }, SHOPWELL_URL);
+          break;
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
     
     // Inject script to hide Quick Tip and other unwanted elements
     const injectHideScript = () => {
@@ -64,13 +172,11 @@ export default function HomeScreen() {
                   }
                 });
                 
-                // Hide by text content
                 try {
                   const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article');
                   allElements.forEach(el => {
                     const text = el.textContent?.toLowerCase() || '';
                     
-                    // Hide "Products in the News"
                     if (text.includes('products in the news') || text.includes('products in news')) {
                       el.style.display = 'none !important';
                       el.style.visibility = 'hidden !important';
@@ -79,7 +185,6 @@ export default function HomeScreen() {
                       }
                     }
                     
-                    // Hide "Quick Tip" messages about Click-&-Add
                     if (text.includes('quick tip')) {
                       if (text.includes('click') || text.includes('add') || text.includes('install')) {
                         el.style.display = 'none !important';
@@ -88,7 +193,6 @@ export default function HomeScreen() {
                         el.style.height = '0 !important';
                         el.style.overflow = 'hidden !important';
                         
-                        // Also hide parent containers
                         let parent = el.parentElement;
                         while (parent && parent !== document.body) {
                           const parentText = parent.textContent?.toLowerCase() || '';
@@ -101,7 +205,6 @@ export default function HomeScreen() {
                       }
                     }
                     
-                    // Specifically target "Install Now" buttons related to Quick Tip
                     if (text.includes('install now') && el.closest('[class*="tip"]')) {
                       let container = el.closest('[class*="tip"]');
                       if (container) {
@@ -115,26 +218,28 @@ export default function HomeScreen() {
                 }
               };
               
-              // Run immediately
               hideUnwantedElements();
               
-              // Run on DOM ready
               if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', hideUnwantedElements);
               }
               
-              // Run on window load
               window.addEventListener('load', hideUnwantedElements);
               
-              // Run periodically to catch dynamically added elements
               setInterval(hideUnwantedElements, 500);
               
-              // Use MutationObserver to catch DOM changes
               const observer = new MutationObserver(hideUnwantedElements);
               observer.observe(document.body, {
                 childList: true,
                 subtree: true
               });
+              
+              // Notify web that native features are available
+              window.postMessage({ 
+                type: 'NATIVE_APP_READY', 
+                platform: 'web',
+                features: ['geofencing', 'locationNotifications']
+              }, '*');
               
               console.log('Quick Tip hiding script injected and running');
             })();
@@ -148,7 +253,6 @@ export default function HomeScreen() {
       }
     };
 
-    // Try to inject after iframe loads
     const iframe = iframeRef.current;
     if (iframe) {
       iframe.addEventListener('load', () => {
@@ -159,7 +263,11 @@ export default function HomeScreen() {
         setTimeout(injectHideScript, 2000);
       });
     }
-  }, []);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [isGeofencingActive, geofencePermissionStatus, startGeofencing, stopGeofencing, addStoreLocation, removeStoreLocation, getMonitoredStoreLocations]);
 
   return (
     <View style={styles.container}>
