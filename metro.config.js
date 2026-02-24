@@ -1,5 +1,5 @@
+
 const { getDefaultConfig } = require('expo/metro-config');
-const { FileStore } = require('metro-cache');
 const path = require('path');
 const fs = require('fs');
 
@@ -7,10 +7,8 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.unstable_enablePackageExports = true;
 
-// Use turborepo to restore the cache when possible
-config.cacheStores = [
-    new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
-  ];
+// Metro will handle caching internally - no need to manually configure FileStore
+// The cache will be stored in node_modules/.cache/metro by default
 
 // Custom server middleware to receive console.log messages from the app
 const LOG_FILE_PATH = path.join(__dirname, '.natively', 'app_console.log');
