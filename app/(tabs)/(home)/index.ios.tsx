@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Platform, Alert } from 'react-native';
+import { StyleSheet, View, Platform, Alert, TouchableOpacity, Text } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,9 +12,14 @@ import { Audio } from 'expo-audio';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useTrackingPermission } from '@/hooks/useTrackingPermission';
+import { useGeofencing } from '@/hooks/useGeofencing';
 import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
 import * as AudioHandler from '@/utils/audioHandler';
+import * as LocationHandler from '@/utils/locationHandler';
+import StoreLocationManager from '@/components/StoreLocationManager';
+import { IconSymbol } from '@/components/IconSymbol';
+import { colors } from '@/styles/commonStyles';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -23,8 +28,10 @@ export default function HomeScreen() {
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
   const { trackingStatus } = useTrackingPermission();
+  const { isActive: isGeofencingActive, storeLocations, addStoreLocation } = useGeofencing();
   const insets = useSafeAreaInsets();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
+  const [showLocationManager, setShowLocationManager] = useState(false);
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
@@ -390,6 +397,54 @@ export default function HomeScreen() {
           `);
           break;
           
+        case 'natively.location.requestPermission':
+          console.log('User requested location permission from web');
+          const locationPermissionGranted = await LocationHandler.requestLocationPermission();
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'LOCATION_PERMISSION_RESPONSE', 
+              granted: ${locationPermissionGranted}
+            }, '*');
+          `);
+          break;
+          
+        case 'natively.location.getCurrent':
+          console.log('User requested current location from web');
+          const currentLocation = await LocationHandler.getCurrentLocation();
+          if (currentLocation) {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LOCATION_CURRENT_RESPONSE', 
+                location: ${JSON.stringify(currentLocation.coords)}
+              }, '*');
+            `);
+          } else {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LOCATION_CURRENT_RESPONSE', 
+                error: 'Failed to get location'
+              }, '*');
+            `);
+          }
+          break;
+          
+        case 'natively.geofence.add':
+          console.log('User adding geofence from web:', data.store);
+          await addStoreLocation(data.store);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'GEOFENCE_ADD_RESPONSE', 
+              success: true,
+              storeId: '${data.store.id}'
+            }, '*');
+          `);
+          break;
+          
+        case 'natively.geofence.openManager':
+          console.log('User opened location manager from web');
+          setShowLocationManager(true);
+          break;
+          
         case 'natively.product.cache':
           await OfflineStorage.cacheProduct(data.product);
           break;
@@ -477,11 +532,14 @@ export default function HomeScreen() {
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'ios',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing']
       }, '*');
     })();
     true;
   `;
+
+  const geofenceStatusText = isGeofencingActive ? 'Active' : 'Inactive';
+  const storeCountText = `${storeLocations.length}`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -505,6 +563,33 @@ export default function HomeScreen() {
           }
         }}
       />
+      
+      {/* Floating Location Button */}
+      <TouchableOpacity
+        style={styles.locationButton}
+        onPress={() => {
+          console.log('User tapped location button');
+          setShowLocationManager(true);
+        }}
+      >
+        <IconSymbol
+          ios_icon_name="location.fill"
+          android_material_icon_name="location-on"
+          size={24}
+          color="#fff"
+        />
+        {storeLocations.length > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{storeCountText}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      
+      {/* Location Manager Modal */}
+      <StoreLocationManager
+        visible={showLocationManager}
+        onClose={() => setShowLocationManager(false)}
+      />
     </View>
   );
 }
@@ -515,5 +600,38 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+  },
+  locationButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#007aff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ff3b30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

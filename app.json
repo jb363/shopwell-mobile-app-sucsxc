@@ -26,8 +26,11 @@
         "NSContactsUsageDescription": "ShopWell.ai needs access to your contacts to help you connect with friends and family on the platform",
         "NSMicrophoneUsageDescription": "ShopWell.ai needs microphone access for voice planning and audio features",
         "NSUserTrackingUsageDescription": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers.",
+        "NSLocationWhenInUseUsageDescription": "ShopWell.ai needs your location to notify you when you're near stores with active shopping lists",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "ShopWell.ai needs your location in the background to send you reminders when you're near stores with active shopping lists",
         "UIBackgroundModes": [
-          "remote-notification"
+          "remote-notification",
+          "location"
         ],
         "CFBundleAllowMixedLocalizations": true
       },
@@ -50,7 +53,10 @@
         "WRITE_EXTERNAL_STORAGE",
         "NOTIFICATIONS",
         "READ_CONTACTS",
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
       ],
       "intentFilters": [
         {
@@ -105,6 +111,15 @@
         "expo-tracking-transparency",
         {
           "userTrackingPermission": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "ShopWell.ai needs your location in the background to send you reminders when you're near stores with active shopping lists",
+          "locationWhenInUsePermission": "ShopWell.ai needs your location to notify you when you're near stores with active shopping lists",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ]
     ],

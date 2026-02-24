@@ -1,7 +1,8 @@
 
 import * as Notifications from 'expo-notifications';
-import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -11,6 +12,33 @@ Notifications.setNotificationHandler({
     shouldSetBadge: true,
   }),
 });
+
+// Handle notification data and deep linking
+function handleNotificationData(data: any) {
+  console.log('Handling notification data:', data);
+  
+  if (!data) return;
+
+  // Handle geofence notifications
+  if (data.type === 'geofence') {
+    console.log('Geofence notification:', data.storeName);
+    
+    if (data.listId) {
+      // Navigate to list detail
+      console.log('Navigating to list:', data.listId);
+      // TODO: Backend Integration - Navigate to list detail screen when backend provides list endpoints
+      // router.push(`/lists/${data.listId}`);
+    } else if (data.reservationNumber) {
+      // Navigate to reservation detail
+      console.log('Navigating to reservation:', data.reservationNumber);
+      // TODO: Backend Integration - Navigate to reservation detail screen when backend provides reservation endpoints
+      // router.push(`/reservations/${data.reservationNumber}`);
+    }
+  }
+  
+  // Handle other notification types
+  // Add more handlers as needed
+}
 
 export function useNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string>();
@@ -35,8 +63,7 @@ export function useNotifications() {
       if (response) {
         console.log('App opened from notification:', response);
         const data = response.notification.request.content.data;
-        // Handle deep linking here
-        console.log('Notification data:', data);
+        handleNotificationData(data);
       }
     });
 
@@ -47,9 +74,8 @@ export function useNotifications() {
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('Notification response:', response);
-      // Handle deep linking here
       const data = response.notification.request.content.data;
-      console.log('Notification response data:', data);
+      handleNotificationData(data);
     });
 
     return () => {
@@ -110,5 +136,14 @@ if (Platform.OS === 'android') {
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#FF231F7C',
+  });
+  
+  // Create a channel for location-based notifications
+  Notifications.setNotificationChannelAsync('location', {
+    name: 'Location Notifications',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#007aff',
+    description: 'Notifications when you are near stores with active lists',
   });
 }
