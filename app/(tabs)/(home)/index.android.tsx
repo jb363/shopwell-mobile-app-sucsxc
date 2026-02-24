@@ -178,6 +178,51 @@ export default function HomeScreen() {
           `);
           break;
 
+        case 'natively.list.addToHomeScreen':
+          console.log('User requested to add list to home screen:', data.list);
+          try {
+            const listName = data.list?.name || 'Shopping List';
+            const listUrl = data.list?.url || `${SHOPWELL_URL}/lists/${data.list?.id}`;
+            
+            // On Android, we can share the URL which allows the user to add it to home screen
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(listUrl, {
+                dialogTitle: `Add "${listName}" to Home Screen`,
+              });
+              
+              // Provide haptic feedback
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
+                  success: true,
+                  listId: '${data.list?.id}',
+                  message: 'Share dialog opened. Select "Add to Home screen" from the options.'
+                }, '*');
+              `);
+            } else {
+              console.log('Sharing not available on this device');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
+                  success: false,
+                  error: 'Sharing not available on this device'
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error adding list to home screen:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
+                success: false,
+                error: 'Failed to add list to home screen'
+              }, '*');
+            `);
+          }
+          break;
+
         case 'natively.geofence.enableNotifications':
           console.log('User toggling location-based notifications from web:', data.enabled);
           try {
@@ -927,14 +972,14 @@ export default function HomeScreen() {
         subtree: true
       });
       
-      // Notify the website that we're in native app with all features including geofencing
+      // Notify the website that we're in native app with all features including geofencing and addToHomeScreen
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'android',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
       }, '*');
       
-      console.log('[Native App Android] Native app bridge initialized - geofencing and quick actions features available');
+      console.log('[Native App Android] Native app bridge initialized - geofencing, quick actions, and add to home screen features available');
     })();
     true;
   `;

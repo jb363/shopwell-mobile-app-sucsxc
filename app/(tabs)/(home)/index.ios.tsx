@@ -160,8 +160,54 @@ export default function HomeScreen() {
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      console.log('iOS received message from web:', data.type);
       
       switch (data.type) {
+        case 'natively.list.addToHomeScreen':
+          console.log('User requested to add list to home screen:', data.list);
+          try {
+            const listName = data.list?.name || 'Shopping List';
+            const listUrl = data.list?.url || `${SHOPWELL_URL}/lists/${data.list?.id}`;
+            
+            // On iOS, we can share the URL which allows the user to add it to home screen
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(listUrl, {
+                dialogTitle: `Add "${listName}" to Home Screen`,
+              });
+              
+              // Provide haptic feedback
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
+                  success: true,
+                  listId: '${data.list?.id}',
+                  message: 'Share dialog opened. Select "Add to Home Screen" from the share sheet.'
+                }, '*');
+              `);
+            } else {
+              console.log('Sharing not available on this device');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
+                  success: false,
+                  error: 'Sharing not available on this device'
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error adding list to home screen:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
+                success: false,
+                error: 'Failed to add list to home screen'
+              }, '*');
+            `);
+          }
+          break;
+
         case 'natively.geofence.enableNotifications':
           console.log('User toggling location-based notifications from web:', data.enabled);
           try {
@@ -717,6 +763,8 @@ export default function HomeScreen() {
   // JavaScript to inject that tells the website it's running in native app
   const injectedJavaScript = `
     (function() {
+      console.log('[Native App iOS] Initializing native app bridge...');
+      
       // Set flag that we're in native app
       window.isNativeApp = true;
       window.nativeAppPlatform = 'ios';
@@ -839,12 +887,14 @@ export default function HomeScreen() {
         subtree: true
       });
       
-      // Notify the website that we're in native app with all features including geofencing
+      // Notify the website that we're in native app with all features including geofencing and addToHomeScreen
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'ios',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions']
+        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
       }, '*');
+      
+      console.log('[Native App iOS] Native app bridge initialized - geofencing, quick actions, and add to home screen features available');
     })();
     true;
   `;
