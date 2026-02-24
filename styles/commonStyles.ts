@@ -20,6 +20,7 @@ export const colors = {
   textSecondary: '#9BA1A6',
   border: '#A1A1AA80',
   card: '#27272a',
+  cardBackground: '#27272a',
   success: '#34C759',
   error: '#FF3B30',
   warning: '#FF9500',

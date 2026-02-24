@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Platform, Alert, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, View, Platform, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as Clipboard from 'expo-clipboard';
@@ -15,9 +15,6 @@ import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
 import * as AudioHandler from '@/utils/audioHandler';
 import * as LocationHandler from '@/utils/locationHandler';
-import StoreLocationManager from '@/components/StoreLocationManager';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -25,9 +22,8 @@ export default function HomeScreen() {
   const webViewRef = useRef<WebView>(null);
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
-  const { isActive: isGeofencingActive, storeLocations, addStoreLocation } = useGeofencing();
+  const { addStoreLocation } = useGeofencing();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
-  const [showLocationManager, setShowLocationManager] = useState(false);
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
@@ -417,8 +413,8 @@ export default function HomeScreen() {
           break;
           
         case 'natively.geofence.openManager':
-          console.log('User opened location manager from web');
-          setShowLocationManager(true);
+          console.log('User opened location manager from web - redirecting to profile');
+          router.push('/(tabs)/profile');
           break;
           
         case 'natively.product.cache':
@@ -517,9 +513,6 @@ export default function HomeScreen() {
     true;
   `;
 
-  const geofenceStatusText = isGeofencingActive ? 'Active' : 'Inactive';
-  const storeCountText = `${storeLocations.length}`;
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -541,33 +534,6 @@ export default function HomeScreen() {
           }
         }}
       />
-      
-      {/* Floating Location Button */}
-      <TouchableOpacity
-        style={styles.locationButton}
-        onPress={() => {
-          console.log('User tapped location button');
-          setShowLocationManager(true);
-        }}
-      >
-        <IconSymbol
-          ios_icon_name="location.fill"
-          android_material_icon_name="location-on"
-          size={24}
-          color="#fff"
-        />
-        {storeLocations.length > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{storeCountText}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-      
-      {/* Location Manager Modal */}
-      <StoreLocationManager
-        visible={showLocationManager}
-        onClose={() => setShowLocationManager(false)}
-      />
     </View>
   );
 }
@@ -579,38 +545,5 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-  },
-  locationButton: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#007aff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#ff3b30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
 });

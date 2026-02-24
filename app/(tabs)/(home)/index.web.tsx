@@ -1,16 +1,13 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
-import StoreLocationManager from '@/components/StoreLocationManager';
-import { IconSymbol } from '@/components/IconSymbol';
 import { useGeofencing } from '@/hooks/useGeofencing';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [showLocationManager, setShowLocationManager] = useState(false);
   const { storeLocations } = useGeofencing();
 
   useEffect(() => {
@@ -164,8 +161,6 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const storeCountText = `${storeLocations.length}`;
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -179,33 +174,6 @@ export default function HomeScreen() {
         }}
         title="ShopWell.ai"
       />
-      
-      {/* Floating Location Button */}
-      <TouchableOpacity
-        style={styles.locationButton}
-        onPress={() => {
-          console.log('User tapped location button on web');
-          setShowLocationManager(true);
-        }}
-      >
-        <IconSymbol
-          ios_icon_name="location.fill"
-          android_material_icon_name="location-on"
-          size={24}
-          color="#fff"
-        />
-        {storeLocations.length > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{storeCountText}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-      
-      {/* Location Manager Modal */}
-      <StoreLocationManager
-        visible={showLocationManager}
-        onClose={() => setShowLocationManager(false)}
-      />
     </View>
   );
 }
@@ -216,39 +184,5 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     position: 'relative',
-  },
-  locationButton: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#007aff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 1000,
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#ff3b30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
 });
