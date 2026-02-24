@@ -36,6 +36,38 @@ export default function HomeScreen() {
   } = useGeofencing();
   const insets = useSafeAreaInsets();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
+  const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+
+  // Check initial permission statuses
+  useEffect(() => {
+    async function checkPermissions() {
+      console.log('Checking initial permission statuses...');
+      
+      // Check contacts permission
+      const hasContacts = await ContactsHandler.hasContactsPermission();
+      setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
+      console.log('Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
+      
+      // Check location permission
+      const hasLocation = await LocationHandler.hasLocationPermission();
+      setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
+      console.log('Initial location permission:', hasLocation ? 'granted' : 'undetermined');
+      
+      // Send initial status to web
+      if (webViewRef.current) {
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ 
+            type: 'PERMISSIONS_STATUS', 
+            contacts: '${hasContacts ? 'granted' : 'undetermined'}',
+            location: '${hasLocation ? 'granted' : 'undetermined'}'
+          }, '*');
+        `);
+      }
+    }
+    
+    checkPermissions();
+  }, []);
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
@@ -87,6 +119,20 @@ export default function HomeScreen() {
     }
   }, [isGeofencingActive, geofencePermissionStatus]);
 
+  // Send permission statuses to web when they change
+  useEffect(() => {
+    if (webViewRef.current) {
+      console.log('Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
+      webViewRef.current.injectJavaScript(`
+        window.postMessage({ 
+          type: 'PERMISSIONS_STATUS', 
+          contacts: '${contactsPermissionStatus}',
+          location: '${locationPermissionStatus}'
+        }, '*');
+      `);
+    }
+  }, [contactsPermissionStatus, locationPermissionStatus]);
+
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -129,22 +175,39 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.requestPermission':
-          console.log('User requesting location permission from web');
+          console.log('User requesting location permission from web (profile page)');
           try {
             const permissionGranted = await LocationHandler.requestLocationPermission();
             console.log('Location permission granted:', permissionGranted);
+            
+            // Update local state
+            setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
+            
+            // Send response to web
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                granted: ${permissionGranted}
+                granted: ${permissionGranted},
+                status: '${permissionGranted ? 'granted' : 'denied'}'
+              }, '*');
+            `);
+            
+            // Also send updated permissions status
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${contactsPermissionStatus}',
+                location: '${permissionGranted ? 'granted' : 'denied'}'
               }, '*');
             `);
           } catch (error) {
             console.error('Error requesting location permission:', error);
+            setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_PERMISSION_RESPONSE', 
                 granted: false,
+                status: 'denied',
                 error: 'Failed to request permission'
               }, '*');
             `);
@@ -420,14 +483,43 @@ export default function HomeScreen() {
           break;
           
         case 'natively.contacts.requestPermission':
-          console.log('User requested contacts permission from web');
-          const permissionGranted = await ContactsHandler.requestContactsPermission();
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'CONTACTS_PERMISSION_RESPONSE', 
-              granted: ${permissionGranted}
-            }, '*');
-          `);
+          console.log('User requested contacts permission from web (profile page or contacts page)');
+          try {
+            const permissionGranted = await ContactsHandler.requestContactsPermission();
+            console.log('Contacts permission granted:', permissionGranted);
+            
+            // Update local state
+            setContactsPermissionStatus(permissionGranted ? 'granted' : 'denied');
+            
+            // Send response to web
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_PERMISSION_RESPONSE', 
+                granted: ${permissionGranted},
+                status: '${permissionGranted ? 'granted' : 'denied'}'
+              }, '*');
+            `);
+            
+            // Also send updated permissions status
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${permissionGranted ? 'granted' : 'denied'}',
+                location: '${locationPermissionStatus}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error requesting contacts permission:', error);
+            setContactsPermissionStatus('denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_PERMISSION_RESPONSE', 
+                granted: false,
+                status: 'denied',
+                error: 'Failed to request permission'
+              }, '*');
+            `);
+          }
           break;
           
         case 'natively.contacts.getAll':
@@ -436,6 +528,8 @@ export default function HomeScreen() {
           if (!hasPermission) {
             console.log('No contacts permission, requesting...');
             const granted = await ContactsHandler.requestContactsPermission();
+            setContactsPermissionStatus(granted ? 'granted' : 'denied');
+            
             if (!granted) {
               console.log('Contacts permission denied by user');
               webViewRef.current?.injectJavaScript(`
@@ -543,10 +637,12 @@ export default function HomeScreen() {
         case 'natively.location.requestPermission':
           console.log('User requested location permission from web');
           const locationPermissionGranted = await LocationHandler.requestLocationPermission();
+          setLocationPermissionStatus(locationPermissionGranted ? 'granted' : 'denied');
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'LOCATION_PERMISSION_RESPONSE', 
-              granted: ${locationPermissionGranted}
+              granted: ${locationPermissionGranted},
+              status: '${locationPermissionGranted ? 'granted' : 'denied'}'
             }, '*');
           `);
           break;
