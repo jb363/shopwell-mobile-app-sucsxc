@@ -142,18 +142,9 @@
         "expo-quick-actions",
         {
           "androidIcons": {
-            "voice_planner": {
-              "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
-              "backgroundColor": "#1A1D2E"
-            },
-            "product_search": {
-              "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
-              "backgroundColor": "#1A1D2E"
-            },
-            "photo_search": {
-              "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
-              "backgroundColor": "#1A1D2E"
-            }
+            "voice_planner": "./assets/images/shopwell-ai-app-icon.png",
+            "product_search": "./assets/images/shopwell-ai-app-icon.png",
+            "photo_search": "./assets/images/shopwell-ai-app-icon.png"
           }
         }
       ]
