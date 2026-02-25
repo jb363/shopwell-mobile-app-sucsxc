@@ -1,7 +1,8 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "ShopWell.ai Mobile",
+    "slug": "shopwell-ai-mobile",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
@@ -157,7 +158,7 @@
         }
       ]
     ],
-    "scheme": "ShopWell.ai Mobile",
+    "scheme": "shopwellai",
     "experiments": {
       "typedRoutes": true
     },
