@@ -1,7 +1,8 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "shopwell-mobile-app-sucsxc",
+    "slug": "ShopWell-ai-Mobile",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
@@ -18,7 +19,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.shopwell.ios",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
@@ -32,7 +33,12 @@
           "remote-notification",
           "location"
         ],
-        "CFBundleAllowMixedLocalizations": true
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["shopwellai"]
+          }
+        ]
       },
       "associatedDomains": [
         "applinks:shopwell.ai",
@@ -72,6 +78,9 @@
               "scheme": "https",
               "host": "*.shopwell.ai",
               "pathPrefix": "/lists"
+            },
+            {
+              "scheme": "shopwellai"
             }
           ],
           "category": [

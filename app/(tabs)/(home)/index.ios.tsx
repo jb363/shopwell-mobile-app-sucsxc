@@ -30,11 +30,12 @@ export default function HomeScreen() {
   const { 
     addStoreLocation, 
     removeStoreLocation, 
-    getMonitoredStoreLocations,
-    isGeofencingActive,
+    loadStoreLocations,
+    isActive: isGeofencingActive,
     startGeofencing,
     stopGeofencing,
-    geofencePermissionStatus
+    hasPermission: geofencePermissionStatus,
+    storeLocations
   } = useGeofencing();
   const insets = useSafeAreaInsets();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
@@ -66,27 +67,31 @@ export default function HomeScreen() {
   // Check initial permission statuses
   useEffect(() => {
     async function checkPermissions() {
-      console.log('Checking initial permission statuses...');
-      
-      // Check contacts permission
-      const hasContacts = await ContactsHandler.hasContactsPermission();
-      setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
-      console.log('Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
-      
-      // Check location permission
-      const hasLocation = await LocationHandler.hasLocationPermission();
-      setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
-      console.log('Initial location permission:', hasLocation ? 'granted' : 'undetermined');
-      
-      // Send initial status to web
-      if (webViewRef.current) {
-        webViewRef.current.injectJavaScript(`
-          window.postMessage({ 
-            type: 'PERMISSIONS_STATUS', 
-            contacts: '${hasContacts ? 'granted' : 'undetermined'}',
-            location: '${hasLocation ? 'granted' : 'undetermined'}'
-          }, '*');
-        `);
+      try {
+        console.log('Checking initial permission statuses...');
+        
+        // Check contacts permission
+        const hasContacts = await ContactsHandler.hasContactsPermission();
+        setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
+        console.log('Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
+        
+        // Check location permission
+        const hasLocation = await LocationHandler.hasLocationPermission();
+        setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
+        console.log('Initial location permission:', hasLocation ? 'granted' : 'undetermined');
+        
+        // Send initial status to web
+        if (webViewRef.current) {
+          webViewRef.current.injectJavaScript(`
+            window.postMessage({ 
+              type: 'PERMISSIONS_STATUS', 
+              contacts: '${hasContacts ? 'granted' : 'undetermined'}',
+              location: '${hasLocation ? 'granted' : 'undetermined'}'
+            }, '*');
+          `);
+        }
+      } catch (error) {
+        console.error('Error checking permissions:', error);
       }
     }
     
@@ -133,11 +138,12 @@ export default function HomeScreen() {
     // Send geofencing status to web
     if (webViewRef.current) {
       console.log('Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
+      const permissionStatusStr = geofencePermissionStatus ? 'granted' : 'denied';
       webViewRef.current.injectJavaScript(`
         window.postMessage({ 
           type: 'GEOFENCING_STATUS', 
           isActive: ${isGeofencingActive},
-          permissionStatus: '${geofencePermissionStatus}'
+          permissionStatus: '${permissionStatusStr}'
         }, '*');
       `);
     }
@@ -286,16 +292,20 @@ export default function HomeScreen() {
 
         case 'natively.geofence.getStatus':
           console.log('Web requesting geofencing status');
-          const locations = await getMonitoredStoreLocations();
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'GEOFENCE_STATUS_RESPONSE', 
-              isActive: ${isGeofencingActive},
-              permissionStatus: '${geofencePermissionStatus}',
-              locationCount: ${locations.length},
-              locations: ${JSON.stringify(locations)}
-            }, '*');
-          `);
+          try {
+            const locations = await loadStoreLocations();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_STATUS_RESPONSE', 
+                isActive: ${isGeofencingActive},
+                permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
+                locationCount: ${locations.length},
+                locations: ${JSON.stringify(locations)}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting geofence status:', error);
+          }
           break;
 
         case 'natively.geofence.add':
@@ -346,119 +356,147 @@ export default function HomeScreen() {
 
         case 'natively.geofence.getAll':
           console.log('Web requesting all monitored locations');
-          const allLocations = await getMonitoredStoreLocations();
-          console.log(`Sending ${allLocations.length} monitored locations to web`);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'GEOFENCE_LIST_RESPONSE', 
-              locations: ${JSON.stringify(allLocations)}
-            }, '*');
-          `);
+          try {
+            const allLocations = await loadStoreLocations();
+            console.log(`Sending ${allLocations.length} monitored locations to web`);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_LIST_RESPONSE', 
+                locations: ${JSON.stringify(allLocations)}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting all geofences:', error);
+          }
           break;
 
         case 'natively.microphone.requestPermission':
           console.log('User requested microphone permission from web');
-          const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'MICROPHONE_PERMISSION_RESPONSE', 
-              granted: ${micPermissionGranted}
-            }, '*');
-          `);
+          try {
+            const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'MICROPHONE_PERMISSION_RESPONSE', 
+                granted: ${micPermissionGranted}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error requesting microphone permission:', error);
+          }
           break;
 
         case 'natively.audio.startRecording':
           console.log('User initiated audio recording from web');
-          const recording = await AudioHandler.startRecording();
-          if (recording) {
-            setCurrentRecording(recording);
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'AUDIO_RECORDING_STARTED', 
-                success: true
-              }, '*');
-            `);
-          } else {
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'AUDIO_RECORDING_STARTED', 
-                success: false,
-                error: 'Failed to start recording'
-              }, '*');
-            `);
-          }
-          break;
-
-        case 'natively.audio.stopRecording':
-          console.log('User stopped audio recording from web');
-          if (currentRecording) {
-            const uri = await AudioHandler.stopRecording(currentRecording);
-            setCurrentRecording(null);
-            if (uri) {
+          try {
+            const recording = await AudioHandler.startRecording();
+            if (recording) {
+              setCurrentRecording(recording);
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
-                  type: 'AUDIO_RECORDING_STOPPED', 
-                  success: true,
-                  uri: '${uri}'
+                  type: 'AUDIO_RECORDING_STARTED', 
+                  success: true
                 }, '*');
               `);
             } else {
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
-                  type: 'AUDIO_RECORDING_STOPPED', 
+                  type: 'AUDIO_RECORDING_STARTED', 
                   success: false,
-                  error: 'Failed to stop recording'
+                  error: 'Failed to start recording'
                 }, '*');
               `);
             }
-          } else {
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'AUDIO_RECORDING_STOPPED', 
-                success: false,
-                error: 'No active recording'
-              }, '*');
-            `);
+          } catch (error) {
+            console.error('Error starting audio recording:', error);
+          }
+          break;
+
+        case 'natively.audio.stopRecording':
+          console.log('User stopped audio recording from web');
+          try {
+            if (currentRecording) {
+              const uri = await AudioHandler.stopRecording(currentRecording);
+              setCurrentRecording(null);
+              if (uri) {
+                webViewRef.current?.injectJavaScript(`
+                  window.postMessage({ 
+                    type: 'AUDIO_RECORDING_STOPPED', 
+                    success: true,
+                    uri: '${uri}'
+                  }, '*');
+                `);
+              } else {
+                webViewRef.current?.injectJavaScript(`
+                  window.postMessage({ 
+                    type: 'AUDIO_RECORDING_STOPPED', 
+                    success: false,
+                    error: 'Failed to stop recording'
+                  }, '*');
+                `);
+              }
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_STOPPED', 
+                  success: false,
+                  error: 'No active recording'
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error stopping audio recording:', error);
           }
           break;
 
         case 'natively.audio.pauseRecording':
           console.log('User paused audio recording from web');
-          if (currentRecording) {
-            const paused = await AudioHandler.pauseRecording(currentRecording);
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'AUDIO_RECORDING_PAUSED', 
-                success: ${paused}
-              }, '*');
-            `);
+          try {
+            if (currentRecording) {
+              const paused = await AudioHandler.pauseRecording(currentRecording);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_PAUSED', 
+                  success: ${paused}
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error pausing audio recording:', error);
           }
           break;
 
         case 'natively.audio.resumeRecording':
           console.log('User resumed audio recording from web');
-          if (currentRecording) {
-            const resumed = await AudioHandler.resumeRecording(currentRecording);
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'AUDIO_RECORDING_RESUMED', 
-                success: ${resumed}
-              }, '*');
-            `);
+          try {
+            if (currentRecording) {
+              const resumed = await AudioHandler.resumeRecording(currentRecording);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_RESUMED', 
+                  success: ${resumed}
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error resuming audio recording:', error);
           }
           break;
 
         case 'natively.audio.getStatus':
-          if (currentRecording) {
-            const status = await AudioHandler.getRecordingStatus(currentRecording);
-            if (status) {
-              webViewRef.current?.injectJavaScript(`
-                window.postMessage({ 
-                  type: 'AUDIO_RECORDING_STATUS', 
-                  status: ${JSON.stringify(status)}
-                }, '*');
-              `);
+          try {
+            if (currentRecording) {
+              const status = await AudioHandler.getRecordingStatus(currentRecording);
+              if (status) {
+                webViewRef.current?.injectJavaScript(`
+                  window.postMessage({ 
+                    type: 'AUDIO_RECORDING_STATUS', 
+                    status: ${JSON.stringify(status)}
+                  }, '*');
+                `);
+              }
             }
+          } catch (error) {
+            console.error('Error getting audio status:', error);
           }
           break;
 
@@ -501,55 +539,79 @@ export default function HomeScreen() {
           break;
 
         case 'natively.clipboard.read':
-          const text = await Clipboard.getStringAsync();
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ type: 'CLIPBOARD_READ_RESPONSE', text: '${text}' }, '*');
-          `);
+          try {
+            const text = await Clipboard.getStringAsync();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CLIPBOARD_READ_RESPONSE', text: '${text}' }, '*');
+            `);
+          } catch (error) {
+            console.error('Error reading clipboard:', error);
+          }
           break;
           
         case 'natively.clipboard.write':
-          await Clipboard.setStringAsync(data.text);
+          try {
+            await Clipboard.setStringAsync(data.text);
+          } catch (error) {
+            console.error('Error writing to clipboard:', error);
+          }
           break;
           
         case 'natively.haptic.trigger':
-          const style = data.style || 'medium';
-          const hapticMap: Record<string, any> = {
-            light: Haptics.ImpactFeedbackStyle.Light,
-            medium: Haptics.ImpactFeedbackStyle.Medium,
-            heavy: Haptics.ImpactFeedbackStyle.Heavy,
-            success: Haptics.NotificationFeedbackType.Success,
-            warning: Haptics.NotificationFeedbackType.Warning,
-            error: Haptics.NotificationFeedbackType.Error,
-          };
-          if (style in hapticMap) {
-            if (['success', 'warning', 'error'].includes(style)) {
-              await Haptics.notificationAsync(hapticMap[style]);
-            } else {
-              await Haptics.impactAsync(hapticMap[style]);
+          try {
+            const style = data.style || 'medium';
+            const hapticMap: Record<string, any> = {
+              light: Haptics.ImpactFeedbackStyle.Light,
+              medium: Haptics.ImpactFeedbackStyle.Medium,
+              heavy: Haptics.ImpactFeedbackStyle.Heavy,
+              success: Haptics.NotificationFeedbackType.Success,
+              warning: Haptics.NotificationFeedbackType.Warning,
+              error: Haptics.NotificationFeedbackType.Error,
+            };
+            if (style in hapticMap) {
+              if (['success', 'warning', 'error'].includes(style)) {
+                await Haptics.notificationAsync(hapticMap[style]);
+              } else {
+                await Haptics.impactAsync(hapticMap[style]);
+              }
             }
+          } catch (error) {
+            console.error('Error triggering haptic:', error);
           }
           break;
           
         case 'natively.share':
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(data.url || data.message);
+          try {
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(data.url || data.message);
+            }
+          } catch (error) {
+            console.error('Error sharing:', error);
           }
           break;
           
         case 'natively.imagePicker':
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 1,
-          });
-          if (!result.canceled) {
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ type: 'IMAGE_SELECTED', uri: '${result.assets[0].uri}' }, '*');
-            `);
+          try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 1,
+            });
+            if (!result.canceled) {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'IMAGE_SELECTED', uri: '${result.assets[0].uri}' }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error picking image:', error);
           }
           break;
           
         case 'natively.scanner.open':
-          router.push('/scanner');
+          try {
+            router.push('/scanner');
+          } catch (error) {
+            console.error('Error opening scanner:', error);
+          }
           break;
           
         case 'natively.contacts.requestPermission':
@@ -594,162 +656,214 @@ export default function HomeScreen() {
           
         case 'natively.contacts.getAll':
           console.log('User requested to import all contacts from web');
-          const hasPermission = await ContactsHandler.hasContactsPermission();
-          if (!hasPermission) {
-            console.log('No contacts permission, requesting...');
-            const granted = await ContactsHandler.requestContactsPermission();
-            setContactsPermissionStatus(granted ? 'granted' : 'denied');
-            
-            if (!granted) {
-              console.log('Contacts permission denied by user');
-              webViewRef.current?.injectJavaScript(`
-                window.postMessage({ 
-                  type: 'CONTACTS_GET_ALL_RESPONSE', 
-                  contacts: [],
-                  error: 'Permission denied'
-                }, '*');
-              `);
-              break;
+          try {
+            const hasPermission = await ContactsHandler.hasContactsPermission();
+            if (!hasPermission) {
+              console.log('No contacts permission, requesting...');
+              const granted = await ContactsHandler.requestContactsPermission();
+              setContactsPermissionStatus(granted ? 'granted' : 'denied');
+              
+              if (!granted) {
+                console.log('Contacts permission denied by user');
+                webViewRef.current?.injectJavaScript(`
+                  window.postMessage({ 
+                    type: 'CONTACTS_GET_ALL_RESPONSE', 
+                    contacts: [],
+                    error: 'Permission denied'
+                  }, '*');
+                `);
+                break;
+              }
             }
+            
+            const allContacts = await ContactsHandler.getAllContacts();
+            console.log(`Sending ${allContacts.length} contacts to web`);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_GET_ALL_RESPONSE', 
+                contacts: ${JSON.stringify(allContacts)}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting contacts:', error);
           }
-          
-          const allContacts = await ContactsHandler.getAllContacts();
-          console.log(`Sending ${allContacts.length} contacts to web`);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'CONTACTS_GET_ALL_RESPONSE', 
-              contacts: ${JSON.stringify(allContacts)}
-            }, '*');
-          `);
           break;
           
         case 'natively.contacts.search':
           console.log('User searching contacts with query:', data.query);
-          const searchResults = await ContactsHandler.searchContacts(data.query || '');
-          console.log(`Found ${searchResults.length} matching contacts`);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'CONTACTS_SEARCH_RESPONSE', 
-              contacts: ${JSON.stringify(searchResults)},
-              query: '${data.query || ''}'
-            }, '*');
-          `);
+          try {
+            const searchResults = await ContactsHandler.searchContacts(data.query || '');
+            console.log(`Found ${searchResults.length} matching contacts`);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_SEARCH_RESPONSE', 
+                contacts: ${JSON.stringify(searchResults)},
+                query: '${data.query || ''}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error searching contacts:', error);
+          }
           break;
           
         case 'natively.storage.get':
-          const storedValue = await OfflineStorage.getItem(data.key);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'STORAGE_GET_RESPONSE', 
-              key: '${data.key}',
-              value: ${JSON.stringify(storedValue)}
-            }, '*');
-          `);
+          try {
+            const storedValue = await OfflineStorage.getItem(data.key);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'STORAGE_GET_RESPONSE', 
+                key: '${data.key}',
+                value: ${JSON.stringify(storedValue)}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting storage item:', error);
+          }
           break;
           
         case 'natively.storage.set':
-          await OfflineStorage.setItem(data.key, data.value);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'STORAGE_SET_RESPONSE', 
-              key: '${data.key}',
-              success: true
-            }, '*');
-          `);
+          try {
+            await OfflineStorage.setItem(data.key, data.value);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'STORAGE_SET_RESPONSE', 
+                key: '${data.key}',
+                success: true
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error setting storage item:', error);
+          }
           break;
           
         case 'natively.storage.remove':
-          await OfflineStorage.removeItem(data.key);
+          try {
+            await OfflineStorage.removeItem(data.key);
+          } catch (error) {
+            console.error('Error removing storage item:', error);
+          }
           break;
           
         case 'natively.sync.manual':
-          const syncSuccess = await manualSync();
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'SYNC_MANUAL_RESPONSE', 
-              success: ${syncSuccess}
-            }, '*');
-          `);
+          try {
+            const syncSuccess = await manualSync();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'SYNC_MANUAL_RESPONSE', 
+                success: ${syncSuccess}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error manual sync:', error);
+          }
           break;
           
         case 'natively.lists.save':
-          await OfflineStorage.saveShoppingList(data.list);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'LIST_SAVE_RESPONSE', 
-              success: true,
-              listId: '${data.list.id}'
-            }, '*');
-          `);
+          try {
+            await OfflineStorage.saveShoppingList(data.list);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LIST_SAVE_RESPONSE', 
+                success: true,
+                listId: '${data.list.id}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error saving list:', error);
+          }
           break;
           
         case 'natively.lists.get':
-          const lists = await OfflineStorage.getShoppingLists();
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'LISTS_GET_RESPONSE', 
-              lists: ${JSON.stringify(lists)}
-            }, '*');
-          `);
+          try {
+            const lists = await OfflineStorage.getShoppingLists();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LISTS_GET_RESPONSE', 
+                lists: ${JSON.stringify(lists)}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting lists:', error);
+          }
           break;
           
         case 'natively.lists.delete':
-          await OfflineStorage.deleteShoppingList(data.listId);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'LIST_DELETE_RESPONSE', 
-              success: true,
-              listId: '${data.listId}'
-            }, '*');
-          `);
+          try {
+            await OfflineStorage.deleteShoppingList(data.listId);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LIST_DELETE_RESPONSE', 
+                success: true,
+                listId: '${data.listId}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error deleting list:', error);
+          }
           break;
           
         case 'natively.location.requestPermission':
           console.log('User requested location permission from web');
-          const locationPermissionGranted = await LocationHandler.requestLocationPermission();
-          setLocationPermissionStatus(locationPermissionGranted ? 'granted' : 'denied');
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'LOCATION_PERMISSION_RESPONSE', 
-              granted: ${locationPermissionGranted},
-              status: '${locationPermissionGranted ? 'granted' : 'denied'}'
-            }, '*');
-          `);
+          try {
+            const locationPermissionGranted = await LocationHandler.requestLocationPermission();
+            setLocationPermissionStatus(locationPermissionGranted ? 'granted' : 'denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'LOCATION_PERMISSION_RESPONSE', 
+                granted: ${locationPermissionGranted},
+                status: '${locationPermissionGranted ? 'granted' : 'denied'}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error requesting location permission:', error);
+          }
           break;
           
         case 'natively.location.getCurrent':
           console.log('User requested current location from web');
-          const currentLocation = await LocationHandler.getCurrentLocation();
-          if (currentLocation) {
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'LOCATION_CURRENT_RESPONSE', 
-                location: ${JSON.stringify(currentLocation.coords)}
-              }, '*');
-            `);
-          } else {
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'LOCATION_CURRENT_RESPONSE', 
-                error: 'Failed to get location'
-              }, '*');
-            `);
+          try {
+            const currentLocation = await LocationHandler.getCurrentLocation();
+            if (currentLocation) {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'LOCATION_CURRENT_RESPONSE', 
+                  location: ${JSON.stringify(currentLocation.coords)}
+                }, '*');
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'LOCATION_CURRENT_RESPONSE', 
+                  error: 'Failed to get location'
+                }, '*');
+              `);
+            }
+          } catch (error) {
+            console.error('Error getting current location:', error);
           }
           break;
           
         case 'natively.product.cache':
-          await OfflineStorage.cacheProduct(data.product);
+          try {
+            await OfflineStorage.cacheProduct(data.product);
+          } catch (error) {
+            console.error('Error caching product:', error);
+          }
           break;
           
         case 'natively.product.getCached':
-          const cachedProduct = await OfflineStorage.getCachedProduct(data.barcode);
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'PRODUCT_CACHED_RESPONSE', 
-              barcode: '${data.barcode}',
-              product: ${JSON.stringify(cachedProduct)}
-            }, '*');
-          `);
+          try {
+            const cachedProduct = await OfflineStorage.getCachedProduct(data.barcode);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PRODUCT_CACHED_RESPONSE', 
+                barcode: '${data.barcode}',
+                product: ${JSON.stringify(cachedProduct)}
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting cached product:', error);
+          }
           break;
           
         default:
@@ -792,7 +906,6 @@ export default function HomeScreen() {
           'a[href*="get-app"]',
           'button[class*="download"]',
           'button[class*="get-app"]',
-          // Products in the News selectors
           '[data-products-news]',
           '[class*="products-news"]',
           '[class*="products-in-news"]',
@@ -800,7 +913,6 @@ export default function HomeScreen() {
           '[id*="products-in-news"]',
           'a[href*="/news"]',
           'a[href*="/products-news"]',
-          // Quick Tip selectors
           '[data-quick-tip]',
           '[class*="quick-tip"]',
           '[class*="quicktip"]',
@@ -822,7 +934,6 @@ export default function HomeScreen() {
           });
         });
         
-        // Also hide by text content (more aggressive)
         const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article, nav, header');
         allElements.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
@@ -830,7 +941,6 @@ export default function HomeScreen() {
           const title = el.getAttribute('title')?.toLowerCase() || '';
           const combinedText = text + ' ' + ariaLabel + ' ' + title;
           
-          // Hide "Download App" or "Get App" elements
           if (combinedText.includes('download app') || 
               combinedText.includes('get app') || 
               combinedText.includes('install app') ||
@@ -842,13 +952,11 @@ export default function HomeScreen() {
             el.style.height = '0';
             el.style.overflow = 'hidden';
             
-            // Also hide parent if it's a list item or nav item
             if (el.parentElement?.tagName === 'LI' || el.parentElement?.tagName === 'NAV') {
               el.parentElement.style.display = 'none';
             }
           }
           
-          // Hide "Products in the News" links
           if (combinedText.includes('products in the news') || combinedText.includes('products in news')) {
             el.style.display = 'none';
             el.style.visibility = 'hidden';
@@ -857,7 +965,6 @@ export default function HomeScreen() {
             }
           }
           
-          // Hide "Quick Tip" messages about Click-&-Add
           if (combinedText.includes('quick tip') && (combinedText.includes('click') || combinedText.includes('add') || combinedText.includes('install'))) {
             el.style.display = 'none';
             el.style.visibility = 'hidden';
@@ -871,30 +978,26 @@ export default function HomeScreen() {
         });
       };
       
-      // Run immediately and after DOM loads
       hideUnwantedElements();
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideUnwantedElements);
       }
       
-      // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
-      // Use MutationObserver for more efficient detection
       const observer = new MutationObserver(hideUnwantedElements);
       observer.observe(document.body, {
         childList: true,
         subtree: true
       });
       
-      // Notify the website that we're in native app with all features including geofencing and addToHomeScreen
       window.postMessage({ 
         type: 'NATIVE_APP_READY', 
         platform: 'ios',
         features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
       }, '*');
       
-      console.log('[Native App iOS] Native app bridge initialized - geofencing, quick actions, and add to home screen features available');
+      console.log('[Native App iOS] Native app bridge initialized - all features available');
     })();
     true;
   `;
@@ -919,6 +1022,10 @@ export default function HomeScreen() {
           if (webViewRef.current) {
             webViewRef.current.injectJavaScript(injectedJavaScript);
           }
+        }}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('WebView error:', nativeEvent);
         }}
       />
     </View>

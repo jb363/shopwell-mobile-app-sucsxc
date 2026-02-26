@@ -21,7 +21,7 @@ import { shopWellColors } from "@/constants/Colors";
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  initialRouteName: "(tabs)", // Ensure any route can link back to `/`
+  initialRouteName: "(tabs)",
 };
 
 export default function RootLayout() {
@@ -29,29 +29,43 @@ export default function RootLayout() {
   const networkState = useNetworkState();
 
   useEffect(() => {
-    SplashScreen.hideAsync();
+    console.log('RootLayout: Initializing app...');
+    
+    // Hide splash screen after a short delay to ensure everything is loaded
+    const timer = setTimeout(() => {
+      console.log('RootLayout: Hiding splash screen');
+      SplashScreen.hideAsync().catch((error) => {
+        console.error('Error hiding splash screen:', error);
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Handle deep linking and share intents
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
-      console.log('Deep link received:', event.url);
-      
-      const url = Linking.parse(event.url);
-      console.log('Parsed URL:', url);
+      try {
+        console.log('Deep link received:', event.url);
+        
+        const url = Linking.parse(event.url);
+        console.log('Parsed URL:', url);
 
-      // Handle share target deep links
-      if (url.path === 'share-target' || url.hostname === 'share-target') {
-        console.log('Navigating to share-target with params:', url.queryParams);
-        router.push({
-          pathname: '/share-target',
-          params: url.queryParams || {},
-        });
-      }
-      // Handle other deep links
-      else if (url.path) {
-        console.log('Navigating to path:', url.path);
-        router.push(url.path as any);
+        // Handle share target deep links
+        if (url.path === 'share-target' || url.hostname === 'share-target') {
+          console.log('Navigating to share-target with params:', url.queryParams);
+          router.push({
+            pathname: '/share-target',
+            params: url.queryParams || {},
+          });
+        }
+        // Handle other deep links
+        else if (url.path) {
+          console.log('Navigating to path:', url.path);
+          router.push(url.path as any);
+        }
+      } catch (error) {
+        console.error('Error handling deep link:', error);
       }
     };
 
@@ -61,6 +75,8 @@ export default function RootLayout() {
         console.log('Initial URL:', url);
         handleDeepLink({ url });
       }
+    }).catch((error) => {
+      console.error('Error getting initial URL:', error);
     });
 
     // Listen for deep links while app is running
@@ -76,6 +92,7 @@ export default function RootLayout() {
       !networkState.isConnected &&
       networkState.isInternetReachable === false
     ) {
+      console.log('User is offline - showing offline alert');
       Alert.alert(
         "🔌 You are offline",
         "You can keep using the app! Your changes will be saved locally and synced when you are back online."
@@ -114,7 +131,7 @@ export default function RootLayout() {
       <ThemeProvider
         value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
       >
-        <GestureHandlerRootView>
+        <GestureHandlerRootView style={{ flex: 1 }}>
           <Stack>
             {/* Main app with tabs */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -125,6 +142,14 @@ export default function RootLayout() {
               options={{ 
                 headerShown: false,
                 presentation: 'modal',
+              }} 
+            />
+
+            {/* 404 Not Found Screen */}
+            <Stack.Screen 
+              name="+not-found" 
+              options={{ 
+                title: 'Not Found',
               }} 
             />
 
