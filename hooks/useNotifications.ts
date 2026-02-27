@@ -53,9 +53,25 @@ export function useNotifications() {
       return;
     }
 
-    registerForPushNotificationsAsync().then(token => {
-      setExpoPushToken(token);
-      console.log('Push token:', token);
+    // DO NOT automatically request notification permissions on mount
+    // This was causing the permission prompt to appear immediately when the app opens
+    // Instead, we only check if we already have permission and get the token if we do
+    console.log('[useNotifications] Checking existing notification permissions (not requesting)');
+    
+    Notifications.getPermissionsAsync().then(({ status }) => {
+      if (status === 'granted') {
+        console.log('[useNotifications] Already have notification permission, getting token');
+        Notifications.getExpoPushTokenAsync().then(tokenData => {
+          setExpoPushToken(tokenData.data);
+          console.log('[useNotifications] Push token:', tokenData.data);
+        }).catch(error => {
+          console.error('[useNotifications] Error getting push token:', error);
+        });
+      } else {
+        console.log('[useNotifications] No notification permission yet - will request when user enables notifications');
+      }
+    }).catch(error => {
+      console.error('[useNotifications] Error checking notification permissions:', error);
     });
 
     // Check for notification that opened the app
@@ -103,7 +119,7 @@ export function useNotifications() {
   return { schedulePushNotification, expoPushToken, notification };
 }
 
-async function registerForPushNotificationsAsync() {
+export async function registerForPushNotificationsAsync() {
   if (Platform.OS === 'web') {
     console.log('Push notifications not available on web');
     return undefined;
@@ -114,6 +130,7 @@ async function registerForPushNotificationsAsync() {
   let finalStatus = existingStatus;
   
   if (existingStatus !== 'granted') {
+    console.log('[registerForPushNotifications] Requesting notification permissions from user');
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
