@@ -550,7 +550,7 @@ export default function HomeScreen() {
           console.log('User requested tracking permission from web');
           try {
             // Import the tracking permission function dynamically to avoid crashes
-            const { requestTrackingPermission } = require('@/hooks/useTrackingPermission.ios');
+            const { requestTrackingPermission } = await import('@/hooks/useTrackingPermission.ios');
             const granted = await requestTrackingPermission();
             console.log('Tracking permission result:', granted);
             webViewRef.current?.injectJavaScript(`
@@ -577,8 +577,8 @@ export default function HomeScreen() {
           console.log('User requested tracking status from web');
           try {
             // Import the tracking transparency module dynamically
-            const TrackingTransparency = require('expo-tracking-transparency');
-            const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
+            const { getTrackingStatus } = await import('@/hooks/useTrackingPermission.ios');
+            const status = await getTrackingStatus();
             console.log('Current tracking status:', status);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
