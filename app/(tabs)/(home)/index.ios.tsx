@@ -21,6 +21,8 @@ import * as LocationHandler from '@/utils/locationHandler';
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
+  console.log('[iOS HomeScreen] Component mounting...');
+  
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
@@ -28,61 +30,31 @@ export default function HomeScreen() {
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
 
-  // Initialize hooks with error handling
-  let expoPushToken = '';
-  let isSyncing = false;
-  let queueSize = 0;
-  let isOnline = true;
-  let manualSync = async () => false;
-  let isGeofencingActive = false;
-  let geofencePermissionStatus = false;
-  let storeLocations: any[] = [];
-  let addStoreLocation = async (store: any) => {};
-  let removeStoreLocation = async (storeId: string) => {};
-  let loadStoreLocations = async () => [];
-  let startGeofencing = async () => false;
-  let stopGeofencing = async () => {};
+  // CRITICAL: Hooks MUST be called unconditionally at the top level
+  // Wrapping them in try-catch violates Rules of Hooks and causes crashes
+  const notificationsHook = useNotifications();
+  const offlineSyncHook = useOfflineSync();
+  const geofencingHook = useGeofencing();
+  
+  // Set up quick actions (app shortcuts) - this hook is safe
+  useQuickActions(webViewRef);
 
-  try {
-    const notificationsHook = useNotifications();
-    expoPushToken = notificationsHook.expoPushToken;
-  } catch (error) {
-    console.error('Error initializing notifications hook:', error);
-  }
+  // Extract values from hooks
+  const expoPushToken = notificationsHook.expoPushToken;
+  const isSyncing = offlineSyncHook.isSyncing;
+  const queueSize = offlineSyncHook.queueSize;
+  const isOnline = offlineSyncHook.isOnline;
+  const manualSync = offlineSyncHook.manualSync;
+  const isGeofencingActive = geofencingHook.isActive;
+  const geofencePermissionStatus = geofencingHook.hasPermission;
+  const storeLocations = geofencingHook.storeLocations;
+  const addStoreLocation = geofencingHook.addStoreLocation;
+  const removeStoreLocation = geofencingHook.removeStoreLocation;
+  const loadStoreLocations = geofencingHook.loadStoreLocations;
+  const startGeofencing = geofencingHook.startGeofencing;
+  const stopGeofencing = geofencingHook.stopGeofencing;
 
-  try {
-    const offlineSyncHook = useOfflineSync();
-    isSyncing = offlineSyncHook.isSyncing;
-    queueSize = offlineSyncHook.queueSize;
-    isOnline = offlineSyncHook.isOnline;
-    manualSync = offlineSyncHook.manualSync;
-  } catch (error) {
-    console.error('Error initializing offline sync hook:', error);
-  }
-
-  // DO NOT initialize tracking permission hook here
-  // It will be handled on-demand when the user requests it from the web
-
-  try {
-    const geofencingHook = useGeofencing();
-    isGeofencingActive = geofencingHook.isActive;
-    geofencePermissionStatus = geofencingHook.hasPermission;
-    storeLocations = geofencingHook.storeLocations;
-    addStoreLocation = geofencingHook.addStoreLocation;
-    removeStoreLocation = geofencingHook.removeStoreLocation;
-    loadStoreLocations = geofencingHook.loadStoreLocations;
-    startGeofencing = geofencingHook.startGeofencing;
-    stopGeofencing = geofencingHook.stopGeofencing;
-  } catch (error) {
-    console.error('Error initializing geofencing hook:', error);
-  }
-
-  // Set up quick actions (app shortcuts)
-  try {
-    useQuickActions(webViewRef);
-  } catch (error) {
-    console.error('Error initializing quick actions:', error);
-  }
+  console.log('[iOS HomeScreen] Hooks initialized successfully');
 
   // Handle shared content from share-target screen
   useEffect(() => {
@@ -111,34 +83,55 @@ export default function HomeScreen() {
   useEffect(() => {
     async function checkPermissions() {
       try {
-        console.log('Checking initial permission statuses...');
+        console.log('[iOS HomeScreen] Checking initial permission statuses...');
         
-        // Check contacts permission
-        const hasContacts = await ContactsHandler.hasContactsPermission();
-        setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
-        console.log('Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
+        // Check contacts permission with error handling
+        let hasContacts = false;
+        try {
+          hasContacts = await ContactsHandler.hasContactsPermission();
+          setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
+          console.log('[iOS HomeScreen] Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
+        } catch (contactsError) {
+          console.error('[iOS HomeScreen] Error checking contacts permission:', contactsError);
+          setContactsPermissionStatus('undetermined');
+        }
         
-        // Check location permission
-        const hasLocation = await LocationHandler.hasLocationPermission();
-        setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
-        console.log('Initial location permission:', hasLocation ? 'granted' : 'undetermined');
+        // Check location permission with error handling
+        let hasLocation = false;
+        try {
+          hasLocation = await LocationHandler.hasLocationPermission();
+          setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
+          console.log('[iOS HomeScreen] Initial location permission:', hasLocation ? 'granted' : 'undetermined');
+        } catch (locationError) {
+          console.error('[iOS HomeScreen] Error checking location permission:', locationError);
+          setLocationPermissionStatus('undetermined');
+        }
         
         // Send initial status to web
         if (webViewRef.current) {
-          webViewRef.current.injectJavaScript(`
-            window.postMessage({ 
-              type: 'PERMISSIONS_STATUS', 
-              contacts: '${hasContacts ? 'granted' : 'undetermined'}',
-              location: '${hasLocation ? 'granted' : 'undetermined'}'
-            }, '*');
-          `);
+          try {
+            webViewRef.current.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${hasContacts ? 'granted' : 'undetermined'}',
+                location: '${hasLocation ? 'granted' : 'undetermined'}'
+              }, '*');
+            `);
+          } catch (injectError) {
+            console.error('[iOS HomeScreen] Error injecting permissions status:', injectError);
+          }
         }
       } catch (error) {
-        console.error('Error checking permissions:', error);
+        console.error('[iOS HomeScreen] Error in checkPermissions:', error);
       }
     }
     
-    checkPermissions();
+    // Delay permission check slightly to ensure app is fully initialized
+    const timer = setTimeout(() => {
+      checkPermissions();
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -1115,20 +1108,38 @@ export default function HomeScreen() {
         allowsBackForwardNavigationGestures={true}
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
+        onLoadStart={() => {
+          console.log('[iOS HomeScreen] WebView started loading');
+        }}
         onLoadEnd={() => {
+          console.log('[iOS HomeScreen] WebView finished loading');
           // Re-inject after page loads to ensure it takes effect
-          if (webViewRef.current) {
-            webViewRef.current.injectJavaScript(injectedJavaScript);
+          try {
+            if (webViewRef.current) {
+              webViewRef.current.injectJavaScript(injectedJavaScript);
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error re-injecting JavaScript:', error);
           }
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('WebView error:', nativeEvent);
+          console.error('[iOS HomeScreen] WebView error:', nativeEvent);
+        }}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('[iOS HomeScreen] WebView HTTP error:', nativeEvent.statusCode, nativeEvent.url);
+        }}
+        onRenderProcessGone={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('[iOS HomeScreen] WebView render process gone:', nativeEvent.didCrash);
         }}
       />
     </View>
   );
 }
+
+console.log('[iOS HomeScreen] Module loaded successfully');
 
 const styles = StyleSheet.create({
   container: {

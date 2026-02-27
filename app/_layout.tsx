@@ -6,7 +6,12 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Linking from 'expo-linking';
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useColorScheme, Alert } from "react-native";
+import { useColorScheme, Alert, Platform } from "react-native";
+
+// Type declaration for ErrorUtils (React Native global)
+declare const ErrorUtils: {
+  setGlobalHandler: (handler: (error: Error, isFatal?: boolean) => void) => void;
+} | undefined;
 import { useNetworkState } from "expo-network";
 import {
   DarkTheme,
@@ -20,6 +25,16 @@ import { shopWellColors } from "@/constants/Colors";
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+// Global error handler
+const errorHandler = (error: Error, isFatal?: boolean) => {
+  console.error('[Global Error Handler]', isFatal ? 'FATAL:' : 'ERROR:', error);
+  console.error('[Global Error Handler] Stack:', error.stack);
+  
+  if (isFatal) {
+    console.error('[Global Error Handler] Fatal error detected - app may crash');
+  }
+};
+
 export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
@@ -29,13 +44,21 @@ export default function RootLayout() {
   const networkState = useNetworkState();
 
   useEffect(() => {
-    console.log('RootLayout: Initializing app...');
+    console.log('[RootLayout] Initializing app...');
+    console.log('[RootLayout] Platform:', Platform.OS);
+    console.log('[RootLayout] Color scheme:', colorScheme);
+    
+    // Set up global error handler
+    if (ErrorUtils) {
+      ErrorUtils.setGlobalHandler(errorHandler);
+      console.log('[RootLayout] Global error handler installed');
+    }
     
     // Hide splash screen after a short delay to ensure everything is loaded
     const timer = setTimeout(() => {
-      console.log('RootLayout: Hiding splash screen');
+      console.log('[RootLayout] Hiding splash screen');
       SplashScreen.hideAsync().catch((error) => {
-        console.error('Error hiding splash screen:', error);
+        console.error('[RootLayout] Error hiding splash screen:', error);
       });
     }, 100);
 

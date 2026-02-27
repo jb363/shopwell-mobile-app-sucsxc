@@ -65,15 +65,27 @@ export function useTrackingPermission() {
 // Export standalone function for use in message handlers
 export async function getTrackingStatus(): Promise<TrackingStatus> {
   try {
-    console.log('Standalone: Getting tracking status...');
+    console.log('[Tracking] Standalone: Getting tracking status...');
     
-    // Dynamically import to avoid early initialization
-    const TrackingTransparency = await import('expo-tracking-transparency');
-    const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
-    console.log('Standalone: Current tracking status:', status);
-    return status;
+    // Check if module is available
+    try {
+      // Dynamically import to avoid early initialization
+      const TrackingTransparency = await import('expo-tracking-transparency');
+      
+      if (!TrackingTransparency || !TrackingTransparency.getTrackingPermissionsAsync) {
+        console.warn('[Tracking] Tracking transparency module not available');
+        return 'unavailable';
+      }
+      
+      const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
+      console.log('[Tracking] Standalone: Current tracking status:', status);
+      return status;
+    } catch (importError) {
+      console.error('[Tracking] Failed to import tracking transparency module:', importError);
+      return 'unavailable';
+    }
   } catch (error) {
-    console.error('Standalone: Error getting tracking status:', error);
+    console.error('[Tracking] Standalone: Error getting tracking status:', error);
     return 'unavailable';
   }
 }
@@ -81,21 +93,33 @@ export async function getTrackingStatus(): Promise<TrackingStatus> {
 // Export standalone function for use in message handlers
 export async function requestTrackingPermission(): Promise<boolean> {
   try {
-    console.log('Standalone: Requesting tracking permission from user...');
+    console.log('[Tracking] Standalone: Requesting tracking permission from user...');
     
-    // Dynamically import to avoid early initialization
-    const TrackingTransparency = await import('expo-tracking-transparency');
-    const { status: currentStatus } = await TrackingTransparency.getTrackingPermissionsAsync();
-    
-    if (currentStatus === 'undetermined') {
-      const { status: newStatus } = await TrackingTransparency.requestTrackingPermissionsAsync();
-      console.log('Standalone: User responded with tracking permission:', newStatus);
-      return newStatus === 'authorized';
-    } else {
-      return currentStatus === 'authorized';
+    // Check if module is available
+    try {
+      // Dynamically import to avoid early initialization
+      const TrackingTransparency = await import('expo-tracking-transparency');
+      
+      if (!TrackingTransparency || !TrackingTransparency.requestTrackingPermissionsAsync) {
+        console.warn('[Tracking] Tracking transparency module not available');
+        return false;
+      }
+      
+      const { status: currentStatus } = await TrackingTransparency.getTrackingPermissionsAsync();
+      
+      if (currentStatus === 'undetermined') {
+        const { status: newStatus } = await TrackingTransparency.requestTrackingPermissionsAsync();
+        console.log('[Tracking] Standalone: User responded with tracking permission:', newStatus);
+        return newStatus === 'authorized';
+      } else {
+        return currentStatus === 'authorized';
+      }
+    } catch (importError) {
+      console.error('[Tracking] Failed to import tracking transparency module:', importError);
+      return false;
     }
   } catch (error) {
-    console.error('Standalone: Error requesting tracking permission:', error);
+    console.error('[Tracking] Standalone: Error requesting tracking permission:', error);
     return false;
   }
 }
