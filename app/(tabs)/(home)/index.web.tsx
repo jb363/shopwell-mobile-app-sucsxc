@@ -67,7 +67,7 @@ export default function HomeScreen() {
     setTimeout(() => sendMessageToIframe(statusMessage), 500);
     setTimeout(() => sendMessageToIframe(statusMessage), 1000);
     setTimeout(() => sendMessageToIframe(statusMessage), 2000);
-  }, [iframeReady, isGeofencingActive, geofencePermissionStatus, storeLocations]);
+  }, [iframeReady, isGeofencingActive, geofencePermissionStatus, storeLocations, sendMessageToIframe]);
 
   useEffect(() => {
     console.log('Web home screen mounted');
@@ -436,7 +436,7 @@ export default function HomeScreen() {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [isGeofencingActive, geofencePermissionStatus, storeLocations, startGeofencing, stopGeofencing, addStoreLocation, removeStoreLocation, loadStoreLocations]);
+  }, [isGeofencingActive, geofencePermissionStatus, storeLocations, startGeofencing, stopGeofencing, addStoreLocation, removeStoreLocation, loadStoreLocations, sendMessageToIframe]);
 
   return (
     <View style={styles.container}>

@@ -17,11 +17,16 @@ import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
 import * as AudioHandler from '@/utils/audioHandler';
 import * as LocationHandler from '@/utils/locationHandler';
+import { crashReporter } from '@/utils/crashReporter';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
-  console.log('[iOS HomeScreen] Component mounting...');
+  console.log('[iOS HomeScreen] ═══════════════════════════════════════');
+  console.log('[iOS HomeScreen] COMPONENT MOUNTING');
+  console.log('[iOS HomeScreen] ═══════════════════════════════════════');
+  console.log('[iOS HomeScreen] Timestamp:', new Date().toISOString());
+  console.log('[iOS HomeScreen] Platform:', Platform.OS, Platform.Version);
   
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
@@ -30,14 +35,20 @@ export default function HomeScreen() {
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
 
+  console.log('[iOS HomeScreen] State initialized');
+  console.log('[iOS HomeScreen] Safe area insets:', JSON.stringify(insets));
+
   // CRITICAL: Hooks MUST be called unconditionally at the top level
-  // Wrapping them in try-catch violates Rules of Hooks and causes crashes
+  // React Hooks cannot be wrapped in try-catch or conditionals
+  console.log('[iOS HomeScreen] Initializing hooks...');
   const notificationsHook = useNotifications();
   const offlineSyncHook = useOfflineSync();
   const geofencingHook = useGeofencing();
   
-  // Set up quick actions (app shortcuts) - this hook is safe
+  // Set up quick actions (app shortcuts) - MUST be called unconditionally
   useQuickActions(webViewRef);
+  
+  console.log('[iOS HomeScreen] ✅ All hooks initialized successfully');
 
   // Extract values from hooks
   const expoPushToken = notificationsHook.expoPushToken;
@@ -54,13 +65,21 @@ export default function HomeScreen() {
   const startGeofencing = geofencingHook.startGeofencing;
   const stopGeofencing = geofencingHook.stopGeofencing;
 
-  console.log('[iOS HomeScreen] Hooks initialized successfully');
+  console.log('[iOS HomeScreen] Hook values:', {
+    hasExpoPushToken: !!expoPushToken,
+    isSyncing,
+    queueSize,
+    isOnline,
+    isGeofencingActive,
+    geofencePermissionStatus,
+    storeLocationsCount: storeLocations.length,
+  });
 
   // Handle shared content from share-target screen
   useEffect(() => {
     try {
       if (params.sharedContent && params.sharedType && webViewRef.current) {
-        console.log('Received shared content:', { type: params.sharedType, content: params.sharedContent });
+        console.log('[iOS HomeScreen] Received shared content:', { type: params.sharedType, content: params.sharedContent });
         
         // Send shared content to the web app
         const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
@@ -75,7 +94,10 @@ export default function HomeScreen() {
         `);
       }
     } catch (error) {
-      console.error('Error handling shared content:', error);
+      console.error('[iOS HomeScreen] Error handling shared content:', error);
+      if (error instanceof Error) {
+        crashReporter.logCrash(error, { location: 'sharedContentHandler' });
+      }
     }
   }, [params.sharedContent, params.sharedType]);
 
@@ -93,6 +115,9 @@ export default function HomeScreen() {
           console.log('[iOS HomeScreen] Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
         } catch (contactsError) {
           console.error('[iOS HomeScreen] Error checking contacts permission:', contactsError);
+          if (contactsError instanceof Error) {
+            crashReporter.logCrash(contactsError, { location: 'checkContactsPermission' });
+          }
           setContactsPermissionStatus('undetermined');
         }
         
@@ -104,6 +129,9 @@ export default function HomeScreen() {
           console.log('[iOS HomeScreen] Initial location permission:', hasLocation ? 'granted' : 'undetermined');
         } catch (locationError) {
           console.error('[iOS HomeScreen] Error checking location permission:', locationError);
+          if (locationError instanceof Error) {
+            crashReporter.logCrash(locationError, { location: 'checkLocationPermission' });
+          }
           setLocationPermissionStatus('undetermined');
         }
         
@@ -119,10 +147,16 @@ export default function HomeScreen() {
             `);
           } catch (injectError) {
             console.error('[iOS HomeScreen] Error injecting permissions status:', injectError);
+            if (injectError instanceof Error) {
+              crashReporter.logCrash(injectError, { location: 'injectPermissionsStatus' });
+            }
           }
         }
       } catch (error) {
         console.error('[iOS HomeScreen] Error in checkPermissions:', error);
+        if (error instanceof Error) {
+          crashReporter.logCrash(error, { location: 'checkPermissions' });
+        }
       }
     }
     
@@ -137,13 +171,16 @@ export default function HomeScreen() {
   useEffect(() => {
     try {
       if (expoPushToken && webViewRef.current) {
-        console.log('Sending push token to web:', expoPushToken);
+        console.log('[iOS HomeScreen] Sending push token to web:', expoPushToken);
         webViewRef.current.injectJavaScript(`
           window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
         `);
       }
     } catch (error) {
-      console.error('Error sending push token:', error);
+      console.error('[iOS HomeScreen] Error sending push token:', error);
+      if (error instanceof Error) {
+        crashReporter.logCrash(error, { location: 'sendPushToken' });
+      }
     }
   }, [expoPushToken]);
 
@@ -161,7 +198,10 @@ export default function HomeScreen() {
         `);
       }
     } catch (error) {
-      console.error('Error sending sync status:', error);
+      console.error('[iOS HomeScreen] Error sending sync status:', error);
+      if (error instanceof Error) {
+        crashReporter.logCrash(error, { location: 'sendSyncStatus' });
+      }
     }
   }, [isSyncing, queueSize, isOnline]);
 
@@ -169,7 +209,7 @@ export default function HomeScreen() {
     try {
       // Send geofencing status to web
       if (webViewRef.current) {
-        console.log('Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
+        console.log('[iOS HomeScreen] Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
         const permissionStatusStr = geofencePermissionStatus ? 'granted' : 'denied';
         webViewRef.current.injectJavaScript(`
           window.postMessage({ 
@@ -180,7 +220,10 @@ export default function HomeScreen() {
         `);
       }
     } catch (error) {
-      console.error('Error sending geofencing status:', error);
+      console.error('[iOS HomeScreen] Error sending geofencing status:', error);
+      if (error instanceof Error) {
+        crashReporter.logCrash(error, { location: 'sendGeofencingStatus' });
+      }
     }
   }, [isGeofencingActive, geofencePermissionStatus]);
 
@@ -188,7 +231,7 @@ export default function HomeScreen() {
   useEffect(() => {
     try {
       if (webViewRef.current) {
-        console.log('Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
+        console.log('[iOS HomeScreen] Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
         webViewRef.current.injectJavaScript(`
           window.postMessage({ 
             type: 'PERMISSIONS_STATUS', 
@@ -198,18 +241,21 @@ export default function HomeScreen() {
         `);
       }
     } catch (error) {
-      console.error('Error sending permission statuses:', error);
+      console.error('[iOS HomeScreen] Error sending permission statuses:', error);
+      if (error instanceof Error) {
+        crashReporter.logCrash(error, { location: 'sendPermissionStatuses' });
+      }
     }
   }, [contactsPermissionStatus, locationPermissionStatus]);
 
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log('iOS received message from web:', data.type);
+      console.log('[iOS HomeScreen] Received message from web:', data.type);
       
       switch (data.type) {
         case 'natively.list.addToHomeScreen':
-          console.log('User requested to add list to home screen:', data.list);
+          console.log('[iOS HomeScreen] User requested to add list to home screen:', data.list);
           try {
             const listName = data.list?.name || 'Shopping List';
             const listUrl = data.list?.url || `${SHOPWELL_URL}/lists/${data.list?.id}`;
@@ -232,7 +278,7 @@ export default function HomeScreen() {
                 }, '*');
               `);
             } else {
-              console.log('Sharing not available on this device');
+              console.log('[iOS HomeScreen] Sharing not available on this device');
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
@@ -242,7 +288,10 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error adding list to home screen:', error);
+            console.error('[iOS HomeScreen] Error adding list to home screen:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'addToHomeScreen', listId: data.list?.id });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
@@ -254,11 +303,11 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.enableNotifications':
-          console.log('User toggling location-based notifications from web:', data.enabled);
+          console.log('[iOS HomeScreen] User toggling location-based notifications from web:', data.enabled);
           try {
             if (data.enabled) {
               const started = await startGeofencing();
-              console.log('Geofencing started:', started);
+              console.log('[iOS HomeScreen] Geofencing started:', started);
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -268,7 +317,7 @@ export default function HomeScreen() {
               `);
             } else {
               await stopGeofencing();
-              console.log('Geofencing stopped');
+              console.log('[iOS HomeScreen] Geofencing stopped');
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -278,7 +327,10 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error toggling geofencing:', error);
+            console.error('[iOS HomeScreen] Error toggling geofencing:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'toggleGeofencing', enabled: data.enabled });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -290,10 +342,10 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.requestPermission':
-          console.log('User requesting location permission from web (profile page)');
+          console.log('[iOS HomeScreen] User requesting location permission from web (profile page)');
           try {
             const permissionGranted = await LocationHandler.requestLocationPermission();
-            console.log('Location permission granted:', permissionGranted);
+            console.log('[iOS HomeScreen] Location permission granted:', permissionGranted);
             
             // Update local state
             setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
@@ -316,7 +368,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error requesting location permission:', error);
+            console.error('[iOS HomeScreen] Error requesting location permission:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'requestLocationPermission' });
+            }
             setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -330,7 +385,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.getStatus':
-          console.log('Web requesting geofencing status');
+          console.log('[iOS HomeScreen] Web requesting geofencing status');
           try {
             const locations = await loadStoreLocations();
             webViewRef.current?.injectJavaScript(`
@@ -343,12 +398,15 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting geofence status:', error);
+            console.error('[iOS HomeScreen] Error getting geofence status:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getGeofenceStatus' });
+            }
           }
           break;
 
         case 'natively.geofence.add':
-          console.log('User adding geofence from web:', data.location);
+          console.log('[iOS HomeScreen] User adding geofence from web:', data.location);
           try {
             await addStoreLocation(data.location);
             webViewRef.current?.injectJavaScript(`
@@ -359,7 +417,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error adding geofence:', error);
+            console.error('[iOS HomeScreen] Error adding geofence:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'addGeofence', locationId: data.location?.id });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_ADD_RESPONSE', 
@@ -371,7 +432,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.remove':
-          console.log('User removing geofence from web:', data.locationId);
+          console.log('[iOS HomeScreen] User removing geofence from web:', data.locationId);
           try {
             await removeStoreLocation(data.locationId);
             webViewRef.current?.injectJavaScript(`
@@ -382,7 +443,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error removing geofence:', error);
+            console.error('[iOS HomeScreen] Error removing geofence:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'removeGeofence', locationId: data.locationId });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_REMOVE_RESPONSE', 
@@ -394,10 +458,10 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.getAll':
-          console.log('Web requesting all monitored locations');
+          console.log('[iOS HomeScreen] Web requesting all monitored locations');
           try {
             const allLocations = await loadStoreLocations();
-            console.log(`Sending ${allLocations.length} monitored locations to web`);
+            console.log(`[iOS HomeScreen] Sending ${allLocations.length} monitored locations to web`);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_LIST_RESPONSE', 
@@ -405,12 +469,15 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting all geofences:', error);
+            console.error('[iOS HomeScreen] Error getting all geofences:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getAllGeofences' });
+            }
           }
           break;
 
         case 'natively.microphone.requestPermission':
-          console.log('User requested microphone permission from web');
+          console.log('[iOS HomeScreen] User requested microphone permission from web');
           try {
             const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
             webViewRef.current?.injectJavaScript(`
@@ -420,12 +487,15 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error requesting microphone permission:', error);
+            console.error('[iOS HomeScreen] Error requesting microphone permission:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'requestMicrophonePermission' });
+            }
           }
           break;
 
         case 'natively.audio.startRecording':
-          console.log('User initiated audio recording from web');
+          console.log('[iOS HomeScreen] User initiated audio recording from web');
           try {
             const recording = await AudioHandler.startRecording();
             if (recording) {
@@ -446,12 +516,15 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error starting audio recording:', error);
+            console.error('[iOS HomeScreen] Error starting audio recording:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'startAudioRecording' });
+            }
           }
           break;
 
         case 'natively.audio.stopRecording':
-          console.log('User stopped audio recording from web');
+          console.log('[iOS HomeScreen] User stopped audio recording from web');
           try {
             if (currentRecording) {
               const uri = await AudioHandler.stopRecording(currentRecording);
@@ -483,12 +556,15 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error stopping audio recording:', error);
+            console.error('[iOS HomeScreen] Error stopping audio recording:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'stopAudioRecording' });
+            }
           }
           break;
 
         case 'natively.audio.pauseRecording':
-          console.log('User paused audio recording from web');
+          console.log('[iOS HomeScreen] User paused audio recording from web');
           try {
             if (currentRecording) {
               const paused = await AudioHandler.pauseRecording(currentRecording);
@@ -500,12 +576,15 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error pausing audio recording:', error);
+            console.error('[iOS HomeScreen] Error pausing audio recording:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'pauseAudioRecording' });
+            }
           }
           break;
 
         case 'natively.audio.resumeRecording':
-          console.log('User resumed audio recording from web');
+          console.log('[iOS HomeScreen] User resumed audio recording from web');
           try {
             if (currentRecording) {
               const resumed = await AudioHandler.resumeRecording(currentRecording);
@@ -517,7 +596,10 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error resuming audio recording:', error);
+            console.error('[iOS HomeScreen] Error resuming audio recording:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'resumeAudioRecording' });
+            }
           }
           break;
 
@@ -535,17 +617,20 @@ export default function HomeScreen() {
               }
             }
           } catch (error) {
-            console.error('Error getting audio status:', error);
+            console.error('[iOS HomeScreen] Error getting audio status:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getAudioStatus' });
+            }
           }
           break;
 
         case 'natively.tracking.requestPermission':
-          console.log('User requested tracking permission from web');
+          console.log('[iOS HomeScreen] User requested tracking permission from web');
           try {
             // Import the tracking permission function dynamically to avoid crashes
             const { requestTrackingPermission } = await import('@/hooks/useTrackingPermission.ios');
             const granted = await requestTrackingPermission();
-            console.log('Tracking permission result:', granted);
+            console.log('[iOS HomeScreen] Tracking permission result:', granted);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'TRACKING_PERMISSION_RESPONSE', 
@@ -554,7 +639,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error requesting tracking permission:', error);
+            console.error('[iOS HomeScreen] Error requesting tracking permission:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'requestTrackingPermission' });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'TRACKING_PERMISSION_RESPONSE', 
@@ -567,12 +655,12 @@ export default function HomeScreen() {
           break;
 
         case 'natively.tracking.getStatus':
-          console.log('User requested tracking status from web');
+          console.log('[iOS HomeScreen] User requested tracking status from web');
           try {
             // Import the tracking transparency module dynamically
             const { getTrackingStatus } = await import('@/hooks/useTrackingPermission.ios');
             const status = await getTrackingStatus();
-            console.log('Current tracking status:', status);
+            console.log('[iOS HomeScreen] Current tracking status:', status);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'TRACKING_STATUS_RESPONSE', 
@@ -580,7 +668,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting tracking status:', error);
+            console.error('[iOS HomeScreen] Error getting tracking status:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getTrackingStatus' });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'TRACKING_STATUS_RESPONSE', 
@@ -592,7 +683,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.account.delete':
-          console.log('User initiated account deletion from web');
+          console.log('[iOS HomeScreen] User initiated account deletion from web');
           Alert.alert(
             'Delete Account',
             'Your account will be permanently deleted. This action cannot be undone. All your data will be removed from our servers.',
@@ -613,9 +704,9 @@ export default function HomeScreen() {
                 text: 'Delete Account',
                 style: 'destructive',
                 onPress: async () => {
-                  console.log('User confirmed account deletion');
+                  console.log('[iOS HomeScreen] User confirmed account deletion');
                   await OfflineStorage.clearAll();
-                  console.log('Cleared all local storage');
+                  console.log('[iOS HomeScreen] Cleared all local storage');
                   
                   webViewRef.current?.injectJavaScript(`
                     window.postMessage({ 
@@ -636,7 +727,10 @@ export default function HomeScreen() {
               window.postMessage({ type: 'CLIPBOARD_READ_RESPONSE', text: '${text}' }, '*');
             `);
           } catch (error) {
-            console.error('Error reading clipboard:', error);
+            console.error('[iOS HomeScreen] Error reading clipboard:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'readClipboard' });
+            }
           }
           break;
           
@@ -644,7 +738,10 @@ export default function HomeScreen() {
           try {
             await Clipboard.setStringAsync(data.text);
           } catch (error) {
-            console.error('Error writing to clipboard:', error);
+            console.error('[iOS HomeScreen] Error writing to clipboard:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'writeClipboard' });
+            }
           }
           break;
           
@@ -667,7 +764,10 @@ export default function HomeScreen() {
               }
             }
           } catch (error) {
-            console.error('Error triggering haptic:', error);
+            console.error('[iOS HomeScreen] Error triggering haptic:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'triggerHaptic', style: data.style });
+            }
           }
           break;
           
@@ -677,7 +777,10 @@ export default function HomeScreen() {
               await Sharing.shareAsync(data.url || data.message);
             }
           } catch (error) {
-            console.error('Error sharing:', error);
+            console.error('[iOS HomeScreen] Error sharing:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'share' });
+            }
           }
           break;
           
@@ -693,7 +796,10 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error picking image:', error);
+            console.error('[iOS HomeScreen] Error picking image:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'imagePicker' });
+            }
           }
           break;
           
@@ -701,15 +807,18 @@ export default function HomeScreen() {
           try {
             router.push('/scanner');
           } catch (error) {
-            console.error('Error opening scanner:', error);
+            console.error('[iOS HomeScreen] Error opening scanner:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'openScanner' });
+            }
           }
           break;
           
         case 'natively.contacts.requestPermission':
-          console.log('User requested contacts permission from web (profile page or contacts page)');
+          console.log('[iOS HomeScreen] User requested contacts permission from web (profile page or contacts page)');
           try {
             const permissionGranted = await ContactsHandler.requestContactsPermission();
-            console.log('Contacts permission granted:', permissionGranted);
+            console.log('[iOS HomeScreen] Contacts permission granted:', permissionGranted);
             
             // Update local state
             setContactsPermissionStatus(permissionGranted ? 'granted' : 'denied');
@@ -732,7 +841,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error requesting contacts permission:', error);
+            console.error('[iOS HomeScreen] Error requesting contacts permission:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'requestContactsPermission' });
+            }
             setContactsPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -746,16 +858,16 @@ export default function HomeScreen() {
           break;
           
         case 'natively.contacts.getAll':
-          console.log('User requested to import all contacts from web');
+          console.log('[iOS HomeScreen] User requested to import all contacts from web');
           try {
             const hasPermission = await ContactsHandler.hasContactsPermission();
             if (!hasPermission) {
-              console.log('No contacts permission, requesting...');
+              console.log('[iOS HomeScreen] No contacts permission, requesting...');
               const granted = await ContactsHandler.requestContactsPermission();
               setContactsPermissionStatus(granted ? 'granted' : 'denied');
               
               if (!granted) {
-                console.log('Contacts permission denied by user');
+                console.log('[iOS HomeScreen] Contacts permission denied by user');
                 webViewRef.current?.injectJavaScript(`
                   window.postMessage({ 
                     type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -768,7 +880,7 @@ export default function HomeScreen() {
             }
             
             const allContacts = await ContactsHandler.getAllContacts();
-            console.log(`Sending ${allContacts.length} contacts to web`);
+            console.log(`[iOS HomeScreen] Sending ${allContacts.length} contacts to web`);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -776,15 +888,18 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting contacts:', error);
+            console.error('[iOS HomeScreen] Error getting contacts:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getAllContacts' });
+            }
           }
           break;
           
         case 'natively.contacts.search':
-          console.log('User searching contacts with query:', data.query);
+          console.log('[iOS HomeScreen] User searching contacts with query:', data.query);
           try {
             const searchResults = await ContactsHandler.searchContacts(data.query || '');
-            console.log(`Found ${searchResults.length} matching contacts`);
+            console.log(`[iOS HomeScreen] Found ${searchResults.length} matching contacts`);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'CONTACTS_SEARCH_RESPONSE', 
@@ -793,7 +908,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error searching contacts:', error);
+            console.error('[iOS HomeScreen] Error searching contacts:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'searchContacts', query: data.query });
+            }
           }
           break;
           
@@ -808,7 +926,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting storage item:', error);
+            console.error('[iOS HomeScreen] Error getting storage item:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getStorageItem', key: data.key });
+            }
           }
           break;
           
@@ -823,7 +944,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error setting storage item:', error);
+            console.error('[iOS HomeScreen] Error setting storage item:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'setStorageItem', key: data.key });
+            }
           }
           break;
           
@@ -831,7 +955,10 @@ export default function HomeScreen() {
           try {
             await OfflineStorage.removeItem(data.key);
           } catch (error) {
-            console.error('Error removing storage item:', error);
+            console.error('[iOS HomeScreen] Error removing storage item:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'removeStorageItem', key: data.key });
+            }
           }
           break;
           
@@ -845,7 +972,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error manual sync:', error);
+            console.error('[iOS HomeScreen] Error manual sync:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'manualSync' });
+            }
           }
           break;
           
@@ -860,7 +990,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error saving list:', error);
+            console.error('[iOS HomeScreen] Error saving list:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'saveList', listId: data.list?.id });
+            }
           }
           break;
           
@@ -874,7 +1007,10 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting lists:', error);
+            console.error('[iOS HomeScreen] Error getting lists:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getLists' });
+            }
           }
           break;
           
@@ -889,12 +1025,15 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error deleting list:', error);
+            console.error('[iOS HomeScreen] Error deleting list:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'deleteList', listId: data.listId });
+            }
           }
           break;
           
         case 'natively.location.requestPermission':
-          console.log('User requested location permission from web');
+          console.log('[iOS HomeScreen] User requested location permission from web');
           try {
             const locationPermissionGranted = await LocationHandler.requestLocationPermission();
             setLocationPermissionStatus(locationPermissionGranted ? 'granted' : 'denied');
@@ -906,12 +1045,15 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error requesting location permission:', error);
+            console.error('[iOS HomeScreen] Error requesting location permission:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'requestLocationPermission' });
+            }
           }
           break;
           
         case 'natively.location.getCurrent':
-          console.log('User requested current location from web');
+          console.log('[iOS HomeScreen] User requested current location from web');
           try {
             const currentLocation = await LocationHandler.getCurrentLocation();
             if (currentLocation) {
@@ -930,7 +1072,10 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error getting current location:', error);
+            console.error('[iOS HomeScreen] Error getting current location:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getCurrentLocation' });
+            }
           }
           break;
           
@@ -938,7 +1083,10 @@ export default function HomeScreen() {
           try {
             await OfflineStorage.cacheProduct(data.product);
           } catch (error) {
-            console.error('Error caching product:', error);
+            console.error('[iOS HomeScreen] Error caching product:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'cacheProduct', productId: data.product?.id });
+            }
           }
           break;
           
@@ -953,15 +1101,24 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error getting cached product:', error);
+            console.error('[iOS HomeScreen] Error getting cached product:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'getCachedProduct', barcode: data.barcode });
+            }
           }
           break;
           
         default:
-          console.log('Unknown message type:', data.type);
+          console.log('[iOS HomeScreen] Unknown message type:', data.type);
       }
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error('[iOS HomeScreen] Error handling message:', error);
+      if (error instanceof Error) {
+        crashReporter.logCrash(error, { 
+          location: 'handleMessage',
+          messageData: event.nativeEvent.data,
+        });
+      }
     }
   };
 
@@ -1093,6 +1250,8 @@ export default function HomeScreen() {
     true;
   `;
 
+  console.log('[iOS HomeScreen] Rendering WebView...');
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -1120,26 +1279,44 @@ export default function HomeScreen() {
             }
           } catch (error) {
             console.error('[iOS HomeScreen] Error re-injecting JavaScript:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'webViewReInject' });
+            }
           }
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] WebView error:', nativeEvent);
+          console.error('[iOS HomeScreen] ❌ WebView error:', nativeEvent);
+          crashReporter.logCrash(new Error(`WebView error: ${nativeEvent.description}`), {
+            location: 'webViewError',
+            url: nativeEvent.url,
+            code: nativeEvent.code,
+          });
         }}
         onHttpError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] WebView HTTP error:', nativeEvent.statusCode, nativeEvent.url);
+          console.error('[iOS HomeScreen] ❌ WebView HTTP error:', nativeEvent.statusCode, nativeEvent.url);
+          crashReporter.logCrash(new Error(`WebView HTTP error: ${nativeEvent.statusCode}`), {
+            location: 'webViewHttpError',
+            url: nativeEvent.url,
+            statusCode: nativeEvent.statusCode,
+            description: nativeEvent.description,
+          });
         }}
         onRenderProcessGone={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] WebView render process gone:', nativeEvent.didCrash);
+          console.error('[iOS HomeScreen] ❌ WebView render process gone:', nativeEvent.didCrash);
+          crashReporter.logCrash(new Error('WebView render process gone'), {
+            location: 'webViewRenderProcessGone',
+            didCrash: nativeEvent.didCrash,
+          });
         }}
       />
     </View>
   );
 }
 
-console.log('[iOS HomeScreen] Module loaded successfully');
+console.log('[iOS HomeScreen] ✅ Module loaded successfully');
 
 const styles = StyleSheet.create({
   container: {
