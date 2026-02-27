@@ -11,7 +11,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-audio';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { useTrackingPermission } from '@/hooks/useTrackingPermission';
 import { useGeofencing } from '@/hooks/useGeofencing';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as OfflineStorage from '@/utils/offlineStorage';
@@ -35,7 +34,6 @@ export default function HomeScreen() {
   let queueSize = 0;
   let isOnline = true;
   let manualSync = async () => false;
-  let trackingStatus = 'unknown';
   let isGeofencingActive = false;
   let geofencePermissionStatus = false;
   let storeLocations: any[] = [];
@@ -62,12 +60,8 @@ export default function HomeScreen() {
     console.error('Error initializing offline sync hook:', error);
   }
 
-  try {
-    const trackingHook = useTrackingPermission();
-    trackingStatus = trackingHook.trackingStatus;
-  } catch (error) {
-    console.error('Error initializing tracking permission hook:', error);
-  }
+  // DO NOT initialize tracking permission hook here
+  // It will be handled on-demand when the user requests it from the web
 
   try {
     const geofencingHook = useGeofencing();
@@ -159,23 +153,6 @@ export default function HomeScreen() {
       console.error('Error sending push token:', error);
     }
   }, [expoPushToken]);
-
-  useEffect(() => {
-    try {
-      // Inject tracking status to web
-      if (webViewRef.current && trackingStatus !== 'unknown') {
-        console.log('Sending tracking status to web:', trackingStatus);
-        webViewRef.current.injectJavaScript(`
-          window.postMessage({ 
-            type: 'TRACKING_STATUS', 
-            status: '${trackingStatus}'
-          }, '*');
-        `);
-      }
-    } catch (error) {
-      console.error('Error sending tracking status:', error);
-    }
-  }, [trackingStatus]);
 
   useEffect(() => {
     try {
@@ -572,9 +549,10 @@ export default function HomeScreen() {
         case 'natively.tracking.requestPermission':
           console.log('User requested tracking permission from web');
           try {
-            // Import the tracking permission hook dynamically to avoid crashes
-            const { requestTrackingPermission } = require('@/hooks/useTrackingPermission');
+            // Import the tracking permission function dynamically to avoid crashes
+            const { requestTrackingPermission } = require('@/hooks/useTrackingPermission.ios');
             const granted = await requestTrackingPermission();
+            console.log('Tracking permission result:', granted);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'TRACKING_PERMISSION_RESPONSE', 
@@ -590,6 +568,31 @@ export default function HomeScreen() {
                 granted: false,
                 status: 'denied',
                 error: 'Failed to request permission'
+              }, '*');
+            `);
+          }
+          break;
+
+        case 'natively.tracking.getStatus':
+          console.log('User requested tracking status from web');
+          try {
+            // Import the tracking transparency module dynamically
+            const TrackingTransparency = require('expo-tracking-transparency');
+            const { status } = await TrackingTransparency.getTrackingPermissionsAsync();
+            console.log('Current tracking status:', status);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'TRACKING_STATUS_RESPONSE', 
+                status: '${status}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error getting tracking status:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'TRACKING_STATUS_RESPONSE', 
+                status: 'unknown',
+                error: 'Failed to get status'
               }, '*');
             `);
           }

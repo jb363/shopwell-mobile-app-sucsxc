@@ -1,25 +1,32 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-// Fallback implementation for any other platforms
-// This is a no-op implementation
+// Base tracking permission hook for non-iOS platforms
+// iOS uses useTrackingPermission.ios.ts
 export function useTrackingPermission() {
-  const [trackingStatus, setTrackingStatus] = useState<string>('not-applicable');
-  const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
+  const [trackingStatus] = useState<string>('not-available');
+  const [hasRequestedPermission] = useState(false);
 
-  useEffect(() => {
-    console.log('Tracking permission not needed on this platform');
-    setTrackingStatus('not-applicable');
-  }, []);
+  const checkTrackingPermission = async () => {
+    console.log('Tracking permission not available on this platform');
+    return 'not-available';
+  };
 
   const requestTrackingPermission = async () => {
-    console.log('Tracking permission not applicable on this platform');
-    setTrackingStatus('not-applicable');
+    console.log('Tracking permission not available on this platform');
+    return false;
   };
 
   return {
     trackingStatus,
     hasRequestedPermission,
+    checkTrackingPermission,
     requestTrackingPermission,
   };
+}
+
+// Export standalone function for consistency
+export async function requestTrackingPermission() {
+  console.log('Tracking permission not available on this platform');
+  return false;
 }

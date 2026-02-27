@@ -1,19 +1,14 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import * as TrackingTransparency from 'expo-tracking-transparency';
 
 export function useTrackingPermission() {
   const [trackingStatus, setTrackingStatus] = useState<string>('unknown');
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
 
-  useEffect(() => {
-    // Delay the permission check to ensure app is fully initialized
-    const timer = setTimeout(() => {
-      checkTrackingPermission();
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
+  // DO NOT check permission automatically on mount
+  // This prevents crashes on iOS 26.3+ where early permission checks fail
+  // Permission will be checked only when user explicitly requests it
 
   const checkTrackingPermission = async () => {
     try {
@@ -24,15 +19,11 @@ export function useTrackingPermission() {
       console.log('Current tracking status:', currentStatus);
       
       setTrackingStatus(currentStatus);
-
-      // Don't automatically request permission - let the user trigger it
-      // This prevents crashes on iOS 26.3+ where automatic permission requests can fail
-      if (currentStatus === 'undetermined') {
-        console.log('Tracking permission not determined yet - waiting for user action');
-      }
+      return currentStatus;
     } catch (error) {
       console.error('Error checking tracking permission:', error);
       setTrackingStatus('denied');
+      return 'denied';
     }
   };
 
@@ -63,6 +54,27 @@ export function useTrackingPermission() {
   return {
     trackingStatus,
     hasRequestedPermission,
+    checkTrackingPermission,
     requestTrackingPermission,
   };
+}
+
+// Export standalone function for use in message handlers
+export async function requestTrackingPermission() {
+  try {
+    console.log('Standalone: Requesting tracking permission from user...');
+    
+    const { status: currentStatus } = await TrackingTransparency.getTrackingPermissionsAsync();
+    
+    if (currentStatus === 'undetermined') {
+      const { status: newStatus } = await TrackingTransparency.requestTrackingPermissionsAsync();
+      console.log('Standalone: User responded with tracking permission:', newStatus);
+      return newStatus === 'granted';
+    } else {
+      return currentStatus === 'granted';
+    }
+  } catch (error) {
+    console.error('Standalone: Error requesting tracking permission:', error);
+    return false;
+  }
 }
