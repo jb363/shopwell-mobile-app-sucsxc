@@ -101,63 +101,10 @@ export default function HomeScreen() {
     }
   }, [params.sharedContent, params.sharedType]);
 
-  // Check initial permission statuses - DELAYED to prevent crashes
-  useEffect(() => {
-    async function checkPermissions() {
-      try {
-        console.log('[iOS HomeScreen] Checking initial permission statuses...');
-        
-        // Check contacts permission with error handling
-        let hasContacts = false;
-        try {
-          hasContacts = await ContactsHandler.hasContactsPermission();
-          setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
-          console.log('[iOS HomeScreen] Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
-        } catch (contactsError) {
-          console.error('[iOS HomeScreen] Error checking contacts permission:', contactsError);
-          if (contactsError instanceof Error) {
-            crashReporter.logCrash(contactsError, { location: 'checkContactsPermission' });
-          }
-          setContactsPermissionStatus('undetermined');
-        }
-        
-        // SKIP initial location permission check - let geofencing hook handle it
-        // This prevents crashes from checking location permission too early
-        console.log('[iOS HomeScreen] Skipping initial location permission check (handled by geofencing hook)');
-        
-        // Send initial status to web
-        if (webViewRef.current) {
-          try {
-            webViewRef.current.injectJavaScript(`
-              window.postMessage({ 
-                type: 'PERMISSIONS_STATUS', 
-                contacts: '${hasContacts ? 'granted' : 'undetermined'}',
-                location: 'undetermined'
-              }, '*');
-            `);
-          } catch (injectError) {
-            console.error('[iOS HomeScreen] Error injecting permissions status:', injectError);
-            if (injectError instanceof Error) {
-              crashReporter.logCrash(injectError, { location: 'injectPermissionsStatus' });
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[iOS HomeScreen] Error in checkPermissions:', error);
-        if (error instanceof Error) {
-          crashReporter.logCrash(error, { location: 'checkPermissions' });
-        }
-      }
-    }
-    
-    // Delay permission check to ensure app is fully initialized
-    // Increased delay to 2 seconds to give more time for initialization
-    const timer = setTimeout(() => {
-      checkPermissions();
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  // DO NOT check permissions automatically on mount
+  // Permissions will be checked only when the user explicitly requests them
+  // This prevents crashes on iOS 16.7.14 where early permission checks fail
+  console.log('[iOS HomeScreen] Skipping automatic permission checks - will request in context when needed');
 
   useEffect(() => {
     try {
@@ -335,33 +282,78 @@ export default function HomeScreen() {
         case 'natively.geofence.requestPermission':
           console.log('[iOS HomeScreen] User requesting location permission from web (profile page)');
           try {
-            const permissionGranted = await LocationHandler.requestLocationPermission();
-            console.log('[iOS HomeScreen] Location permission granted:', permissionGranted);
-            
-            // Update local state
-            setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
-            
-            // Send response to web
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                granted: ${permissionGranted},
-                status: '${permissionGranted ? 'granted' : 'denied'}'
-              }, '*');
-            `);
-            
-            // Also send updated permissions status
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'PERMISSIONS_STATUS', 
-                contacts: '${contactsPermissionStatus}',
-                location: '${permissionGranted ? 'granted' : 'denied'}'
-              }, '*');
-            `);
+            // Show user-friendly explanation before requesting permission
+            Alert.alert(
+              'Location Permission',
+              'ShopWell needs access to your location to notify you when you\'re near stores with active shopping lists or reservations. This helps you remember to pick up items when you\'re nearby.',
+              [
+                {
+                  text: 'Not Now',
+                  style: 'cancel',
+                  onPress: () => {
+                    console.log('[iOS HomeScreen] User declined location permission prompt');
+                    setLocationPermissionStatus('denied');
+                    webViewRef.current?.injectJavaScript(`
+                      window.postMessage({ 
+                        type: 'GEOFENCE_PERMISSION_RESPONSE', 
+                        granted: false,
+                        status: 'denied',
+                        userCancelled: true
+                      }, '*');
+                    `);
+                  }
+                },
+                {
+                  text: 'Allow',
+                  onPress: async () => {
+                    console.log('[iOS HomeScreen] User accepted location permission prompt, requesting permission...');
+                    try {
+                      const permissionGranted = await LocationHandler.requestLocationPermission();
+                      console.log('[iOS HomeScreen] Location permission granted:', permissionGranted);
+                      
+                      // Update local state
+                      setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
+                      
+                      // Send response to web
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'GEOFENCE_PERMISSION_RESPONSE', 
+                          granted: ${permissionGranted},
+                          status: '${permissionGranted ? 'granted' : 'denied'}'
+                        }, '*');
+                      `);
+                      
+                      // Also send updated permissions status
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'PERMISSIONS_STATUS', 
+                          contacts: '${contactsPermissionStatus}',
+                          location: '${permissionGranted ? 'granted' : 'denied'}'
+                        }, '*');
+                      `);
+                    } catch (permError) {
+                      console.error('[iOS HomeScreen] Error requesting location permission:', permError);
+                      if (permError instanceof Error) {
+                        crashReporter.logCrash(permError, { location: 'requestLocationPermission' });
+                      }
+                      setLocationPermissionStatus('denied');
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'GEOFENCE_PERMISSION_RESPONSE', 
+                          granted: false,
+                          status: 'denied',
+                          error: 'Failed to request permission'
+                        }, '*');
+                      `);
+                    }
+                  }
+                }
+              ]
+            );
           } catch (error) {
-            console.error('[iOS HomeScreen] Error requesting location permission:', error);
+            console.error('[iOS HomeScreen] Error showing location permission prompt:', error);
             if (error instanceof Error) {
-              crashReporter.logCrash(error, { location: 'requestLocationPermission' });
+              crashReporter.logCrash(error, { location: 'showLocationPermissionPrompt' });
             }
             setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
@@ -369,7 +361,7 @@ export default function HomeScreen() {
                 type: 'GEOFENCE_PERMISSION_RESPONSE', 
                 granted: false,
                 status: 'denied',
-                error: 'Failed to request permission'
+                error: 'Failed to show permission prompt'
               }, '*');
             `);
           }
@@ -470,18 +462,67 @@ export default function HomeScreen() {
         case 'natively.microphone.requestPermission':
           console.log('[iOS HomeScreen] User requested microphone permission from web');
           try {
-            const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
+            // Show user-friendly explanation before requesting permission
+            Alert.alert(
+              'Microphone Permission',
+              'ShopWell needs access to your microphone to record voice notes for your shopping lists. This helps you quickly add items by speaking instead of typing.',
+              [
+                {
+                  text: 'Not Now',
+                  style: 'cancel',
+                  onPress: () => {
+                    console.log('[iOS HomeScreen] User declined microphone permission prompt');
+                    webViewRef.current?.injectJavaScript(`
+                      window.postMessage({ 
+                        type: 'MICROPHONE_PERMISSION_RESPONSE', 
+                        granted: false,
+                        userCancelled: true
+                      }, '*');
+                    `);
+                  }
+                },
+                {
+                  text: 'Allow',
+                  onPress: async () => {
+                    console.log('[iOS HomeScreen] User accepted microphone permission prompt, requesting permission...');
+                    try {
+                      const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
+                      console.log('[iOS HomeScreen] Microphone permission granted:', micPermissionGranted);
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'MICROPHONE_PERMISSION_RESPONSE', 
+                          granted: ${micPermissionGranted}
+                        }, '*');
+                      `);
+                    } catch (permError) {
+                      console.error('[iOS HomeScreen] Error requesting microphone permission:', permError);
+                      if (permError instanceof Error) {
+                        crashReporter.logCrash(permError, { location: 'requestMicrophonePermission' });
+                      }
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'MICROPHONE_PERMISSION_RESPONSE', 
+                          granted: false,
+                          error: 'Failed to request permission'
+                        }, '*');
+                      `);
+                    }
+                  }
+                }
+              ]
+            );
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error showing microphone permission prompt:', error);
+            if (error instanceof Error) {
+              crashReporter.logCrash(error, { location: 'showMicrophonePermissionPrompt' });
+            }
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'MICROPHONE_PERMISSION_RESPONSE', 
-                granted: ${micPermissionGranted}
+                granted: false,
+                error: 'Failed to show permission prompt'
               }, '*');
             `);
-          } catch (error) {
-            console.error('[iOS HomeScreen] Error requesting microphone permission:', error);
-            if (error instanceof Error) {
-              crashReporter.logCrash(error, { location: 'requestMicrophonePermission' });
-            }
           }
           break;
 
@@ -808,33 +849,78 @@ export default function HomeScreen() {
         case 'natively.contacts.requestPermission':
           console.log('[iOS HomeScreen] User requested contacts permission from web (profile page or contacts page)');
           try {
-            const permissionGranted = await ContactsHandler.requestContactsPermission();
-            console.log('[iOS HomeScreen] Contacts permission granted:', permissionGranted);
-            
-            // Update local state
-            setContactsPermissionStatus(permissionGranted ? 'granted' : 'denied');
-            
-            // Send response to web
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'CONTACTS_PERMISSION_RESPONSE', 
-                granted: ${permissionGranted},
-                status: '${permissionGranted ? 'granted' : 'denied'}'
-              }, '*');
-            `);
-            
-            // Also send updated permissions status
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'PERMISSIONS_STATUS', 
-                contacts: '${permissionGranted ? 'granted' : 'denied'}',
-                location: '${locationPermissionStatus}'
-              }, '*');
-            `);
+            // Show user-friendly explanation before requesting permission
+            Alert.alert(
+              'Contacts Permission',
+              'ShopWell would like to access your contacts to help you share shopping lists and collaborate with friends and family. Your contacts will never be uploaded to our servers without your explicit permission.',
+              [
+                {
+                  text: 'Not Now',
+                  style: 'cancel',
+                  onPress: () => {
+                    console.log('[iOS HomeScreen] User declined contacts permission prompt');
+                    setContactsPermissionStatus('denied');
+                    webViewRef.current?.injectJavaScript(`
+                      window.postMessage({ 
+                        type: 'CONTACTS_PERMISSION_RESPONSE', 
+                        granted: false,
+                        status: 'denied',
+                        userCancelled: true
+                      }, '*');
+                    `);
+                  }
+                },
+                {
+                  text: 'Allow',
+                  onPress: async () => {
+                    console.log('[iOS HomeScreen] User accepted contacts permission prompt, requesting permission...');
+                    try {
+                      const permissionGranted = await ContactsHandler.requestContactsPermission();
+                      console.log('[iOS HomeScreen] Contacts permission granted:', permissionGranted);
+                      
+                      // Update local state
+                      setContactsPermissionStatus(permissionGranted ? 'granted' : 'denied');
+                      
+                      // Send response to web
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'CONTACTS_PERMISSION_RESPONSE', 
+                          granted: ${permissionGranted},
+                          status: '${permissionGranted ? 'granted' : 'denied'}'
+                        }, '*');
+                      `);
+                      
+                      // Also send updated permissions status
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'PERMISSIONS_STATUS', 
+                          contacts: '${permissionGranted ? 'granted' : 'denied'}',
+                          location: '${locationPermissionStatus}'
+                        }, '*');
+                      `);
+                    } catch (permError) {
+                      console.error('[iOS HomeScreen] Error requesting contacts permission:', permError);
+                      if (permError instanceof Error) {
+                        crashReporter.logCrash(permError, { location: 'requestContactsPermission' });
+                      }
+                      setContactsPermissionStatus('denied');
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'CONTACTS_PERMISSION_RESPONSE', 
+                          granted: false,
+                          status: 'denied',
+                          error: 'Failed to request permission'
+                        }, '*');
+                      `);
+                    }
+                  }
+                }
+              ]
+            );
           } catch (error) {
-            console.error('[iOS HomeScreen] Error requesting contacts permission:', error);
+            console.error('[iOS HomeScreen] Error showing contacts permission prompt:', error);
             if (error instanceof Error) {
-              crashReporter.logCrash(error, { location: 'requestContactsPermission' });
+              crashReporter.logCrash(error, { location: 'showContactsPermissionPrompt' });
             }
             setContactsPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
@@ -842,7 +928,7 @@ export default function HomeScreen() {
                 type: 'CONTACTS_PERMISSION_RESPONSE', 
                 granted: false,
                 status: 'denied',
-                error: 'Failed to request permission'
+                error: 'Failed to show permission prompt'
               }, '*');
             `);
           }
@@ -853,36 +939,97 @@ export default function HomeScreen() {
           try {
             const hasPermission = await ContactsHandler.hasContactsPermission();
             if (!hasPermission) {
-              console.log('[iOS HomeScreen] No contacts permission, requesting...');
-              const granted = await ContactsHandler.requestContactsPermission();
-              setContactsPermissionStatus(granted ? 'granted' : 'denied');
+              console.log('[iOS HomeScreen] No contacts permission, showing prompt...');
               
-              if (!granted) {
-                console.log('[iOS HomeScreen] Contacts permission denied by user');
-                webViewRef.current?.injectJavaScript(`
-                  window.postMessage({ 
-                    type: 'CONTACTS_GET_ALL_RESPONSE', 
-                    contacts: [],
-                    error: 'Permission denied'
-                  }, '*');
-                `);
-                break;
-              }
+              // Show user-friendly explanation before requesting permission
+              Alert.alert(
+                'Import Contacts',
+                'ShopWell would like to access your contacts to help you share shopping lists. Your contacts will never be uploaded to our servers without your explicit permission.',
+                [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                    onPress: () => {
+                      console.log('[iOS HomeScreen] User cancelled contacts import');
+                      setContactsPermissionStatus('denied');
+                      webViewRef.current?.injectJavaScript(`
+                        window.postMessage({ 
+                          type: 'CONTACTS_GET_ALL_RESPONSE', 
+                          contacts: [],
+                          error: 'Permission denied',
+                          userCancelled: true
+                        }, '*');
+                      `);
+                    }
+                  },
+                  {
+                    text: 'Allow',
+                    onPress: async () => {
+                      console.log('[iOS HomeScreen] User accepted, requesting contacts permission...');
+                      try {
+                        const granted = await ContactsHandler.requestContactsPermission();
+                        setContactsPermissionStatus(granted ? 'granted' : 'denied');
+                        
+                        if (!granted) {
+                          console.log('[iOS HomeScreen] Contacts permission denied by system');
+                          webViewRef.current?.injectJavaScript(`
+                            window.postMessage({ 
+                              type: 'CONTACTS_GET_ALL_RESPONSE', 
+                              contacts: [],
+                              error: 'Permission denied'
+                            }, '*');
+                          `);
+                          return;
+                        }
+                        
+                        const allContacts = await ContactsHandler.getAllContacts();
+                        console.log(`[iOS HomeScreen] Sending ${allContacts.length} contacts to web`);
+                        webViewRef.current?.injectJavaScript(`
+                          window.postMessage({ 
+                            type: 'CONTACTS_GET_ALL_RESPONSE', 
+                            contacts: ${JSON.stringify(allContacts)}
+                          }, '*');
+                        `);
+                      } catch (permError) {
+                        console.error('[iOS HomeScreen] Error requesting contacts permission:', permError);
+                        if (permError instanceof Error) {
+                          crashReporter.logCrash(permError, { location: 'requestContactsForImport' });
+                        }
+                        webViewRef.current?.injectJavaScript(`
+                          window.postMessage({ 
+                            type: 'CONTACTS_GET_ALL_RESPONSE', 
+                            contacts: [],
+                            error: 'Failed to request permission'
+                          }, '*');
+                        `);
+                      }
+                    }
+                  }
+                ]
+              );
+            } else {
+              // Already have permission, just get contacts
+              const allContacts = await ContactsHandler.getAllContacts();
+              console.log(`[iOS HomeScreen] Sending ${allContacts.length} contacts to web`);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CONTACTS_GET_ALL_RESPONSE', 
+                  contacts: ${JSON.stringify(allContacts)}
+                }, '*');
+              `);
             }
-            
-            const allContacts = await ContactsHandler.getAllContacts();
-            console.log(`[iOS HomeScreen] Sending ${allContacts.length} contacts to web`);
-            webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'CONTACTS_GET_ALL_RESPONSE', 
-                contacts: ${JSON.stringify(allContacts)}
-              }, '*');
-            `);
           } catch (error) {
             console.error('[iOS HomeScreen] Error getting contacts:', error);
             if (error instanceof Error) {
               crashReporter.logCrash(error, { location: 'getAllContacts' });
             }
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_GET_ALL_RESPONSE', 
+                contacts: [],
+                error: 'Failed to get contacts'
+              }, '*');
+            `);
           }
           break;
           

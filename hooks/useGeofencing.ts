@@ -193,10 +193,10 @@ export function useGeofencing() {
     }
   }, []);
 
-  // Check geofencing status on mount
+  // Check geofencing status on mount - ONLY load store locations, do NOT check permissions
   useEffect(() => {
     if (Platform.OS === 'web') {
-      console.log('Web platform - geofencing available via localStorage');
+      console.log('[useGeofencing] Web platform - geofencing available via localStorage');
       setHasPermission(true); // Web always has "permission"
       loadStoreLocations();
       return;
@@ -204,33 +204,27 @@ export function useGeofencing() {
 
     async function checkStatus() {
       try {
-        console.log('[useGeofencing] Checking initial status...');
+        console.log('[useGeofencing] Loading store locations and checking geofencing status...');
         
-        // Wrap permission check in try-catch to prevent crashes
-        let permission = false;
-        try {
-          permission = await LocationHandler.hasLocationPermission();
-          console.log('[useGeofencing] Permission status:', permission);
-        } catch (permError) {
-          console.error('[useGeofencing] Error checking permission:', permError);
-          permission = false;
-        }
-        setHasPermission(permission);
-
-        // Only check if geofencing is active if we have permission
-        if (permission) {
-          try {
-            const active = await LocationHandler.isGeofencingActive();
-            console.log('[useGeofencing] Geofencing active:', active);
-            setIsActive(active);
-          } catch (activeError) {
-            console.error('[useGeofencing] Error checking active status:', activeError);
-            setIsActive(false);
-          }
-        }
-
+        // Load store locations (safe operation, no permissions needed)
         await loadStoreLocations();
-        console.log('[useGeofencing] Initial status check complete');
+        
+        // Check if geofencing is currently active (safe operation)
+        try {
+          const active = await LocationHandler.isGeofencingActive();
+          console.log('[useGeofencing] Geofencing active:', active);
+          setIsActive(active);
+          
+          // If geofencing is active, we know we have permission
+          if (active) {
+            setHasPermission(true);
+          }
+        } catch (activeError) {
+          console.error('[useGeofencing] Error checking active status:', activeError);
+          setIsActive(false);
+        }
+        
+        console.log('[useGeofencing] Initial status check complete (permission check skipped - will be requested in context)');
       } catch (error) {
         console.error('[useGeofencing] Error in checkStatus:', error);
       }
