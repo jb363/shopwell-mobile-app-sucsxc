@@ -101,7 +101,7 @@ export default function HomeScreen() {
     }
   }, [params.sharedContent, params.sharedType]);
 
-  // Check initial permission statuses
+  // Check initial permission statuses - DELAYED to prevent crashes
   useEffect(() => {
     async function checkPermissions() {
       try {
@@ -121,19 +121,9 @@ export default function HomeScreen() {
           setContactsPermissionStatus('undetermined');
         }
         
-        // Check location permission with error handling
-        let hasLocation = false;
-        try {
-          hasLocation = await LocationHandler.hasLocationPermission();
-          setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
-          console.log('[iOS HomeScreen] Initial location permission:', hasLocation ? 'granted' : 'undetermined');
-        } catch (locationError) {
-          console.error('[iOS HomeScreen] Error checking location permission:', locationError);
-          if (locationError instanceof Error) {
-            crashReporter.logCrash(locationError, { location: 'checkLocationPermission' });
-          }
-          setLocationPermissionStatus('undetermined');
-        }
+        // SKIP initial location permission check - let geofencing hook handle it
+        // This prevents crashes from checking location permission too early
+        console.log('[iOS HomeScreen] Skipping initial location permission check (handled by geofencing hook)');
         
         // Send initial status to web
         if (webViewRef.current) {
@@ -142,7 +132,7 @@ export default function HomeScreen() {
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
                 contacts: '${hasContacts ? 'granted' : 'undetermined'}',
-                location: '${hasLocation ? 'granted' : 'undetermined'}'
+                location: 'undetermined'
               }, '*');
             `);
           } catch (injectError) {
@@ -160,10 +150,11 @@ export default function HomeScreen() {
       }
     }
     
-    // Delay permission check slightly to ensure app is fully initialized
+    // Delay permission check to ensure app is fully initialized
+    // Increased delay to 2 seconds to give more time for initialization
     const timer = setTimeout(() => {
       checkPermissions();
-    }, 500);
+    }, 2000);
     
     return () => clearTimeout(timer);
   }, []);

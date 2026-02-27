@@ -60,34 +60,53 @@ export default function HomeScreen() {
     }
   }, [params.sharedContent, params.sharedType]);
 
-  // Check initial permission statuses
+  // Check initial permission statuses - DELAYED to prevent crashes
   useEffect(() => {
     async function checkPermissions() {
-      console.log('Checking initial permission statuses...');
-      
-      // Check contacts permission
-      const hasContacts = await ContactsHandler.hasContactsPermission();
-      setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
-      console.log('Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
-      
-      // Check location permission
-      const hasLocation = await LocationHandler.hasLocationPermission();
-      setLocationPermissionStatus(hasLocation ? 'granted' : 'undetermined');
-      console.log('Initial location permission:', hasLocation ? 'granted' : 'undetermined');
-      
-      // Send initial status to web
-      if (webViewRef.current) {
-        webViewRef.current.injectJavaScript(`
-          window.postMessage({ 
-            type: 'PERMISSIONS_STATUS', 
-            contacts: '${hasContacts ? 'granted' : 'undetermined'}',
-            location: '${hasLocation ? 'granted' : 'undetermined'}'
-          }, '*');
-        `);
+      try {
+        console.log('[Android HomeScreen] Checking initial permission statuses...');
+        
+        // Check contacts permission with error handling
+        let hasContacts = false;
+        try {
+          hasContacts = await ContactsHandler.hasContactsPermission();
+          setContactsPermissionStatus(hasContacts ? 'granted' : 'undetermined');
+          console.log('[Android HomeScreen] Initial contacts permission:', hasContacts ? 'granted' : 'undetermined');
+        } catch (contactsError) {
+          console.error('[Android HomeScreen] Error checking contacts permission:', contactsError);
+          setContactsPermissionStatus('undetermined');
+        }
+        
+        // SKIP initial location permission check - let geofencing hook handle it
+        // This prevents crashes from checking location permission too early
+        console.log('[Android HomeScreen] Skipping initial location permission check (handled by geofencing hook)');
+        
+        // Send initial status to web
+        if (webViewRef.current) {
+          try {
+            webViewRef.current.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${hasContacts ? 'granted' : 'undetermined'}',
+                location: 'undetermined'
+              }, '*');
+            `);
+          } catch (injectError) {
+            console.error('[Android HomeScreen] Error injecting permissions status:', injectError);
+          }
+        }
+      } catch (error) {
+        console.error('[Android HomeScreen] Error in checkPermissions:', error);
       }
     }
     
-    checkPermissions();
+    // Delay permission check to ensure app is fully initialized
+    // Increased delay to 2 seconds to give more time for initialization
+    const timer = setTimeout(() => {
+      checkPermissions();
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

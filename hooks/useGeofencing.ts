@@ -203,16 +203,45 @@ export function useGeofencing() {
     }
 
     async function checkStatus() {
-      const permission = await LocationHandler.hasLocationPermission();
-      setHasPermission(permission);
+      try {
+        console.log('[useGeofencing] Checking initial status...');
+        
+        // Wrap permission check in try-catch to prevent crashes
+        let permission = false;
+        try {
+          permission = await LocationHandler.hasLocationPermission();
+          console.log('[useGeofencing] Permission status:', permission);
+        } catch (permError) {
+          console.error('[useGeofencing] Error checking permission:', permError);
+          permission = false;
+        }
+        setHasPermission(permission);
 
-      const active = await LocationHandler.isGeofencingActive();
-      setIsActive(active);
+        // Only check if geofencing is active if we have permission
+        if (permission) {
+          try {
+            const active = await LocationHandler.isGeofencingActive();
+            console.log('[useGeofencing] Geofencing active:', active);
+            setIsActive(active);
+          } catch (activeError) {
+            console.error('[useGeofencing] Error checking active status:', activeError);
+            setIsActive(false);
+          }
+        }
 
-      await loadStoreLocations();
+        await loadStoreLocations();
+        console.log('[useGeofencing] Initial status check complete');
+      } catch (error) {
+        console.error('[useGeofencing] Error in checkStatus:', error);
+      }
     }
 
-    checkStatus();
+    // Delay the check slightly to ensure app is fully initialized
+    const timer = setTimeout(() => {
+      checkStatus();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [loadStoreLocations]);
 
   return {

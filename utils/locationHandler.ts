@@ -47,14 +47,38 @@ export async function requestLocationPermission(): Promise<boolean> {
 // Check if location permissions are granted
 export async function hasLocationPermission(): Promise<boolean> {
   try {
-    const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
-    const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
+    console.log('[locationHandler] Checking location permission...');
+    
+    // Check foreground permission first
+    let foregroundStatus = 'undetermined';
+    try {
+      const result = await Location.getForegroundPermissionsAsync();
+      foregroundStatus = result.status;
+      console.log('[locationHandler] Foreground status:', foregroundStatus);
+    } catch (fgError) {
+      console.error('[locationHandler] Error checking foreground permission:', fgError);
+      return false;
+    }
+    
+    // Only check background if foreground is granted
+    let backgroundStatus = 'undetermined';
+    if (foregroundStatus === 'granted') {
+      try {
+        const result = await Location.getBackgroundPermissionsAsync();
+        backgroundStatus = result.status;
+        console.log('[locationHandler] Background status:', backgroundStatus);
+      } catch (bgError) {
+        console.error('[locationHandler] Error checking background permission:', bgError);
+        // If background check fails, just return foreground status
+        return foregroundStatus === 'granted';
+      }
+    }
     
     const hasPermission = foregroundStatus === 'granted' && backgroundStatus === 'granted';
-    console.log('Location permission status:', { foregroundStatus, backgroundStatus, hasPermission });
+    console.log('[locationHandler] Final permission status:', hasPermission);
     return hasPermission;
   } catch (error) {
-    console.error('Error checking location permission:', error);
+    console.error('[locationHandler] Error checking location permission:', error);
     return false;
   }
 }
@@ -130,11 +154,20 @@ export async function stopGeofencing(): Promise<void> {
 // Check if geofencing is active
 export async function isGeofencingActive(): Promise<boolean> {
   try {
+    console.log('[locationHandler] Checking if geofencing is active...');
+    
+    // First check if the task is defined
+    const isTaskDefined = await TaskManager.isTaskDefined(GEOFENCING_TASK);
+    if (!isTaskDefined) {
+      console.log('[locationHandler] Geofencing task not defined, returning false');
+      return false;
+    }
+    
     const isActive = await Location.hasStartedGeofencingAsync(GEOFENCING_TASK);
-    console.log('Geofencing active:', isActive);
+    console.log('[locationHandler] Geofencing active:', isActive);
     return isActive;
   } catch (error) {
-    console.error('Error checking geofencing status:', error);
+    console.error('[locationHandler] Error checking geofencing status:', error);
     return false;
   }
 }
