@@ -24,43 +24,92 @@ const SHOPWELL_URL = 'https://shopwell.ai';
 export default function HomeScreen() {
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
-  const { expoPushToken } = useNotifications();
-  const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
-  const { trackingStatus } = useTrackingPermission();
-  const { 
-    addStoreLocation, 
-    removeStoreLocation, 
-    loadStoreLocations,
-    isActive: isGeofencingActive,
-    startGeofencing,
-    stopGeofencing,
-    hasPermission: geofencePermissionStatus,
-    storeLocations
-  } = useGeofencing();
   const insets = useSafeAreaInsets();
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
 
+  // Initialize hooks with error handling
+  let expoPushToken = '';
+  let isSyncing = false;
+  let queueSize = 0;
+  let isOnline = true;
+  let manualSync = async () => false;
+  let trackingStatus = 'unknown';
+  let isGeofencingActive = false;
+  let geofencePermissionStatus = false;
+  let storeLocations: any[] = [];
+  let addStoreLocation = async (store: any) => {};
+  let removeStoreLocation = async (storeId: string) => {};
+  let loadStoreLocations = async () => [];
+  let startGeofencing = async () => false;
+  let stopGeofencing = async () => {};
+
+  try {
+    const notificationsHook = useNotifications();
+    expoPushToken = notificationsHook.expoPushToken;
+  } catch (error) {
+    console.error('Error initializing notifications hook:', error);
+  }
+
+  try {
+    const offlineSyncHook = useOfflineSync();
+    isSyncing = offlineSyncHook.isSyncing;
+    queueSize = offlineSyncHook.queueSize;
+    isOnline = offlineSyncHook.isOnline;
+    manualSync = offlineSyncHook.manualSync;
+  } catch (error) {
+    console.error('Error initializing offline sync hook:', error);
+  }
+
+  try {
+    const trackingHook = useTrackingPermission();
+    trackingStatus = trackingHook.trackingStatus;
+  } catch (error) {
+    console.error('Error initializing tracking permission hook:', error);
+  }
+
+  try {
+    const geofencingHook = useGeofencing();
+    isGeofencingActive = geofencingHook.isActive;
+    geofencePermissionStatus = geofencingHook.hasPermission;
+    storeLocations = geofencingHook.storeLocations;
+    addStoreLocation = geofencingHook.addStoreLocation;
+    removeStoreLocation = geofencingHook.removeStoreLocation;
+    loadStoreLocations = geofencingHook.loadStoreLocations;
+    startGeofencing = geofencingHook.startGeofencing;
+    stopGeofencing = geofencingHook.stopGeofencing;
+  } catch (error) {
+    console.error('Error initializing geofencing hook:', error);
+  }
+
   // Set up quick actions (app shortcuts)
-  useQuickActions(webViewRef);
+  try {
+    useQuickActions(webViewRef);
+  } catch (error) {
+    console.error('Error initializing quick actions:', error);
+  }
 
   // Handle shared content from share-target screen
   useEffect(() => {
-    if (params.sharedContent && params.sharedType && webViewRef.current) {
-      console.log('Received shared content:', { type: params.sharedType, content: params.sharedContent });
-      
-      // Send shared content to the web app
-      const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
-      const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
-      
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'SHARED_CONTENT', 
-          contentType: '${sharedTypeStr}',
-          content: ${JSON.stringify(sharedContentStr)}
-        }, '*');
-      `);
+    try {
+      if (params.sharedContent && params.sharedType && webViewRef.current) {
+        console.log('Received shared content:', { type: params.sharedType, content: params.sharedContent });
+        
+        // Send shared content to the web app
+        const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
+        const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
+        
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ 
+            type: 'SHARED_CONTENT', 
+            contentType: '${sharedTypeStr}',
+            content: ${JSON.stringify(sharedContentStr)}
+          }, '*');
+        `);
+      }
+    } catch (error) {
+      console.error('Error handling shared content:', error);
     }
   }, [params.sharedContent, params.sharedType]);
 
@@ -99,67 +148,87 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (expoPushToken && webViewRef.current) {
-      console.log('Sending push token to web:', expoPushToken);
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
-      `);
+    try {
+      if (expoPushToken && webViewRef.current) {
+        console.log('Sending push token to web:', expoPushToken);
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
+        `);
+      }
+    } catch (error) {
+      console.error('Error sending push token:', error);
     }
   }, [expoPushToken]);
 
   useEffect(() => {
-    // Inject tracking status to web
-    if (webViewRef.current && trackingStatus !== 'unknown') {
-      console.log('Sending tracking status to web:', trackingStatus);
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'TRACKING_STATUS', 
-          status: '${trackingStatus}'
-        }, '*');
-      `);
+    try {
+      // Inject tracking status to web
+      if (webViewRef.current && trackingStatus !== 'unknown') {
+        console.log('Sending tracking status to web:', trackingStatus);
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ 
+            type: 'TRACKING_STATUS', 
+            status: '${trackingStatus}'
+          }, '*');
+        `);
+      }
+    } catch (error) {
+      console.error('Error sending tracking status:', error);
     }
   }, [trackingStatus]);
 
   useEffect(() => {
-    // Inject sync status
-    if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'SYNC_STATUS', 
-          isSyncing: ${isSyncing}, 
-          queueSize: ${queueSize},
-          isOnline: ${isOnline}
-        }, '*');
-      `);
+    try {
+      // Inject sync status
+      if (webViewRef.current) {
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ 
+            type: 'SYNC_STATUS', 
+            isSyncing: ${isSyncing}, 
+            queueSize: ${queueSize},
+            isOnline: ${isOnline}
+          }, '*');
+        `);
+      }
+    } catch (error) {
+      console.error('Error sending sync status:', error);
     }
   }, [isSyncing, queueSize, isOnline]);
 
   useEffect(() => {
-    // Send geofencing status to web
-    if (webViewRef.current) {
-      console.log('Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
-      const permissionStatusStr = geofencePermissionStatus ? 'granted' : 'denied';
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'GEOFENCING_STATUS', 
-          isActive: ${isGeofencingActive},
-          permissionStatus: '${permissionStatusStr}'
-        }, '*');
-      `);
+    try {
+      // Send geofencing status to web
+      if (webViewRef.current) {
+        console.log('Sending geofencing status to web:', { isGeofencingActive, geofencePermissionStatus });
+        const permissionStatusStr = geofencePermissionStatus ? 'granted' : 'denied';
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ 
+            type: 'GEOFENCING_STATUS', 
+            isActive: ${isGeofencingActive},
+            permissionStatus: '${permissionStatusStr}'
+          }, '*');
+        `);
+      }
+    } catch (error) {
+      console.error('Error sending geofencing status:', error);
     }
   }, [isGeofencingActive, geofencePermissionStatus]);
 
   // Send permission statuses to web when they change
   useEffect(() => {
-    if (webViewRef.current) {
-      console.log('Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'PERMISSIONS_STATUS', 
-          contacts: '${contactsPermissionStatus}',
-          location: '${locationPermissionStatus}'
-        }, '*');
-      `);
+    try {
+      if (webViewRef.current) {
+        console.log('Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
+        webViewRef.current.injectJavaScript(`
+          window.postMessage({ 
+            type: 'PERMISSIONS_STATUS', 
+            contacts: '${contactsPermissionStatus}',
+            location: '${locationPermissionStatus}'
+          }, '*');
+        `);
+      }
+    } catch (error) {
+      console.error('Error sending permission statuses:', error);
     }
   }, [contactsPermissionStatus, locationPermissionStatus]);
 
@@ -497,6 +566,32 @@ export default function HomeScreen() {
             }
           } catch (error) {
             console.error('Error getting audio status:', error);
+          }
+          break;
+
+        case 'natively.tracking.requestPermission':
+          console.log('User requested tracking permission from web');
+          try {
+            // Import the tracking permission hook dynamically to avoid crashes
+            const { requestTrackingPermission } = require('@/hooks/useTrackingPermission');
+            const granted = await requestTrackingPermission();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'TRACKING_PERMISSION_RESPONSE', 
+                granted: ${granted},
+                status: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+            `);
+          } catch (error) {
+            console.error('Error requesting tracking permission:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'TRACKING_PERMISSION_RESPONSE', 
+                granted: false,
+                status: 'denied',
+                error: 'Failed to request permission'
+              }, '*');
+            `);
           }
           break;
 

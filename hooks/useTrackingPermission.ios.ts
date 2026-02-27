@@ -7,10 +7,15 @@ export function useTrackingPermission() {
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
 
   useEffect(() => {
-    requestTrackingPermission();
+    // Delay the permission check to ensure app is fully initialized
+    const timer = setTimeout(() => {
+      checkTrackingPermission();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  const requestTrackingPermission = async () => {
+  const checkTrackingPermission = async () => {
     try {
       console.log('Checking tracking permission status...');
       
@@ -20,17 +25,38 @@ export function useTrackingPermission() {
       
       setTrackingStatus(currentStatus);
 
-      // If not determined yet, request permission
+      // Don't automatically request permission - let the user trigger it
+      // This prevents crashes on iOS 26.3+ where automatic permission requests can fail
       if (currentStatus === 'undetermined') {
-        console.log('Requesting tracking permission from user...');
+        console.log('Tracking permission not determined yet - waiting for user action');
+      }
+    } catch (error) {
+      console.error('Error checking tracking permission:', error);
+      setTrackingStatus('denied');
+    }
+  };
+
+  const requestTrackingPermission = async () => {
+    try {
+      console.log('Requesting tracking permission from user...');
+      
+      // Get current status first
+      const { status: currentStatus } = await TrackingTransparency.getTrackingPermissionsAsync();
+      
+      if (currentStatus === 'undetermined') {
         const { status: newStatus } = await TrackingTransparency.requestTrackingPermissionsAsync();
         console.log('User responded with tracking permission:', newStatus);
         setTrackingStatus(newStatus);
         setHasRequestedPermission(true);
+        return newStatus === 'granted';
+      } else {
+        setTrackingStatus(currentStatus);
+        return currentStatus === 'granted';
       }
     } catch (error) {
       console.error('Error requesting tracking permission:', error);
-      setTrackingStatus('error');
+      setTrackingStatus('denied');
+      return false;
     }
   };
 
