@@ -42,30 +42,25 @@ export default function HomeScreen() {
   // CRITICAL: Hooks MUST be called unconditionally at the top level
   // React Hooks cannot be wrapped in try-catch or conditionals
   console.log('[iOS HomeScreen] Initializing hooks...');
-  const notificationsHook = useNotifications();
-  const offlineSyncHook = useOfflineSync();
-  const geofencingHook = useGeofencing();
+  
+  // Call all hooks unconditionally
+  const { expoPushToken } = useNotifications();
+  const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
+  const { 
+    isActive: isGeofencingActive,
+    hasPermission: geofencePermissionStatus,
+    storeLocations,
+    addStoreLocation,
+    removeStoreLocation,
+    loadStoreLocations,
+    startGeofencing,
+    stopGeofencing
+  } = useGeofencing();
   
   // Set up quick actions (app shortcuts) - MUST be called unconditionally
   useQuickActions(webViewRef);
   
   console.log('[iOS HomeScreen] ✅ All hooks initialized successfully');
-
-  // Extract values from hooks
-  const expoPushToken = notificationsHook.expoPushToken;
-  const isSyncing = offlineSyncHook.isSyncing;
-  const queueSize = offlineSyncHook.queueSize;
-  const isOnline = offlineSyncHook.isOnline;
-  const manualSync = offlineSyncHook.manualSync;
-  const isGeofencingActive = geofencingHook.isActive;
-  const geofencePermissionStatus = geofencingHook.hasPermission;
-  const storeLocations = geofencingHook.storeLocations;
-  const addStoreLocation = geofencingHook.addStoreLocation;
-  const removeStoreLocation = geofencingHook.removeStoreLocation;
-  const loadStoreLocations = geofencingHook.loadStoreLocations;
-  const startGeofencing = geofencingHook.startGeofencing;
-  const stopGeofencing = geofencingHook.stopGeofencing;
-
   console.log('[iOS HomeScreen] Hook values:', {
     hasExpoPushToken: !!expoPushToken,
     isSyncing,
@@ -73,7 +68,7 @@ export default function HomeScreen() {
     isOnline,
     isGeofencingActive,
     geofencePermissionStatus,
-    storeLocationsCount: storeLocations.length,
+    storeLocationsCount: storeLocations?.length || 0,
   });
 
   // Signal to website that native app is ready to receive messages

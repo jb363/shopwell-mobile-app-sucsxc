@@ -37,47 +37,69 @@ class CrashReporter {
   }
 
   private setupGlobalHandlers() {
-    // Handle unhandled promise rejections
-    if (typeof global !== 'undefined') {
-      const originalHandler = global.Promise?.prototype?.catch;
-      
-      // Track unhandled promise rejections
-      if (typeof (global as any).HermesInternal === 'undefined') {
-        // Non-Hermes environment
-        (global as any).onunhandledrejection = (event: any) => {
-          console.error('[CrashReporter] Unhandled promise rejection:', event.reason);
-          this.logCrash(event.reason || new Error('Unhandled promise rejection'), {
-            type: 'unhandledRejection',
-            promise: event.promise,
-          });
-        };
-      }
-    }
-
-    // React Native ErrorUtils integration
-    if (typeof ErrorUtils !== 'undefined') {
-      const originalHandler = ErrorUtils.getGlobalHandler();
-      
-      ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
-        console.error('[CrashReporter] Global error caught:', {
-          isFatal,
-          message: error.message,
-          stack: error.stack,
-        });
-        
-        this.logCrash(error, {
-          isFatal,
-          type: 'globalError',
-        });
-        
-        // Call original handler if it exists
-        if (originalHandler) {
-          originalHandler(error, isFatal);
+    try {
+      // Handle unhandled promise rejections
+      if (typeof global !== 'undefined') {
+        // Track unhandled promise rejections
+        if (typeof (global as any).HermesInternal === 'undefined') {
+          // Non-Hermes environment
+          try {
+            (global as any).onunhandledrejection = (event: any) => {
+              console.error('[CrashReporter] Unhandled promise rejection:', event?.reason);
+              try {
+                this.logCrash(event?.reason || new Error('Unhandled promise rejection'), {
+                  type: 'unhandledRejection',
+                  promise: event?.promise,
+                });
+              } catch (logError) {
+                console.error('[CrashReporter] Error logging unhandled rejection:', logError);
+              }
+            };
+          } catch (setupError) {
+            console.error('[CrashReporter] Error setting up unhandled rejection handler:', setupError);
+          }
         }
-      });
-    }
+      }
 
-    console.log('[CrashReporter] Global error handlers installed');
+      // React Native ErrorUtils integration
+      if (typeof ErrorUtils !== 'undefined') {
+        try {
+          const originalHandler = ErrorUtils.getGlobalHandler();
+          
+          ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+            console.error('[CrashReporter] Global error caught:', {
+              isFatal,
+              message: error?.message,
+              stack: error?.stack,
+            });
+            
+            try {
+              this.logCrash(error, {
+                isFatal,
+                type: 'globalError',
+              });
+            } catch (logError) {
+              console.error('[CrashReporter] Error logging global error:', logError);
+            }
+            
+            // Call original handler if it exists
+            if (originalHandler) {
+              try {
+                originalHandler(error, isFatal);
+              } catch (handlerError) {
+                console.error('[CrashReporter] Error calling original handler:', handlerError);
+              }
+            }
+          });
+        } catch (setupError) {
+          console.error('[CrashReporter] Error setting up ErrorUtils handler:', setupError);
+        }
+      }
+
+      console.log('[CrashReporter] Global error handlers installed');
+    } catch (error) {
+      console.error('[CrashReporter] Error in setupGlobalHandlers:', error);
+    }
   }
 
   async logCrash(error: Error, context?: any) {

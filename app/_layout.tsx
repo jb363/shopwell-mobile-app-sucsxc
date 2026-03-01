@@ -23,21 +23,29 @@ SplashScreen.preventAutoHideAsync();
 
 // Global error handler with crash reporting
 const errorHandler = (error: Error, isFatal?: boolean) => {
-  console.error('[Global Error Handler]', isFatal ? 'FATAL:' : 'ERROR:', error);
-  console.error('[Global Error Handler] Stack:', error.stack);
-  console.error('[Global Error Handler] Name:', error.name);
-  console.error('[Global Error Handler] Message:', error.message);
-  
-  // Log to crash reporter
-  crashReporter.logCrash(error, {
-    isFatal,
-    location: 'globalErrorHandler',
-    timestamp: new Date().toISOString(),
-  });
-  
-  if (isFatal) {
-    console.error('[Global Error Handler] ⚠️ FATAL ERROR - App may crash');
-    console.error('[Global Error Handler] This crash has been logged for debugging');
+  try {
+    console.error('[Global Error Handler]', isFatal ? 'FATAL:' : 'ERROR:', error);
+    console.error('[Global Error Handler] Stack:', error?.stack);
+    console.error('[Global Error Handler] Name:', error?.name);
+    console.error('[Global Error Handler] Message:', error?.message);
+    
+    // Log to crash reporter
+    try {
+      crashReporter.logCrash(error, {
+        isFatal,
+        location: 'globalErrorHandler',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (logError) {
+      console.error('[Global Error Handler] Error logging crash:', logError);
+    }
+    
+    if (isFatal) {
+      console.error('[Global Error Handler] ⚠️ FATAL ERROR - App may crash');
+      console.error('[Global Error Handler] This crash has been logged for debugging');
+    }
+  } catch (handlerError) {
+    console.error('[Global Error Handler] Error in error handler:', handlerError);
   }
 };
 
@@ -50,60 +58,99 @@ export default function RootLayout() {
   const networkState = useNetworkState();
 
   useEffect(() => {
-    console.log('[RootLayout] ═══════════════════════════════════════');
-    console.log('[RootLayout] APP INITIALIZATION STARTED');
-    console.log('[RootLayout] ═══════════════════════════════════════');
-    console.log('[RootLayout] Platform:', Platform.OS);
-    console.log('[RootLayout] Platform Version:', Platform.Version);
-    console.log('[RootLayout] Color scheme:', colorScheme);
-    console.log('[RootLayout] Timestamp:', new Date().toISOString());
+    let isMounted = true;
     
-    // Set up global error handler
-    if (typeof ErrorUtils !== 'undefined') {
-      ErrorUtils.setGlobalHandler(errorHandler);
-      console.log('[RootLayout] ✅ Global error handler installed');
-    } else {
-      console.warn('[RootLayout] ⚠️ ErrorUtils not available - error handling may be limited');
-    }
-    
-    // Check for previous crashes
-    crashReporter.getLastCrash().then((lastCrash) => {
-      if (lastCrash) {
-        console.log('[RootLayout] ⚠️ Previous crash detected:');
-        console.log('[RootLayout] Crash time:', lastCrash.timestamp);
-        console.log('[RootLayout] Error:', lastCrash.error.message);
-        console.log('[RootLayout] Device:', lastCrash.deviceInfo.modelName, lastCrash.deviceInfo.osVersion);
-      } else {
-        console.log('[RootLayout] ✅ No previous crashes detected');
+    try {
+      console.log('[RootLayout] ═══════════════════════════════════════');
+      console.log('[RootLayout] APP INITIALIZATION STARTED');
+      console.log('[RootLayout] ═══════════════════════════════════════');
+      console.log('[RootLayout] Platform:', Platform.OS);
+      console.log('[RootLayout] Platform Version:', Platform.Version);
+      console.log('[RootLayout] Color scheme:', colorScheme);
+      console.log('[RootLayout] Timestamp:', new Date().toISOString());
+      
+      // Set up global error handler
+      try {
+        if (typeof ErrorUtils !== 'undefined') {
+          ErrorUtils.setGlobalHandler(errorHandler);
+          console.log('[RootLayout] ✅ Global error handler installed');
+        } else {
+          console.warn('[RootLayout] ⚠️ ErrorUtils not available - error handling may be limited');
+        }
+      } catch (errorUtilsError) {
+        console.error('[RootLayout] Error setting up ErrorUtils:', errorUtilsError);
       }
-    }).catch((error) => {
-      console.error('[RootLayout] Error checking for previous crashes:', error);
-    });
-    
-    // Hide splash screen after a short delay to ensure everything is loaded
-    const timer = setTimeout(() => {
-      console.log('[RootLayout] Hiding splash screen...');
-      SplashScreen.hideAsync()
-        .then(() => {
-          console.log('[RootLayout] ✅ Splash screen hidden successfully');
-          console.log('[RootLayout] ═══════════════════════════════════════');
-          console.log('[RootLayout] APP INITIALIZATION COMPLETE');
-          console.log('[RootLayout] ═══════════════════════════════════════');
-        })
-        .catch((error) => {
-          console.error('[RootLayout] ❌ Error hiding splash screen:', error);
-          crashReporter.logCrash(error, { location: 'splashScreenHide' });
-        });
-    }, 100);
+      
+      // Check for previous crashes
+      crashReporter.getLastCrash().then((lastCrash) => {
+        if (!isMounted) return;
+        
+        if (lastCrash) {
+          console.log('[RootLayout] ⚠️ Previous crash detected:');
+          console.log('[RootLayout] Crash time:', lastCrash.timestamp);
+          console.log('[RootLayout] Error:', lastCrash.error.message);
+          console.log('[RootLayout] Device:', lastCrash.deviceInfo.modelName, lastCrash.deviceInfo.osVersion);
+        } else {
+          console.log('[RootLayout] ✅ No previous crashes detected');
+        }
+      }).catch((error) => {
+        console.error('[RootLayout] Error checking for previous crashes:', error);
+      });
+      
+      // Hide splash screen after a short delay to ensure everything is loaded
+      const timer = setTimeout(() => {
+        if (!isMounted) return;
+        
+        console.log('[RootLayout] Hiding splash screen...');
+        SplashScreen.hideAsync()
+          .then(() => {
+            if (!isMounted) return;
+            
+            console.log('[RootLayout] ✅ Splash screen hidden successfully');
+            console.log('[RootLayout] ═══════════════════════════════════════');
+            console.log('[RootLayout] APP INITIALIZATION COMPLETE');
+            console.log('[RootLayout] ═══════════════════════════════════════');
+          })
+          .catch((error) => {
+            console.error('[RootLayout] ❌ Error hiding splash screen:', error);
+            try {
+              crashReporter.logCrash(error, { location: 'splashScreenHide' });
+            } catch (logError) {
+              console.error('[RootLayout] Error logging splash screen error:', logError);
+            }
+          });
+      }, 100);
 
-    return () => clearTimeout(timer);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
+    } catch (error) {
+      console.error('[RootLayout] ❌ CRITICAL ERROR in initialization:', error);
+      try {
+        if (error instanceof Error) {
+          crashReporter.logCrash(error, { location: 'rootLayoutInit' });
+        }
+      } catch (logError) {
+        console.error('[RootLayout] Error logging initialization error:', logError);
+      }
+    }
   }, [colorScheme]);
 
   // Handle deep linking and share intents
   useEffect(() => {
+    let isMounted = true;
+    
     const handleDeepLink = (event: { url: string }) => {
+      if (!isMounted) return;
+      
       try {
-        console.log('[RootLayout] Deep link received:', event.url);
+        console.log('[RootLayout] Deep link received:', event?.url);
+        
+        if (!event?.url) {
+          console.warn('[RootLayout] Deep link event has no URL');
+          return;
+        }
         
         const url = Linking.parse(event.url);
         console.log('[RootLayout] Parsed URL:', JSON.stringify(url, null, 2));
@@ -111,29 +158,43 @@ export default function RootLayout() {
         // Handle share target deep links
         if (url.path === 'share-target' || url.hostname === 'share-target') {
           console.log('[RootLayout] Navigating to share-target with params:', url.queryParams);
-          router.push({
-            pathname: '/share-target',
-            params: url.queryParams || {},
-          });
+          try {
+            router.push({
+              pathname: '/share-target',
+              params: url.queryParams || {},
+            });
+          } catch (navError) {
+            console.error('[RootLayout] Error navigating to share-target:', navError);
+          }
         }
         // Handle other deep links
         else if (url.path) {
           console.log('[RootLayout] Navigating to path:', url.path);
-          router.push(url.path as any);
+          try {
+            router.push(url.path as any);
+          } catch (navError) {
+            console.error('[RootLayout] Error navigating to path:', navError);
+          }
         }
       } catch (error) {
         console.error('[RootLayout] Error handling deep link:', error);
-        if (error instanceof Error) {
-          crashReporter.logCrash(error, { 
-            location: 'deepLinkHandler',
-            url: event.url,
-          });
+        try {
+          if (error instanceof Error) {
+            crashReporter.logCrash(error, { 
+              location: 'deepLinkHandler',
+              url: event?.url,
+            });
+          }
+        } catch (logError) {
+          console.error('[RootLayout] Error logging deep link error:', logError);
         }
       }
     };
 
     // Get initial URL (app opened via deep link)
     Linking.getInitialURL().then((url) => {
+      if (!isMounted) return;
+      
       if (url) {
         console.log('[RootLayout] Initial URL:', url);
         handleDeepLink({ url });
@@ -142,29 +203,53 @@ export default function RootLayout() {
       }
     }).catch((error) => {
       console.error('[RootLayout] Error getting initial URL:', error);
-      if (error instanceof Error) {
-        crashReporter.logCrash(error, { location: 'getInitialURL' });
+      try {
+        if (error instanceof Error) {
+          crashReporter.logCrash(error, { location: 'getInitialURL' });
+        }
+      } catch (logError) {
+        console.error('[RootLayout] Error logging initial URL error:', logError);
       }
     });
 
     // Listen for deep links while app is running
-    const subscription = Linking.addEventListener('url', handleDeepLink);
+    let subscription: any;
+    try {
+      subscription = Linking.addEventListener('url', handleDeepLink);
+    } catch (error) {
+      console.error('[RootLayout] Error setting up deep link listener:', error);
+    }
 
     return () => {
-      subscription.remove();
+      isMounted = false;
+      try {
+        if (subscription) {
+          subscription.remove();
+        }
+      } catch (error) {
+        console.error('[RootLayout] Error removing deep link listener:', error);
+      }
     };
   }, []);
 
   React.useEffect(() => {
-    if (
-      !networkState.isConnected &&
-      networkState.isInternetReachable === false
-    ) {
-      console.log('[RootLayout] User is offline - showing offline alert');
-      Alert.alert(
-        "🔌 You are offline",
-        "You can keep using the app! Your changes will be saved locally and synced when you are back online."
-      );
+    try {
+      if (
+        !networkState.isConnected &&
+        networkState.isInternetReachable === false
+      ) {
+        console.log('[RootLayout] User is offline - showing offline alert');
+        try {
+          Alert.alert(
+            "🔌 You are offline",
+            "You can keep using the app! Your changes will be saved locally and synced when you are back online."
+          );
+        } catch (alertError) {
+          console.error('[RootLayout] Error showing offline alert:', alertError);
+        }
+      }
+    } catch (error) {
+      console.error('[RootLayout] Error in network state effect:', error);
     }
   }, [networkState.isConnected, networkState.isInternetReachable]);
 

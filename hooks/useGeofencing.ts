@@ -195,10 +195,16 @@ export function useGeofencing() {
 
   // Check geofencing status on mount - ONLY load store locations, do NOT check permissions
   useEffect(() => {
+    let isMounted = true;
+    
     if (Platform.OS === 'web') {
       console.log('[useGeofencing] Web platform - geofencing available via localStorage');
-      setHasPermission(true); // Web always has "permission"
-      loadStoreLocations();
+      if (isMounted) {
+        setHasPermission(true); // Web always has "permission"
+      }
+      loadStoreLocations().catch(error => {
+        console.error('[useGeofencing] Error loading store locations on web:', error);
+      });
       return;
     }
 
@@ -213,15 +219,19 @@ export function useGeofencing() {
         try {
           const active = await LocationHandler.isGeofencingActive();
           console.log('[useGeofencing] Geofencing active:', active);
-          setIsActive(active);
-          
-          // If geofencing is active, we know we have permission
-          if (active) {
-            setHasPermission(true);
+          if (isMounted) {
+            setIsActive(active);
+            
+            // If geofencing is active, we know we have permission
+            if (active) {
+              setHasPermission(true);
+            }
           }
         } catch (activeError) {
           console.error('[useGeofencing] Error checking active status:', activeError);
-          setIsActive(false);
+          if (isMounted) {
+            setIsActive(false);
+          }
         }
         
         console.log('[useGeofencing] Initial status check complete (permission check skipped - will be requested in context)');
@@ -232,10 +242,15 @@ export function useGeofencing() {
 
     // Delay the check slightly to ensure app is fully initialized
     const timer = setTimeout(() => {
-      checkStatus();
-    }, 1000);
+      if (isMounted) {
+        checkStatus();
+      }
+    }, 1500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [loadStoreLocations]);
 
   return {

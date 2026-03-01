@@ -20,30 +20,54 @@ import * as LocationHandler from '@/utils/locationHandler';
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
-  console.log('[Android HomeScreen] Component mounting');
+  console.log('[Android HomeScreen] ═══════════════════════════════════════');
+  console.log('[Android HomeScreen] COMPONENT MOUNTING');
+  console.log('[Android HomeScreen] ═══════════════════════════════════════');
+  console.log('[Android HomeScreen] Timestamp:', new Date().toISOString());
+  console.log('[Android HomeScreen] Platform:', Platform.OS, Platform.Version);
   
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
-  const { expoPushToken } = useNotifications();
-  const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
-  const { 
-    addStoreLocation, 
-    removeStoreLocation, 
-    loadStoreLocations,
-    storeLocations,
-    isActive: isGeofencingActive,
-    startGeofencing,
-    stopGeofencing,
-    hasPermission: geofencePermissionStatus
-  } = useGeofencing();
+  
+  // State initialization
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [isNativeReady, setIsNativeReady] = useState(false);
   const [webViewLoaded, setWebViewLoaded] = useState(false);
+  
+  console.log('[Android HomeScreen] State initialized');
 
-  // Set up quick actions (app shortcuts) - only after WebView is ready
+  // CRITICAL: Hooks MUST be called unconditionally at the top level
+  console.log('[Android HomeScreen] Initializing hooks...');
+  
+  // Call all hooks unconditionally
+  const { expoPushToken } = useNotifications();
+  const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
+  const { 
+    isActive: isGeofencingActive,
+    hasPermission: geofencePermissionStatus,
+    storeLocations,
+    addStoreLocation,
+    removeStoreLocation,
+    loadStoreLocations,
+    startGeofencing,
+    stopGeofencing
+  } = useGeofencing();
+  
+  // Set up quick actions (app shortcuts) - MUST be called unconditionally
   useQuickActions(webViewRef);
+  
+  console.log('[Android HomeScreen] ✅ All hooks initialized successfully');
+  console.log('[Android HomeScreen] Hook values:', {
+    hasExpoPushToken: !!expoPushToken,
+    isSyncing,
+    queueSize,
+    isOnline,
+    isGeofencingActive,
+    geofencePermissionStatus,
+    storeLocationsCount: storeLocations?.length || 0,
+  });
 
   // Signal to website that native app is ready to receive messages
   useEffect(() => {
