@@ -1,12 +1,11 @@
-
 {
   "expo": {
-    "name": "ShopWell.ai",
-    "slug": "shopwellai",
+    "name": "ShopWell.ai Mobile",
+    "slug": "shopwell-mobile-app-sucsxc",
     "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
-    "scheme": "shopwellai",
+    "scheme": "ShopWell.ai Mobile",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/shopwell-ai-app-icon.png",
@@ -32,7 +31,7 @@
         "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.shopwell.ai",
+      "package": "com.axiomstrategies.shopwellai",
       "versionCode": 12,
       "permissions": [
         "android.permission.RECORD_AUDIO",
