@@ -19,7 +19,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.shopwell.ios",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
@@ -52,7 +52,6 @@
         "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
         "backgroundColor": "#1A1D2E"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.axiomstrategies.shopwellai",
       "versionCode": 9,
       "permissions": [
@@ -152,9 +151,9 @@
         "expo-quick-actions",
         {
           "androidIcons": {
-            "voice_planner": "./assets/images/shopwell_ai_app_icon.png",
-            "product_search": "./assets/images/shopwell_ai_app_icon.png",
-            "photo_search": "./assets/images/shopwell_ai_app_icon.png"
+            "voice_planner": "./assets/images/shopwell-ai-app-icon.png",
+            "product_search": "./assets/images/shopwell-ai-app-icon.png",
+            "photo_search": "./assets/images/shopwell-ai-app-icon.png"
           }
         }
       ]
