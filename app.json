@@ -75,8 +75,7 @@
             "mimeType": "image/*"
           }
         }
-      ],
-
+      ]
     },
     "web": {
       "bundler": "metro",
