@@ -20,6 +20,8 @@ import * as LocationHandler from '@/utils/locationHandler';
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
+  console.log('[Android HomeScreen] Component mounting');
+  
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
   const { expoPushToken } = useNotifications();
@@ -37,14 +39,40 @@ export default function HomeScreen() {
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [isNativeReady, setIsNativeReady] = useState(false);
 
   // Set up quick actions (app shortcuts)
   useQuickActions(webViewRef);
 
+  // Signal to website that native app is ready to receive messages
+  useEffect(() => {
+    if (!isNativeReady && webViewRef.current) {
+      console.log('[Android HomeScreen] ✅ Native app is ready, signaling to website...');
+      setIsNativeReady(true);
+      
+      // Send ready signal to website
+      setTimeout(() => {
+        try {
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'NATIVE_APP_READY', 
+              platform: 'android',
+              timestamp: Date.now(),
+              features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+            }, '*');
+            console.log('[Native App Android] Sent NATIVE_APP_READY signal to website');
+          `);
+        } catch (error) {
+          console.error('[Android HomeScreen] Error sending ready signal:', error);
+        }
+      }, 500);
+    }
+  }, [isNativeReady]);
+
   // Handle shared content from share-target screen
   useEffect(() => {
     if (params.sharedContent && params.sharedType && webViewRef.current) {
-      console.log('Received shared content:', { type: params.sharedType, content: params.sharedContent });
+      console.log('[Android HomeScreen] Received shared content:', { type: params.sharedType, content: params.sharedContent });
       
       // Send shared content to the web app
       const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
@@ -67,7 +95,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (expoPushToken && webViewRef.current) {
-      console.log('Sending push token to web:', expoPushToken);
+      console.log('[Android HomeScreen] Sending push token to web:', expoPushToken);
       webViewRef.current.injectJavaScript(`
         window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
       `);
@@ -91,7 +119,7 @@ export default function HomeScreen() {
   useEffect(() => {
     // Send geofencing status to web
     if (webViewRef.current) {
-      console.log('Sending geofencing status to web:', { 
+      console.log('[Android HomeScreen] Sending geofencing status to web:', { 
         isGeofencingActive, 
         geofencePermissionStatus,
         locationCount: storeLocations.length 
@@ -112,7 +140,7 @@ export default function HomeScreen() {
   // Send permission statuses to web when they change
   useEffect(() => {
     if (webViewRef.current) {
-      console.log('Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
+      console.log('[Android HomeScreen] Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
       webViewRef.current.injectJavaScript(`
         window.postMessage({ 
           type: 'PERMISSIONS_STATUS', 
@@ -126,12 +154,28 @@ export default function HomeScreen() {
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log('Android received message from web:', data.type);
+      console.log('[Android HomeScreen] Received message from web:', data.type);
+      
+      // Ignore messages until native app is ready
+      if (!isNativeReady && !data.type?.startsWith('WEB_')) {
+        console.log('[Android HomeScreen] ⚠️ Native app not ready yet, ignoring message:', data.type);
+        return;
+      }
       
       switch (data.type) {
         case 'WEB_PAGE_READY':
-          console.log('Web page is ready, sending initial status');
-          // Web page is ready to receive messages
+          console.log('[Android HomeScreen] Website signals it is ready');
+          // Re-send ready signal and current status to ensure website knows we're ready
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'NATIVE_APP_READY', 
+              platform: 'android',
+              timestamp: Date.now(),
+              features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+            }, '*');
+          `);
+          
+          // Also send current geofencing status
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'GEOFENCING_STATUS', 
@@ -154,7 +198,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.list.addToHomeScreen':
-          console.log('User requested to add list to home screen:', data.list);
+          console.log('[Android HomeScreen] User requested to add list to home screen:', data.list);
           try {
             const listName = data.list?.name || 'Shopping List';
             const listUrl = data.list?.url || `${SHOPWELL_URL}/lists/${data.list?.id}`;
@@ -177,7 +221,7 @@ export default function HomeScreen() {
                 }, '*');
               `);
             } else {
-              console.log('Sharing not available on this device');
+              console.log('[Android HomeScreen] Sharing not available on this device');
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
@@ -187,7 +231,7 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error adding list to home screen:', error);
+            console.error('[Android HomeScreen] Error adding list to home screen:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
@@ -199,11 +243,11 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.enableNotifications':
-          console.log('User toggling location-based notifications from web:', data.enabled);
+          console.log('[Android HomeScreen] User toggling location-based notifications from web:', data.enabled);
           try {
             if (data.enabled) {
               const started = await startGeofencing();
-              console.log('Geofencing started:', started);
+              console.log('[Android HomeScreen] Geofencing started:', started);
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -226,7 +270,7 @@ export default function HomeScreen() {
               `);
             } else {
               await stopGeofencing();
-              console.log('Geofencing stopped');
+              console.log('[Android HomeScreen] Geofencing stopped');
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -249,7 +293,7 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error toggling geofencing:', error);
+            console.error('[Android HomeScreen] Error toggling geofencing:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -261,7 +305,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.requestPermission':
-          console.log('User requesting location permission from web (profile page)');
+          console.log('[Android HomeScreen] User requesting location permission from web (profile page)');
           try {
             // Show user-friendly explanation before requesting permission
             Alert.alert(
@@ -272,7 +316,7 @@ export default function HomeScreen() {
                   text: 'Not Now',
                   style: 'cancel',
                   onPress: () => {
-                    console.log('User declined location permission prompt');
+                    console.log('[Android HomeScreen] User declined location permission prompt');
                     setLocationPermissionStatus('denied');
                     webViewRef.current?.injectJavaScript(`
                       window.postMessage({ 
@@ -289,10 +333,10 @@ export default function HomeScreen() {
                 {
                   text: 'Allow',
                   onPress: async () => {
-                    console.log('User accepted location permission prompt, requesting permission...');
+                    console.log('[Android HomeScreen] User accepted location permission prompt, requesting permission...');
                     try {
                       const permissionGranted = await LocationHandler.requestLocationPermission();
-                      console.log('Location permission granted:', permissionGranted);
+                      console.log('[Android HomeScreen] Location permission granted:', permissionGranted);
                       
                       // Update local state
                       setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
@@ -317,7 +361,7 @@ export default function HomeScreen() {
                         }, '*');
                       `);
                     } catch (permError) {
-                      console.error('Error requesting location permission:', permError);
+                      console.error('[Android HomeScreen] Error requesting location permission:', permError);
                       setLocationPermissionStatus('denied');
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
@@ -335,7 +379,7 @@ export default function HomeScreen() {
               ]
             );
           } catch (error) {
-            console.error('Error showing location permission prompt:', error);
+            console.error('[Android HomeScreen] Error showing location permission prompt:', error);
             setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -351,7 +395,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.getStatus':
-          console.log('Web requesting geofencing status');
+          console.log('[Android HomeScreen] Web requesting geofencing status');
           const locations = await loadStoreLocations();
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
@@ -366,7 +410,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.add':
-          console.log('User adding geofence from web:', data.location);
+          console.log('[Android HomeScreen] User adding geofence from web:', data.location);
           try {
             await addStoreLocation(data.location);
             webViewRef.current?.injectJavaScript(`
@@ -390,7 +434,7 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error adding geofence:', error);
+            console.error('[Android HomeScreen] Error adding geofence:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_ADD_RESPONSE', 
@@ -402,7 +446,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.remove':
-          console.log('User removing geofence from web:', data.locationId);
+          console.log('[Android HomeScreen] User removing geofence from web:', data.locationId);
           try {
             await removeStoreLocation(data.locationId);
             webViewRef.current?.injectJavaScript(`
@@ -426,7 +470,7 @@ export default function HomeScreen() {
               }, '*');
             `);
           } catch (error) {
-            console.error('Error removing geofence:', error);
+            console.error('[Android HomeScreen] Error removing geofence:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_REMOVE_RESPONSE', 
@@ -438,9 +482,9 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.getAll':
-          console.log('Web requesting all monitored locations');
+          console.log('[Android HomeScreen] Web requesting all monitored locations');
           const allLocations = await loadStoreLocations();
-          console.log(`Sending ${allLocations.length} monitored locations to web`);
+          console.log(`[Android HomeScreen] Sending ${allLocations.length} monitored locations to web`);
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'GEOFENCE_LIST_RESPONSE', 
@@ -450,7 +494,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.microphone.requestPermission':
-          console.log('User requested microphone permission from web');
+          console.log('[Android HomeScreen] User requested microphone permission from web');
           try {
             // Show user-friendly explanation before requesting permission
             Alert.alert(
@@ -461,7 +505,7 @@ export default function HomeScreen() {
                   text: 'Not Now',
                   style: 'cancel',
                   onPress: () => {
-                    console.log('User declined microphone permission prompt');
+                    console.log('[Android HomeScreen] User declined microphone permission prompt');
                     webViewRef.current?.injectJavaScript(`
                       window.postMessage({ 
                         type: 'MICROPHONE_PERMISSION_RESPONSE', 
@@ -474,10 +518,10 @@ export default function HomeScreen() {
                 {
                   text: 'Allow',
                   onPress: async () => {
-                    console.log('User accepted microphone permission prompt, requesting permission...');
+                    console.log('[Android HomeScreen] User accepted microphone permission prompt, requesting permission...');
                     try {
                       const micPermissionGranted = await AudioHandler.requestMicrophonePermission();
-                      console.log('Microphone permission granted:', micPermissionGranted);
+                      console.log('[Android HomeScreen] Microphone permission granted:', micPermissionGranted);
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
                           type: 'MICROPHONE_PERMISSION_RESPONSE', 
@@ -485,7 +529,7 @@ export default function HomeScreen() {
                         }, '*');
                       `);
                     } catch (permError) {
-                      console.error('Error requesting microphone permission:', permError);
+                      console.error('[Android HomeScreen] Error requesting microphone permission:', permError);
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
                           type: 'MICROPHONE_PERMISSION_RESPONSE', 
@@ -499,7 +543,7 @@ export default function HomeScreen() {
               ]
             );
           } catch (error) {
-            console.error('Error showing microphone permission prompt:', error);
+            console.error('[Android HomeScreen] Error showing microphone permission prompt:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'MICROPHONE_PERMISSION_RESPONSE', 
@@ -511,7 +555,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.audio.startRecording':
-          console.log('User initiated audio recording from web');
+          console.log('[Android HomeScreen] User initiated audio recording from web');
           const recording = await AudioHandler.startRecording();
           if (recording) {
             setCurrentRecording(recording);
@@ -533,7 +577,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.audio.stopRecording':
-          console.log('User stopped audio recording from web');
+          console.log('[Android HomeScreen] User stopped audio recording from web');
           if (currentRecording) {
             const uri = await AudioHandler.stopRecording(currentRecording);
             setCurrentRecording(null);
@@ -566,7 +610,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.audio.pauseRecording':
-          console.log('User paused audio recording from web');
+          console.log('[Android HomeScreen] User paused audio recording from web');
           if (currentRecording) {
             const paused = await AudioHandler.pauseRecording(currentRecording);
             webViewRef.current?.injectJavaScript(`
@@ -579,7 +623,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.audio.resumeRecording':
-          console.log('User resumed audio recording from web');
+          console.log('[Android HomeScreen] User resumed audio recording from web');
           if (currentRecording) {
             const resumed = await AudioHandler.resumeRecording(currentRecording);
             webViewRef.current?.injectJavaScript(`
@@ -606,7 +650,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.account.delete':
-          console.log('User initiated account deletion from web');
+          console.log('[Android HomeScreen] User initiated account deletion from web');
           Alert.alert(
             'Delete Account',
             'Your account will be permanently deleted. This action cannot be undone. All your data will be removed from our servers.',
@@ -627,9 +671,9 @@ export default function HomeScreen() {
                 text: 'Delete Account',
                 style: 'destructive',
                 onPress: async () => {
-                  console.log('User confirmed account deletion');
+                  console.log('[Android HomeScreen] User confirmed account deletion');
                   await OfflineStorage.clearAll();
-                  console.log('Cleared all local storage');
+                  console.log('[Android HomeScreen] Cleared all local storage');
                   
                   webViewRef.current?.injectJavaScript(`
                     window.postMessage({ 
@@ -696,7 +740,7 @@ export default function HomeScreen() {
           break;
           
         case 'natively.contacts.requestPermission':
-          console.log('User requested contacts permission from web (profile page or contacts page)');
+          console.log('[Android HomeScreen] User requested contacts permission from web (profile page or contacts page)');
           try {
             // Show user-friendly explanation before requesting permission
             Alert.alert(
@@ -707,7 +751,7 @@ export default function HomeScreen() {
                   text: 'Not Now',
                   style: 'cancel',
                   onPress: () => {
-                    console.log('User declined contacts permission prompt');
+                    console.log('[Android HomeScreen] User declined contacts permission prompt');
                     setContactsPermissionStatus('denied');
                     webViewRef.current?.injectJavaScript(`
                       window.postMessage({ 
@@ -722,10 +766,10 @@ export default function HomeScreen() {
                 {
                   text: 'Allow',
                   onPress: async () => {
-                    console.log('User accepted contacts permission prompt, requesting permission...');
+                    console.log('[Android HomeScreen] User accepted contacts permission prompt, requesting permission...');
                     try {
                       const permissionGranted = await ContactsHandler.requestContactsPermission();
-                      console.log('Contacts permission granted:', permissionGranted);
+                      console.log('[Android HomeScreen] Contacts permission granted:', permissionGranted);
                       
                       // Update local state
                       setContactsPermissionStatus(permissionGranted ? 'granted' : 'denied');
@@ -748,7 +792,7 @@ export default function HomeScreen() {
                         }, '*');
                       `);
                     } catch (permError) {
-                      console.error('Error requesting contacts permission:', permError);
+                      console.error('[Android HomeScreen] Error requesting contacts permission:', permError);
                       setContactsPermissionStatus('denied');
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
@@ -764,7 +808,7 @@ export default function HomeScreen() {
               ]
             );
           } catch (error) {
-            console.error('Error showing contacts permission prompt:', error);
+            console.error('[Android HomeScreen] Error showing contacts permission prompt:', error);
             setContactsPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -778,11 +822,11 @@ export default function HomeScreen() {
           break;
           
         case 'natively.contacts.getAll':
-          console.log('User requested to import all contacts from web');
+          console.log('[Android HomeScreen] User requested to import all contacts from web');
           try {
             const hasPermission = await ContactsHandler.hasContactsPermission();
             if (!hasPermission) {
-              console.log('No contacts permission, showing prompt...');
+              console.log('[Android HomeScreen] No contacts permission, showing prompt...');
               
               // Show user-friendly explanation before requesting permission
               Alert.alert(
@@ -793,7 +837,7 @@ export default function HomeScreen() {
                     text: 'Cancel',
                     style: 'cancel',
                     onPress: () => {
-                      console.log('User cancelled contacts import');
+                      console.log('[Android HomeScreen] User cancelled contacts import');
                       setContactsPermissionStatus('denied');
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
@@ -808,13 +852,13 @@ export default function HomeScreen() {
                   {
                     text: 'Allow',
                     onPress: async () => {
-                      console.log('User accepted, requesting contacts permission...');
+                      console.log('[Android HomeScreen] User accepted, requesting contacts permission...');
                       try {
                         const granted = await ContactsHandler.requestContactsPermission();
                         setContactsPermissionStatus(granted ? 'granted' : 'denied');
                         
                         if (!granted) {
-                          console.log('Contacts permission denied by system');
+                          console.log('[Android HomeScreen] Contacts permission denied by system');
                           webViewRef.current?.injectJavaScript(`
                             window.postMessage({ 
                               type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -826,7 +870,7 @@ export default function HomeScreen() {
                         }
                         
                         const allContacts = await ContactsHandler.getAllContacts();
-                        console.log(`Sending ${allContacts.length} contacts to web`);
+                        console.log(`[Android HomeScreen] Sending ${allContacts.length} contacts to web`);
                         webViewRef.current?.injectJavaScript(`
                           window.postMessage({ 
                             type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -834,7 +878,7 @@ export default function HomeScreen() {
                           }, '*');
                         `);
                       } catch (permError) {
-                        console.error('Error requesting contacts permission:', permError);
+                        console.error('[Android HomeScreen] Error requesting contacts permission:', permError);
                         webViewRef.current?.injectJavaScript(`
                           window.postMessage({ 
                             type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -850,7 +894,7 @@ export default function HomeScreen() {
             } else {
               // Already have permission, just get contacts
               const allContacts = await ContactsHandler.getAllContacts();
-              console.log(`Sending ${allContacts.length} contacts to web`);
+              console.log(`[Android HomeScreen] Sending ${allContacts.length} contacts to web`);
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -859,7 +903,7 @@ export default function HomeScreen() {
               `);
             }
           } catch (error) {
-            console.error('Error getting contacts:', error);
+            console.error('[Android HomeScreen] Error getting contacts:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -871,9 +915,9 @@ export default function HomeScreen() {
           break;
           
         case 'natively.contacts.search':
-          console.log('User searching contacts with query:', data.query);
+          console.log('[Android HomeScreen] User searching contacts with query:', data.query);
           const searchResults = await ContactsHandler.searchContacts(data.query || '');
-          console.log(`Found ${searchResults.length} matching contacts`);
+          console.log(`[Android HomeScreen] Found ${searchResults.length} matching contacts`);
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
               type: 'CONTACTS_SEARCH_RESPONSE', 
@@ -952,7 +996,7 @@ export default function HomeScreen() {
           break;
           
         case 'natively.location.requestPermission':
-          console.log('User requested location permission from web');
+          console.log('[Android HomeScreen] User requested location permission from web');
           const locationPermissionGranted = await LocationHandler.requestLocationPermission();
           setLocationPermissionStatus(locationPermissionGranted ? 'granted' : 'denied');
           webViewRef.current?.injectJavaScript(`
@@ -965,7 +1009,7 @@ export default function HomeScreen() {
           break;
           
         case 'natively.location.getCurrent':
-          console.log('User requested current location from web');
+          console.log('[Android HomeScreen] User requested current location from web');
           const currentLocation = await LocationHandler.getCurrentLocation();
           if (currentLocation) {
             webViewRef.current?.injectJavaScript(`
@@ -1000,10 +1044,10 @@ export default function HomeScreen() {
           break;
           
         default:
-          console.log('Unknown message type:', data.type);
+          console.log('[Android HomeScreen] Unknown message type:', data.type);
       }
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error('[Android HomeScreen] Error handling message:', error);
     }
   };
 
@@ -1015,19 +1059,48 @@ export default function HomeScreen() {
       // Set flag that we're in native app
       window.isNativeApp = true;
       window.nativeAppPlatform = 'android';
+      window.nativeAppReady = false;
       
-      // Store for tracking if we've already sent ready message
-      if (!window.nativeAppInitialized) {
-        window.nativeAppInitialized = true;
-        
-        // Notify parent that web page is ready to receive messages
-        window.postMessage({ 
+      // Queue for messages sent before native app is ready
+      window.nativelyMessageQueue = [];
+      
+      // Override postMessage to queue messages until native is ready
+      const originalPostMessage = window.postMessage;
+      window.postMessage = function(message, targetOrigin) {
+        if (typeof message === 'object' && message.type && message.type.startsWith('natively.')) {
+          if (!window.nativeAppReady) {
+            console.log('[Native App Android] Queueing message (native not ready):', message.type);
+            window.nativelyMessageQueue.push({ message, targetOrigin });
+            return;
+          }
+        }
+        originalPostMessage.call(window, message, targetOrigin);
+      };
+      
+      // Listen for native ready signal
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'NATIVE_APP_READY') {
+          console.log('[Native App Android] Native app is ready! Processing queued messages...');
+          window.nativeAppReady = true;
+          
+          // Process queued messages
+          const queue = window.nativelyMessageQueue;
+          window.nativelyMessageQueue = [];
+          queue.forEach(function(item) {
+            console.log('[Native App Android] Processing queued message:', item.message.type);
+            originalPostMessage.call(window, item.message, item.targetOrigin);
+          });
+        }
+      });
+      
+      // Notify native that web page is ready
+      setTimeout(function() {
+        originalPostMessage.call(window, { 
           type: 'WEB_PAGE_READY',
           timestamp: Date.now()
         }, '*');
-        
-        console.log('[Native App Android] Sent WEB_PAGE_READY message');
-      }
+        console.log('[Native App Android] Sent WEB_PAGE_READY signal to native');
+      }, 100);
       
       // Hide any "Download App" banners, prompts, "Products in the News", and "Quick Tip" messages
       const hideUnwantedElements = () => {
@@ -1052,7 +1125,6 @@ export default function HomeScreen() {
           'a[href*="get-app"]',
           'button[class*="download"]',
           'button[class*="get-app"]',
-          // Products in the News selectors
           '[data-products-news]',
           '[class*="products-news"]',
           '[class*="products-in-news"]',
@@ -1060,7 +1132,6 @@ export default function HomeScreen() {
           '[id*="products-in-news"]',
           'a[href*="/news"]',
           'a[href*="/products-news"]',
-          // Quick Tip selectors
           '[data-quick-tip]',
           '[class*="quick-tip"]',
           '[class*="quicktip"]',
@@ -1082,7 +1153,6 @@ export default function HomeScreen() {
           });
         });
         
-        // Also hide by text content (more aggressive)
         const allElements = document.querySelectorAll('div, p, span, a, button, li, section, article, nav, header');
         allElements.forEach(el => {
           const text = el.textContent?.toLowerCase() || '';
@@ -1090,7 +1160,6 @@ export default function HomeScreen() {
           const title = el.getAttribute('title')?.toLowerCase() || '';
           const combinedText = text + ' ' + ariaLabel + ' ' + title;
           
-          // Hide "Download App" or "Get App" elements
           if (combinedText.includes('download app') || 
               combinedText.includes('get app') || 
               combinedText.includes('install app') ||
@@ -1102,13 +1171,11 @@ export default function HomeScreen() {
             el.style.height = '0';
             el.style.overflow = 'hidden';
             
-            // Also hide parent if it's a list item or nav item
             if (el.parentElement?.tagName === 'LI' || el.parentElement?.tagName === 'NAV') {
               el.parentElement.style.display = 'none';
             }
           }
           
-          // Hide "Products in the News" links
           if (combinedText.includes('products in the news') || combinedText.includes('products in news')) {
             el.style.display = 'none';
             el.style.visibility = 'hidden';
@@ -1117,7 +1184,6 @@ export default function HomeScreen() {
             }
           }
           
-          // Hide "Quick Tip" messages about Click-&-Add
           if (combinedText.includes('quick tip') && (combinedText.includes('click') || combinedText.includes('add') || combinedText.includes('install'))) {
             el.style.display = 'none';
             el.style.visibility = 'hidden';
@@ -1131,30 +1197,20 @@ export default function HomeScreen() {
         });
       };
       
-      // Run immediately and after DOM loads
       hideUnwantedElements();
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideUnwantedElements);
       }
       
-      // Also run periodically to catch dynamically added elements
       setInterval(hideUnwantedElements, 1000);
       
-      // Use MutationObserver for more efficient detection
       const observer = new MutationObserver(hideUnwantedElements);
       observer.observe(document.body, {
         childList: true,
         subtree: true
       });
       
-      // Notify the website that we're in native app with all features including geofencing and addToHomeScreen
-      window.postMessage({ 
-        type: 'NATIVE_APP_READY', 
-        platform: 'android',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
-      }, '*');
-      
-      console.log('[Native App Android] Native app bridge initialized - geofencing, quick actions, and add to home screen features available');
+      console.log('[Native App Android] Native app bridge initialized - waiting for NATIVE_APP_READY signal');
     })();
     true;
   `;
@@ -1174,6 +1230,7 @@ export default function HomeScreen() {
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
         onLoadEnd={() => {
+          console.log('[Android HomeScreen] WebView finished loading');
           // Re-inject after page loads to ensure it takes effect
           if (webViewRef.current) {
             webViewRef.current.injectJavaScript(injectedJavaScript);

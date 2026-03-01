@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [isNativeReady, setIsNativeReady] = useState(false);
 
   console.log('[iOS HomeScreen] State initialized');
   console.log('[iOS HomeScreen] Safe area insets:', JSON.stringify(insets));
@@ -74,6 +75,31 @@ export default function HomeScreen() {
     geofencePermissionStatus,
     storeLocationsCount: storeLocations.length,
   });
+
+  // Signal to website that native app is ready to receive messages
+  useEffect(() => {
+    if (!isNativeReady && webViewRef.current) {
+      console.log('[iOS HomeScreen] ✅ Native app is ready, signaling to website...');
+      setIsNativeReady(true);
+      
+      // Send ready signal to website
+      setTimeout(() => {
+        try {
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'NATIVE_APP_READY', 
+              platform: 'ios',
+              timestamp: Date.now(),
+              features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+            }, '*');
+            console.log('[Native App iOS] Sent NATIVE_APP_READY signal to website');
+          `);
+        } catch (error) {
+          console.error('[iOS HomeScreen] Error sending ready signal:', error);
+        }
+      }, 500);
+    }
+  }, [isNativeReady]);
 
   // Handle shared content from share-target screen
   useEffect(() => {
@@ -191,7 +217,26 @@ export default function HomeScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       console.log('[iOS HomeScreen] Received message from web:', data.type);
       
+      // Ignore messages until native app is ready
+      if (!isNativeReady && !data.type?.startsWith('WEB_')) {
+        console.log('[iOS HomeScreen] ⚠️ Native app not ready yet, ignoring message:', data.type);
+        return;
+      }
+      
       switch (data.type) {
+        case 'WEB_PAGE_READY':
+          console.log('[iOS HomeScreen] Website signals it is ready');
+          // Re-send ready signal to ensure website knows we're ready
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'NATIVE_APP_READY', 
+              platform: 'ios',
+              timestamp: Date.now(),
+              features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+            }, '*');
+          `);
+          break;
+
         case 'natively.list.addToHomeScreen':
           console.log('[iOS HomeScreen] User requested to add list to home screen:', data.list);
           try {
@@ -1268,6 +1313,48 @@ export default function HomeScreen() {
       // Set flag that we're in native app
       window.isNativeApp = true;
       window.nativeAppPlatform = 'ios';
+      window.nativeAppReady = false;
+      
+      // Queue for messages sent before native app is ready
+      window.nativelyMessageQueue = [];
+      
+      // Override postMessage to queue messages until native is ready
+      const originalPostMessage = window.postMessage;
+      window.postMessage = function(message, targetOrigin) {
+        if (typeof message === 'object' && message.type && message.type.startsWith('natively.')) {
+          if (!window.nativeAppReady) {
+            console.log('[Native App iOS] Queueing message (native not ready):', message.type);
+            window.nativelyMessageQueue.push({ message, targetOrigin });
+            return;
+          }
+        }
+        originalPostMessage.call(window, message, targetOrigin);
+      };
+      
+      // Listen for native ready signal
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'NATIVE_APP_READY') {
+          console.log('[Native App iOS] Native app is ready! Processing queued messages...');
+          window.nativeAppReady = true;
+          
+          // Process queued messages
+          const queue = window.nativelyMessageQueue;
+          window.nativelyMessageQueue = [];
+          queue.forEach(function(item) {
+            console.log('[Native App iOS] Processing queued message:', item.message.type);
+            originalPostMessage.call(window, item.message, item.targetOrigin);
+          });
+        }
+      });
+      
+      // Notify native that web page is ready
+      setTimeout(function() {
+        originalPostMessage.call(window, { 
+          type: 'WEB_PAGE_READY',
+          timestamp: Date.now()
+        }, '*');
+        console.log('[Native App iOS] Sent WEB_PAGE_READY signal to native');
+      }, 100);
       
       // Hide any "Download App" banners, prompts, "Products in the News", and "Quick Tip" messages
       const hideUnwantedElements = () => {
@@ -1377,13 +1464,7 @@ export default function HomeScreen() {
         subtree: true
       });
       
-      window.postMessage({ 
-        type: 'NATIVE_APP_READY', 
-        platform: 'ios',
-        features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'tracking', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
-      }, '*');
-      
-      console.log('[Native App iOS] Native app bridge initialized - all features available');
+      console.log('[Native App iOS] Native app bridge initialized - waiting for NATIVE_APP_READY signal');
     })();
     true;
   `;
