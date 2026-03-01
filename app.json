@@ -1,12 +1,12 @@
 
 {
   "expo": {
-    "name": "ShopWell",
-    "slug": "shopwell-mobile-app-sucsxc",
+    "name": "ShopWell.ai Mobile",
+    "slug": "ShopWell-ai-Mobile",
     "version": "1.0.10",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
-    "scheme": "shopwell",
+    "scheme": "shopwell-ai-mobile",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/shopwell-ai-app-icon.png",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.shopwell.app",
-      "buildNumber": "1.0.10",
+      "buildNumber": "1.0.11",
       "infoPlist": {
         "NSCameraUsageDescription": "ShopWell needs access to your camera to scan product barcodes and QR codes.",
         "NSPhotoLibraryUsageDescription": "ShopWell needs access to your photo library to let you select images for your shopping lists.",
@@ -42,7 +42,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.axiomstrategies.shopwellai",
-      "versionCode": 14,
+      "versionCode": 15,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
@@ -101,7 +101,6 @@
       ],
       "expo-tracking-transparency",
       "expo-contacts",
-      "expo-sharing",
       "expo-quick-actions",
       [
         "expo-image-picker",
