@@ -824,9 +824,28 @@ export default function HomeScreen() {
         case 'natively.contacts.getAll':
           console.log('[Android HomeScreen] User requested to import all contacts from web');
           try {
+            console.log('[Android HomeScreen] Checking contacts permission status...');
             const hasPermission = await ContactsHandler.hasContactsPermission();
-            if (!hasPermission) {
-              console.log('[Android HomeScreen] No contacts permission, showing prompt...');
+            console.log('[Android HomeScreen] Contacts permission status:', hasPermission ? 'granted' : 'not granted');
+            
+            if (hasPermission) {
+              // Already have permission, just get contacts immediately
+              console.log('[Android HomeScreen] Permission already granted, fetching contacts...');
+              const allContacts = await ContactsHandler.getAllContacts();
+              console.log(`[Android HomeScreen] Successfully fetched ${allContacts.length} contacts, sending to web`);
+              
+              // Update local state
+              setContactsPermissionStatus('granted');
+              
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CONTACTS_GET_ALL_RESPONSE', 
+                  contacts: ${JSON.stringify(allContacts)}
+                }, '*');
+              `);
+            } else {
+              // No permission, show prompt
+              console.log('[Android HomeScreen] No contacts permission, showing user prompt...');
               
               // Show user-friendly explanation before requesting permission
               Alert.alert(
@@ -852,9 +871,10 @@ export default function HomeScreen() {
                   {
                     text: 'Allow',
                     onPress: async () => {
-                      console.log('[Android HomeScreen] User accepted, requesting contacts permission...');
+                      console.log('[Android HomeScreen] User accepted prompt, requesting contacts permission from system...');
                       try {
                         const granted = await ContactsHandler.requestContactsPermission();
+                        console.log('[Android HomeScreen] System permission result:', granted ? 'granted' : 'denied');
                         setContactsPermissionStatus(granted ? 'granted' : 'denied');
                         
                         if (!granted) {
@@ -869,8 +889,9 @@ export default function HomeScreen() {
                           return;
                         }
                         
+                        console.log('[Android HomeScreen] Permission granted, fetching contacts...');
                         const allContacts = await ContactsHandler.getAllContacts();
-                        console.log(`[Android HomeScreen] Sending ${allContacts.length} contacts to web`);
+                        console.log(`[Android HomeScreen] Successfully fetched ${allContacts.length} contacts, sending to web`);
                         webViewRef.current?.injectJavaScript(`
                           window.postMessage({ 
                             type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -891,16 +912,6 @@ export default function HomeScreen() {
                   }
                 ]
               );
-            } else {
-              // Already have permission, just get contacts
-              const allContacts = await ContactsHandler.getAllContacts();
-              console.log(`[Android HomeScreen] Sending ${allContacts.length} contacts to web`);
-              webViewRef.current?.injectJavaScript(`
-                window.postMessage({ 
-                  type: 'CONTACTS_GET_ALL_RESPONSE', 
-                  contacts: ${JSON.stringify(allContacts)}
-                }, '*');
-              `);
             }
           } catch (error) {
             console.error('[Android HomeScreen] Error getting contacts:', error);
