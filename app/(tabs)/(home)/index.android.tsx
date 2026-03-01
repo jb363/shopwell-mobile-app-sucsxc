@@ -16,6 +16,7 @@ import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
 import * as AudioHandler from '@/utils/audioHandler';
 import * as LocationHandler from '@/utils/locationHandler';
+import { crashReporter } from '@/utils/crashReporter';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -26,10 +27,11 @@ export default function HomeScreen() {
   console.log('[Android HomeScreen] Timestamp:', new Date().toISOString());
   console.log('[Android HomeScreen] Platform:', Platform.OS, Platform.Version);
   
+  // CRITICAL: All hooks MUST be called unconditionally at the top level
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
   
-  // State initialization
+  // State initialization with defensive defaults
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
@@ -38,15 +40,14 @@ export default function HomeScreen() {
   
   console.log('[Android HomeScreen] State initialized');
 
-  // CRITICAL: Hooks MUST be called unconditionally at the top level
+  // CRITICAL: Call all hooks unconditionally
   console.log('[Android HomeScreen] Initializing hooks...');
   
-  // Call all hooks unconditionally
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
   const { 
-    isActive: isGeofencingActive,
-    hasPermission: geofencePermissionStatus,
+    isActive: isGeofencingActive, 
+    hasPermission: geofencePermissionStatus, 
     storeLocations,
     addStoreLocation,
     removeStoreLocation,
@@ -55,7 +56,7 @@ export default function HomeScreen() {
     stopGeofencing
   } = useGeofencing();
   
-  // Set up quick actions (app shortcuts) - MUST be called unconditionally
+  // Set up quick actions (app shortcuts)
   useQuickActions(webViewRef);
   
   console.log('[Android HomeScreen] ✅ All hooks initialized successfully');
@@ -96,6 +97,7 @@ export default function HomeScreen() {
           `);
         } catch (error) {
           console.error('[Android HomeScreen] Error sending ready signal:', error);
+          crashReporter.logCrash(error as Error, { location: 'sendReadySignal' });
         }
       }, 800);
     }
@@ -128,6 +130,7 @@ export default function HomeScreen() {
           `);
         } catch (error) {
           console.error('[Android HomeScreen] Error injecting shared content:', error);
+          crashReporter.logCrash(error as Error, { location: 'injectSharedContent' });
         }
       }, 500);
     }
@@ -155,6 +158,7 @@ export default function HomeScreen() {
           `);
         } catch (error) {
           console.error('[Android HomeScreen] Error injecting push token:', error);
+          crashReporter.logCrash(error as Error, { location: 'injectPushToken' });
         }
       }, 300);
     }
@@ -181,6 +185,7 @@ export default function HomeScreen() {
         `);
       } catch (error) {
         console.error('[Android HomeScreen] Error injecting sync status:', error);
+        crashReporter.logCrash(error as Error, { location: 'injectSyncStatus' });
       }
     }
   }, [isSyncing, queueSize, isOnline, isNativeReady]);
@@ -213,6 +218,7 @@ export default function HomeScreen() {
         `);
       } catch (error) {
         console.error('[Android HomeScreen] Error injecting geofencing status:', error);
+        crashReporter.logCrash(error as Error, { location: 'injectGeofencingStatus' });
       }
     }
   }, [isGeofencingActive, geofencePermissionStatus, storeLocations, isNativeReady]);
@@ -238,6 +244,7 @@ export default function HomeScreen() {
         `);
       } catch (error) {
         console.error('[Android HomeScreen] Error injecting permissions status:', error);
+        crashReporter.logCrash(error as Error, { location: 'injectPermissionsStatus' });
       }
     }
   }, [contactsPermissionStatus, locationPermissionStatus, isNativeReady]);
@@ -311,6 +318,7 @@ export default function HomeScreen() {
               `);
             } catch (error) {
               console.error('[Android HomeScreen] Error responding to WEB_PAGE_READY:', error);
+              crashReporter.logCrash(error as Error, { location: 'handleWebPageReady' });
             }
           }, 200);
           break;
@@ -352,6 +360,7 @@ export default function HomeScreen() {
             }
           } catch (error) {
             console.error('[Android HomeScreen] Error adding list to home screen:', error);
+            crashReporter.logCrash(error as Error, { location: 'addToHomeScreen' });
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'LIST_ADD_TO_HOME_SCREEN_RESPONSE', 
@@ -419,6 +428,7 @@ export default function HomeScreen() {
             }
           } catch (error) {
             console.error('[Android HomeScreen] Error toggling geofencing:', error);
+            crashReporter.logCrash(error as Error, { location: 'toggleGeofencing' });
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_ENABLE_RESPONSE', 
@@ -491,6 +501,7 @@ export default function HomeScreen() {
                       `);
                     } catch (permError) {
                       console.error('[Android HomeScreen] Error requesting location permission:', permError);
+                      crashReporter.logCrash(permError as Error, { location: 'requestLocationPermission' });
                       setLocationPermissionStatus('denied');
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
@@ -510,6 +521,7 @@ export default function HomeScreen() {
             );
           } catch (error) {
             console.error('[Android HomeScreen] Error showing location permission prompt:', error);
+            crashReporter.logCrash(error as Error, { location: 'showLocationPermissionPrompt' });
             setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -569,6 +581,7 @@ export default function HomeScreen() {
             `);
           } catch (error) {
             console.error('[Android HomeScreen] Error adding geofence:', error);
+            crashReporter.logCrash(error as Error, { location: 'addGeofence' });
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_ADD_RESPONSE', 
@@ -608,6 +621,7 @@ export default function HomeScreen() {
             `);
           } catch (error) {
             console.error('[Android HomeScreen] Error removing geofence:', error);
+            crashReporter.logCrash(error as Error, { location: 'removeGeofence' });
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'GEOFENCE_REMOVE_RESPONSE', 
@@ -671,6 +685,7 @@ export default function HomeScreen() {
                       `);
                     } catch (permError) {
                       console.error('[Android HomeScreen] Error requesting microphone permission:', permError);
+                      crashReporter.logCrash(permError as Error, { location: 'requestMicrophonePermission' });
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
                           type: 'MICROPHONE_PERMISSION_RESPONSE', 
@@ -686,6 +701,7 @@ export default function HomeScreen() {
             );
           } catch (error) {
             console.error('[Android HomeScreen] Error showing microphone permission prompt:', error);
+            crashReporter.logCrash(error as Error, { location: 'showMicrophonePermissionPrompt' });
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'MICROPHONE_PERMISSION_RESPONSE', 
@@ -951,6 +967,7 @@ export default function HomeScreen() {
                       `);
                     } catch (permError) {
                       console.error('[Android HomeScreen] Error requesting contacts permission:', permError);
+                      crashReporter.logCrash(permError as Error, { location: 'requestContactsPermission' });
                       setContactsPermissionStatus('denied');
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
@@ -968,6 +985,7 @@ export default function HomeScreen() {
             );
           } catch (error) {
             console.error('[Android HomeScreen] Error showing contacts permission prompt:', error);
+            crashReporter.logCrash(error as Error, { location: 'showContactsPermissionPrompt' });
             setContactsPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -1064,6 +1082,7 @@ export default function HomeScreen() {
                         `);
                       } catch (permError) {
                         console.error('[Android HomeScreen] Error requesting contacts permission:', permError);
+                        crashReporter.logCrash(permError as Error, { location: 'requestContactsPermissionForImport' });
                         webViewRef.current?.injectJavaScript(`
                           window.postMessage({ 
                             type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -1080,6 +1099,7 @@ export default function HomeScreen() {
             }
           } catch (error) {
             console.error('[Android HomeScreen] Error getting contacts:', error);
+            crashReporter.logCrash(error as Error, { location: 'getAllContacts' });
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'CONTACTS_GET_ALL_RESPONSE', 
@@ -1236,6 +1256,10 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('[Android HomeScreen] Error handling message:', error);
+      crashReporter.logCrash(error as Error, { 
+        location: 'handleMessage',
+        messageType: event?.nativeEvent?.data 
+      });
     }
   };
 
@@ -1431,6 +1455,7 @@ export default function HomeScreen() {
                 webViewRef.current?.injectJavaScript(injectedJavaScript);
               } catch (error) {
                 console.error('[Android HomeScreen] Error re-injecting JavaScript:', error);
+                crashReporter.logCrash(error as Error, { location: 'reInjectJavaScript' });
               }
             }, 300);
           }
@@ -1438,6 +1463,10 @@ export default function HomeScreen() {
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.error('[Android HomeScreen] WebView error:', nativeEvent);
+          crashReporter.logCrash(new Error(`WebView error: ${JSON.stringify(nativeEvent)}`), { 
+            location: 'webViewError',
+            nativeEvent 
+          });
         }}
       />
     </View>

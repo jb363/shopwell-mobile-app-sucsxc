@@ -1,169 +1,78 @@
 
 {
   "expo": {
-    "name": "ShopWell.ai Mobile",
-    "slug": "shopwell-mobile-app-sucsxc",
-    "version": "1.0.7",
+    "name": "ShopWell.ai",
+    "slug": "shopwellai",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
+    "scheme": "shopwellai",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/shopwell-ai-app-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1A1D2E"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.shopwell.ios",
-      "buildNumber": "15",
+      "bundleIdentifier": "com.shopwell.ai",
+      "buildNumber": "16",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "ShopWell.ai needs camera access for photo product search",
-        "NSPhotoLibraryUsageDescription": "ShopWell.ai needs photo library access to search products from images",
-        "NSContactsUsageDescription": "ShopWell.ai needs access to your contacts to help you connect with friends and family on the platform",
-        "NSMicrophoneUsageDescription": "ShopWell.ai needs microphone access for voice planning and audio features",
-        "NSUserTrackingUsageDescription": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers.",
-        "NSLocationWhenInUseUsageDescription": "ShopWell.ai needs your location to notify you when you're near stores with active shopping lists",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "ShopWell.ai needs your location in the background to send you reminders when you're near stores with active shopping lists",
-        "UIBackgroundModes": [
-          "remote-notification",
-          "location"
-        ],
-        "CFBundleAllowMixedLocalizations": true,
-        "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": [
-              "shopwellai"
-            ]
-          }
-        ]
-      },
-      "associatedDomains": [
-        "applinks:shopwell.ai",
-        "applinks:*.shopwell.ai"
-      ]
+        "NSUserNotificationsUsageDescription": "ShopWell.ai uses notifications to alert you about personalized deals and store updates.",
+        "NSLocationWhenInUseUsageDescription": "ShopWell.ai uses your location to provide personalized store notifications and deals.",
+        "NSContactsUsageDescription": "ShopWell.ai needs access to your contacts to help you invite friends and share deals.",
+        "NSMicrophoneUsageDescription": "ShopWell.ai needs microphone access for voice search and audio input features."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
-        "backgroundColor": "#1A1D2E"
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.axiomstrategies.shopwellai",
-      "versionCode": 11,
+      "package": "com.shopwell.ai",
+      "versionCode": 12,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "NOTIFICATIONS",
-        "READ_CONTACTS",
-        "RECORD_AUDIO",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "*.shopwell.ai",
-              "pathPrefix": "/shared"
-            },
-            {
-              "scheme": "https",
-              "host": "*.shopwell.ai",
-              "pathPrefix": "/lists"
-            },
-            {
-              "scheme": "shopwellai"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        },
-        {
-          "action": "SEND",
-          "data": [
-            {
-              "mimeType": "text/plain"
-            }
-          ],
-          "category": [
-            "DEFAULT"
-          ]
-        },
-        {
-          "action": "SEND",
-          "data": [
-            {
-              "mimeType": "image/*"
-            }
-          ],
-          "category": [
-            "DEFAULT"
-          ]
-        },
-        {
-          "action": "SEND_MULTIPLE",
-          "data": [
-            {
-              "mimeType": "image/*"
-            }
-          ],
-          "category": [
-            "DEFAULT"
-          ]
-        }
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.READ_CONTACTS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
     "web": {
-      "favicon": "./assets/images/9f690794-ae21-4465-a1f1-dd1f8d6a46e5.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/shopwell-ai-app-icon.png"
     },
     "plugins": [
-      "expo-font",
-      "expo-router",
-      "expo-web-browser",
+      "expo-quick-actions",
       [
-        "expo-tracking-transparency",
+        "expo-build-properties",
         {
-          "userTrackingPermission": "This allows us to provide you with personalized product recommendations and improve your shopping experience. Your data is used to show relevant content and offers."
+          "ios": {
+            "newArchEnabled": false
+          },
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
         }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "ShopWell.ai needs your location in the background to send you reminders when you're near stores with active shopping lists",
-          "locationWhenInUsePermission": "ShopWell.ai needs your location to notify you when you're near stores with active shopping lists",
-          "isAndroidBackgroundLocationEnabled": true,
-          "isAndroidForegroundServiceEnabled": true
-        }
-      ],
-      "expo-quick-actions"
+      ]
     ],
-    "scheme": "shopwellai",
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "2660e422-ff9f-4525-8ca0-080bf290cdf4"
+        "projectId": "your-project-id-here"
       }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/2660e422-ff9f-4525-8ca0-080bf290cdf4"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
     }
   }
 }
