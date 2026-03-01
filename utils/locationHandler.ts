@@ -17,20 +17,20 @@ export interface StoreLocation {
   reservationNumber?: string;
 }
 
-// Request location permissions
+// Request location permissions - ONLY called when user explicitly requests it
 export async function requestLocationPermission(): Promise<boolean> {
   try {
     console.log('[locationHandler] Requesting location permission...');
     
-    // Add a small delay to ensure native modules are fully initialized
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    // Request foreground permission first
     const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
     
     if (foregroundStatus !== 'granted') {
       console.warn('[locationHandler] Foreground location permission not granted');
       return false;
     }
+
+    console.log('[locationHandler] ✅ Foreground permission granted');
 
     // Request background location permission for geofencing
     const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
@@ -40,7 +40,7 @@ export async function requestLocationPermission(): Promise<boolean> {
       return false;
     }
 
-    console.log('[locationHandler] Location permissions granted');
+    console.log('[locationHandler] ✅ Background permission granted');
     return true;
   } catch (error) {
     console.error('[locationHandler] Error requesting location permission:', error);
@@ -48,39 +48,24 @@ export async function requestLocationPermission(): Promise<boolean> {
   }
 }
 
-// Check if location permissions are granted
-// CRITICAL: This function should ONLY be called when explicitly needed, not on app startup
+// Check if location permissions are granted - ONLY called when explicitly needed
 export async function hasLocationPermission(): Promise<boolean> {
   try {
     console.log('[locationHandler] Checking location permission...');
     
-    // Add a small delay to ensure native modules are fully initialized
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Check foreground permission
+    const foregroundResult = await Location.getForegroundPermissionsAsync();
+    const foregroundStatus = foregroundResult.status;
+    console.log('[locationHandler] Foreground status:', foregroundStatus);
     
-    // Check foreground permission first
-    let foregroundStatus = 'undetermined';
-    try {
-      const result = await Location.getForegroundPermissionsAsync();
-      foregroundStatus = result.status;
-      console.log('[locationHandler] Foreground status:', foregroundStatus);
-    } catch (fgError) {
-      console.error('[locationHandler] Error checking foreground permission:', fgError);
+    if (foregroundStatus !== 'granted') {
       return false;
     }
     
-    // Only check background if foreground is granted
-    let backgroundStatus = 'undetermined';
-    if (foregroundStatus === 'granted') {
-      try {
-        const result = await Location.getBackgroundPermissionsAsync();
-        backgroundStatus = result.status;
-        console.log('[locationHandler] Background status:', backgroundStatus);
-      } catch (bgError) {
-        console.error('[locationHandler] Error checking background permission:', bgError);
-        // If background check fails, just return foreground status
-        return foregroundStatus === 'granted';
-      }
-    }
+    // Check background permission
+    const backgroundResult = await Location.getBackgroundPermissionsAsync();
+    const backgroundStatus = backgroundResult.status;
+    console.log('[locationHandler] Background status:', backgroundStatus);
     
     const hasPermission = foregroundStatus === 'granted' && backgroundStatus === 'granted';
     console.log('[locationHandler] Final permission status:', hasPermission);
@@ -109,18 +94,18 @@ export async function getCurrentLocation(): Promise<Location.LocationObject | nu
 // Start geofencing for store locations
 export async function startGeofencing(stores: StoreLocation[]): Promise<boolean> {
   try {
-    console.log('[locationHandler] Starting geofencing for stores:', stores.length);
+    console.log('[locationHandler] Starting geofencing for', stores.length, 'stores...');
     
     if (stores.length === 0) {
       console.log('[locationHandler] No stores to monitor');
       return false;
     }
 
-    // Check if task is already defined
+    // Check if task is defined
     const isTaskDefined = await TaskManager.isTaskDefined(GEOFENCING_TASK);
     if (!isTaskDefined) {
-      console.log('[locationHandler] Geofencing task not defined, defining now...');
-      // Task will be defined in the geofencing hook
+      console.warn('[locationHandler] Geofencing task not defined - it should be defined at module level in useGeofencing.ts');
+      return false;
     }
 
     // Convert stores to geofencing regions
@@ -133,8 +118,9 @@ export async function startGeofencing(stores: StoreLocation[]): Promise<boolean>
       notifyOnExit: false,
     }));
 
+    console.log('[locationHandler] Starting geofencing with regions:', regions.map(r => r.identifier));
     await Location.startGeofencingAsync(GEOFENCING_TASK, regions);
-    console.log('[locationHandler] Geofencing started successfully');
+    console.log('[locationHandler] ✅ Geofencing started successfully');
     return true;
   } catch (error) {
     console.error('[locationHandler] Error starting geofencing:', error);
@@ -150,7 +136,7 @@ export async function stopGeofencing(): Promise<void> {
     
     if (hasStarted) {
       await Location.stopGeofencingAsync(GEOFENCING_TASK);
-      console.log('[locationHandler] Geofencing stopped');
+      console.log('[locationHandler] ✅ Geofencing stopped');
     } else {
       console.log('[locationHandler] Geofencing was not running');
     }
@@ -159,19 +145,15 @@ export async function stopGeofencing(): Promise<void> {
   }
 }
 
-// Check if geofencing is active
-// CRITICAL: This function should ONLY be called when explicitly needed, not on app startup
+// Check if geofencing is active - ONLY called when explicitly needed
 export async function isGeofencingActive(): Promise<boolean> {
   try {
     console.log('[locationHandler] Checking if geofencing is active...');
     
-    // Add a small delay to ensure native modules are fully initialized
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
     // First check if the task is defined
     const isTaskDefined = await TaskManager.isTaskDefined(GEOFENCING_TASK);
     if (!isTaskDefined) {
-      console.log('[locationHandler] Geofencing task not defined, returning false');
+      console.log('[locationHandler] Geofencing task not defined');
       return false;
     }
     
