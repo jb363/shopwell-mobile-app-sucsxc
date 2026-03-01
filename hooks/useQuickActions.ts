@@ -7,11 +7,11 @@ import { Platform } from 'react-native';
 export function useQuickActions(webViewRef: React.RefObject<any>) {
   useEffect(() => {
     if (Platform.OS === 'web') {
-      console.log('Quick actions not supported on web');
+      console.log('[QuickActions] Quick actions not supported on web');
       return;
     }
 
-    console.log('Setting up quick actions...');
+    console.log('[QuickActions] Setting up quick actions...');
 
     // Define quick actions for iOS and Android
     const quickActions: QuickActions.Action[] = [
@@ -38,121 +38,151 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       },
     ];
 
-    // Set the quick actions
-    QuickActions.setItems(quickActions);
-    console.log('Quick actions set:', quickActions.length);
+    // Set the quick actions with error handling
+    try {
+      QuickActions.setItems(quickActions);
+      console.log('[QuickActions] Quick actions set successfully:', quickActions.length);
+    } catch (error) {
+      console.error('[QuickActions] Error setting quick actions:', error);
+    }
 
     // Handle quick action selection
     const handleQuickAction = (action: QuickActions.Action) => {
-      console.log('Quick action triggered:', action.id);
+      console.log('[QuickActions] Quick action triggered:', action.id);
 
       if (!webViewRef.current) {
-        console.warn('WebView ref not available');
+        console.warn('[QuickActions] WebView ref not available, deferring action');
+        // Retry after a short delay
+        setTimeout(() => {
+          if (webViewRef.current) {
+            handleQuickAction(action);
+          }
+        }, 500);
         return;
       }
 
       // Inject JavaScript to trigger the appropriate action on the web page
-      switch (action.id) {
-        case 'voice_planner':
-          console.log('Triggering voice planner...');
-          webViewRef.current.injectJavaScript(`
-            (function() {
-              // Try to find and click the voice planner button
-              const voiceButton = document.querySelector('[data-voice-planner], [aria-label*="voice"], button[class*="voice"]');
-              if (voiceButton) {
-                voiceButton.click();
-                console.log('Voice planner button clicked');
-              } else {
-                // Fallback: navigate to voice planner URL if it exists
-                if (window.location.pathname !== '/voice-planner') {
-                  window.location.href = '/voice-planner';
+      try {
+        switch (action.id) {
+          case 'voice_planner':
+            console.log('[QuickActions] Triggering voice planner...');
+            webViewRef.current.injectJavaScript(`
+              (function() {
+                try {
+                  // Try to find and click the voice planner button
+                  const voiceButton = document.querySelector('[data-voice-planner], [aria-label*="voice"], button[class*="voice"]');
+                  if (voiceButton) {
+                    voiceButton.click();
+                    console.log('[QuickActions] Voice planner button clicked');
+                  } else {
+                    // Fallback: navigate to voice planner URL if it exists
+                    if (window.location.pathname !== '/voice-planner') {
+                      window.location.href = '/voice-planner';
+                    }
+                    console.log('[QuickActions] Navigated to voice planner');
+                  }
+                  
+                  // Notify native app
+                  window.postMessage({ 
+                    type: 'QUICK_ACTION_EXECUTED', 
+                    action: 'voice_planner' 
+                  }, '*');
+                } catch (error) {
+                  console.error('[QuickActions] Error executing voice planner action:', error);
                 }
-                console.log('Navigated to voice planner');
-              }
-              
-              // Notify native app
-              window.postMessage({ 
-                type: 'QUICK_ACTION_EXECUTED', 
-                action: 'voice_planner' 
-              }, '*');
-            })();
-            true;
-          `);
-          break;
+              })();
+              true;
+            `);
+            break;
 
-        case 'product_search':
-          console.log('Triggering product search...');
-          webViewRef.current.injectJavaScript(`
-            (function() {
-              // Try to find and focus the search input
-              const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i], input[aria-label*="search" i]');
-              if (searchInput) {
-                searchInput.focus();
-                console.log('Search input focused');
-              } else {
-                // Fallback: navigate to search page if it exists
-                if (window.location.pathname !== '/search') {
-                  window.location.href = '/search';
+          case 'product_search':
+            console.log('[QuickActions] Triggering product search...');
+            webViewRef.current.injectJavaScript(`
+              (function() {
+                try {
+                  // Try to find and focus the search input
+                  const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i], input[aria-label*="search" i]');
+                  if (searchInput) {
+                    searchInput.focus();
+                    console.log('[QuickActions] Search input focused');
+                  } else {
+                    // Fallback: navigate to search page if it exists
+                    if (window.location.pathname !== '/search') {
+                      window.location.href = '/search';
+                    }
+                    console.log('[QuickActions] Navigated to search page');
+                  }
+                  
+                  // Notify native app
+                  window.postMessage({ 
+                    type: 'QUICK_ACTION_EXECUTED', 
+                    action: 'product_search' 
+                  }, '*');
+                } catch (error) {
+                  console.error('[QuickActions] Error executing product search action:', error);
                 }
-                console.log('Navigated to search page');
-              }
-              
-              // Notify native app
-              window.postMessage({ 
-                type: 'QUICK_ACTION_EXECUTED', 
-                action: 'product_search' 
-              }, '*');
-            })();
-            true;
-          `);
-          break;
+              })();
+              true;
+            `);
+            break;
 
-        case 'photo_search':
-          console.log('Triggering photo search...');
-          webViewRef.current.injectJavaScript(`
-            (function() {
-              // Try to find and click the photo search button
-              const photoButton = document.querySelector('[data-photo-search], [aria-label*="photo"], button[class*="photo"], button[class*="camera"]');
-              if (photoButton) {
-                photoButton.click();
-                console.log('Photo search button clicked');
-              } else {
-                // Fallback: trigger native image picker
-                window.postMessage({ 
-                  type: 'natively.imagePicker'
-                }, '*');
-                console.log('Triggered native image picker');
-              }
-              
-              // Notify native app
-              window.postMessage({ 
-                type: 'QUICK_ACTION_EXECUTED', 
-                action: 'photo_search' 
-              }, '*');
-            })();
-            true;
-          `);
-          break;
+          case 'photo_search':
+            console.log('[QuickActions] Triggering photo search...');
+            webViewRef.current.injectJavaScript(`
+              (function() {
+                try {
+                  // Try to find and click the photo search button
+                  const photoButton = document.querySelector('[data-photo-search], [aria-label*="photo"], button[class*="photo"], button[class*="camera"]');
+                  if (photoButton) {
+                    photoButton.click();
+                    console.log('[QuickActions] Photo search button clicked');
+                  } else {
+                    // Fallback: trigger native image picker
+                    window.postMessage({ 
+                      type: 'natively.imagePicker'
+                    }, '*');
+                    console.log('[QuickActions] Triggered native image picker');
+                  }
+                  
+                  // Notify native app
+                  window.postMessage({ 
+                    type: 'QUICK_ACTION_EXECUTED', 
+                    action: 'photo_search' 
+                  }, '*');
+                } catch (error) {
+                  console.error('[QuickActions] Error executing photo search action:', error);
+                }
+              })();
+              true;
+            `);
+            break;
 
-        default:
-          console.log('Unknown quick action:', action.id);
+          default:
+            console.log('[QuickActions] Unknown quick action:', action.id);
+        }
+      } catch (error) {
+        console.error('[QuickActions] Error injecting JavaScript for quick action:', error);
       }
     };
 
-    // Listen for quick action events
-    const subscription = QuickActions.initial().then((action) => {
-      if (action) {
-        console.log('Initial quick action:', action.id);
-        // Wait a bit for WebView to be ready
-        setTimeout(() => handleQuickAction(action), 1000);
-      }
-    });
+    // Listen for initial quick action (app launched via quick action)
+    QuickActions.initial()
+      .then((action) => {
+        if (action) {
+          console.log('[QuickActions] Initial quick action detected:', action.id);
+          // Wait a bit for WebView to be ready
+          setTimeout(() => handleQuickAction(action), 1500);
+        }
+      })
+      .catch((error) => {
+        console.error('[QuickActions] Error getting initial quick action:', error);
+      });
 
-    // Listen for subsequent quick actions
+    // Listen for subsequent quick actions (app already running)
     const listener = QuickActions.addListener(handleQuickAction);
 
     return () => {
-      console.log('Cleaning up quick actions...');
+      console.log('[QuickActions] Cleaning up quick actions...');
       listener.remove();
     };
   }, [webViewRef]);

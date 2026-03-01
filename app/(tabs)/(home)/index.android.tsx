@@ -40,53 +40,74 @@ export default function HomeScreen() {
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [isNativeReady, setIsNativeReady] = useState(false);
+  const [webViewLoaded, setWebViewLoaded] = useState(false);
 
-  // Set up quick actions (app shortcuts)
+  // Set up quick actions (app shortcuts) - only after WebView is ready
   useQuickActions(webViewRef);
 
   // Signal to website that native app is ready to receive messages
   useEffect(() => {
-    if (!isNativeReady && webViewRef.current) {
+    if (!isNativeReady && webViewRef.current && webViewLoaded) {
       console.log('[Android HomeScreen] ✅ Native app is ready, signaling to website...');
       setIsNativeReady(true);
       
-      // Send ready signal to website
+      // Send ready signal to website with a delay to ensure WebView is fully initialized
       setTimeout(() => {
         try {
           webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'NATIVE_APP_READY', 
-              platform: 'android',
-              timestamp: Date.now(),
-              features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
-            }, '*');
-            console.log('[Native App Android] Sent NATIVE_APP_READY signal to website');
+            (function() {
+              try {
+                window.postMessage({ 
+                  type: 'NATIVE_APP_READY', 
+                  platform: 'android',
+                  timestamp: Date.now(),
+                  features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+                }, '*');
+                console.log('[Native App Android] Sent NATIVE_APP_READY signal to website');
+              } catch (error) {
+                console.error('[Native App Android] Error sending ready signal:', error);
+              }
+            })();
+            true;
           `);
         } catch (error) {
           console.error('[Android HomeScreen] Error sending ready signal:', error);
         }
-      }, 500);
+      }, 800);
     }
-  }, [isNativeReady]);
+  }, [isNativeReady, webViewLoaded]);
 
   // Handle shared content from share-target screen
   useEffect(() => {
-    if (params.sharedContent && params.sharedType && webViewRef.current) {
+    if (params.sharedContent && params.sharedType && webViewRef.current && isNativeReady) {
       console.log('[Android HomeScreen] Received shared content:', { type: params.sharedType, content: params.sharedContent });
       
       // Send shared content to the web app
       const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
       const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
       
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'SHARED_CONTENT', 
-          contentType: '${sharedTypeStr}',
-          content: ${JSON.stringify(sharedContentStr)}
-        }, '*');
-      `);
+      setTimeout(() => {
+        try {
+          webViewRef.current?.injectJavaScript(`
+            (function() {
+              try {
+                window.postMessage({ 
+                  type: 'SHARED_CONTENT', 
+                  contentType: '${sharedTypeStr}',
+                  content: ${JSON.stringify(sharedContentStr)}
+                }, '*');
+              } catch (error) {
+                console.error('[Native App Android] Error sending shared content:', error);
+              }
+            })();
+            true;
+          `);
+        } catch (error) {
+          console.error('[Android HomeScreen] Error injecting shared content:', error);
+        }
+      }, 500);
     }
-  }, [params.sharedContent, params.sharedType]);
+  }, [params.sharedContent, params.sharedType, isNativeReady]);
 
   // DO NOT check permissions automatically on mount
   // Permissions will be checked only when the user explicitly requests them
@@ -94,62 +115,108 @@ export default function HomeScreen() {
   console.log('[Android HomeScreen] Skipping automatic permission checks - will request in context when needed');
 
   useEffect(() => {
-    if (expoPushToken && webViewRef.current) {
+    if (expoPushToken && webViewRef.current && isNativeReady) {
       console.log('[Android HomeScreen] Sending push token to web:', expoPushToken);
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
-      `);
+      setTimeout(() => {
+        try {
+          webViewRef.current?.injectJavaScript(`
+            (function() {
+              try {
+                window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
+              } catch (error) {
+                console.error('[Native App Android] Error sending push token:', error);
+              }
+            })();
+            true;
+          `);
+        } catch (error) {
+          console.error('[Android HomeScreen] Error injecting push token:', error);
+        }
+      }, 300);
     }
-  }, [expoPushToken]);
+  }, [expoPushToken, isNativeReady]);
 
   useEffect(() => {
     // Inject sync status
-    if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'SYNC_STATUS', 
-          isSyncing: ${isSyncing}, 
-          queueSize: ${queueSize},
-          isOnline: ${isOnline}
-        }, '*');
-      `);
+    if (webViewRef.current && isNativeReady) {
+      try {
+        webViewRef.current.injectJavaScript(`
+          (function() {
+            try {
+              window.postMessage({ 
+                type: 'SYNC_STATUS', 
+                isSyncing: ${isSyncing}, 
+                queueSize: ${queueSize},
+                isOnline: ${isOnline}
+              }, '*');
+            } catch (error) {
+              console.error('[Native App Android] Error sending sync status:', error);
+            }
+          })();
+          true;
+        `);
+      } catch (error) {
+        console.error('[Android HomeScreen] Error injecting sync status:', error);
+      }
     }
-  }, [isSyncing, queueSize, isOnline]);
+  }, [isSyncing, queueSize, isOnline, isNativeReady]);
 
   useEffect(() => {
     // Send geofencing status to web
-    if (webViewRef.current) {
+    if (webViewRef.current && isNativeReady) {
       console.log('[Android HomeScreen] Sending geofencing status to web:', { 
         isGeofencingActive, 
         geofencePermissionStatus,
         locationCount: storeLocations.length 
       });
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'GEOFENCING_STATUS', 
-          isActive: ${isGeofencingActive},
-          permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
-          locationCount: ${storeLocations.length},
-          locations: ${JSON.stringify(storeLocations)},
-          platform: 'android'
-        }, '*');
-      `);
+      try {
+        webViewRef.current.injectJavaScript(`
+          (function() {
+            try {
+              window.postMessage({ 
+                type: 'GEOFENCING_STATUS', 
+                isActive: ${isGeofencingActive},
+                permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
+                locationCount: ${storeLocations.length},
+                locations: ${JSON.stringify(storeLocations)},
+                platform: 'android'
+              }, '*');
+            } catch (error) {
+              console.error('[Native App Android] Error sending geofencing status:', error);
+            }
+          })();
+          true;
+        `);
+      } catch (error) {
+        console.error('[Android HomeScreen] Error injecting geofencing status:', error);
+      }
     }
-  }, [isGeofencingActive, geofencePermissionStatus, storeLocations]);
+  }, [isGeofencingActive, geofencePermissionStatus, storeLocations, isNativeReady]);
 
   // Send permission statuses to web when they change
   useEffect(() => {
-    if (webViewRef.current) {
+    if (webViewRef.current && isNativeReady) {
       console.log('[Android HomeScreen] Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
-      webViewRef.current.injectJavaScript(`
-        window.postMessage({ 
-          type: 'PERMISSIONS_STATUS', 
-          contacts: '${contactsPermissionStatus}',
-          location: '${locationPermissionStatus}'
-        }, '*');
-      `);
+      try {
+        webViewRef.current.injectJavaScript(`
+          (function() {
+            try {
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${contactsPermissionStatus}',
+                location: '${locationPermissionStatus}'
+              }, '*');
+            } catch (error) {
+              console.error('[Native App Android] Error sending permissions status:', error);
+            }
+          })();
+          true;
+        `);
+      } catch (error) {
+        console.error('[Android HomeScreen] Error injecting permissions status:', error);
+      }
     }
-  }, [contactsPermissionStatus, locationPermissionStatus]);
+  }, [contactsPermissionStatus, locationPermissionStatus, isNativeReady]);
 
   const handleMessage = async (event: any) => {
     try {
@@ -166,35 +233,62 @@ export default function HomeScreen() {
         case 'WEB_PAGE_READY':
           console.log('[Android HomeScreen] Website signals it is ready');
           // Re-send ready signal and current status to ensure website knows we're ready
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'NATIVE_APP_READY', 
-              platform: 'android',
-              timestamp: Date.now(),
-              features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
-            }, '*');
-          `);
-          
-          // Also send current geofencing status
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'GEOFENCING_STATUS', 
-              isActive: ${isGeofencingActive},
-              permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
-              locationCount: ${storeLocations.length},
-              locations: ${JSON.stringify(storeLocations)},
-              platform: 'android'
-            }, '*');
-          `);
-          
-          // Also send permissions status
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage({ 
-              type: 'PERMISSIONS_STATUS', 
-              contacts: '${contactsPermissionStatus}',
-              location: '${locationPermissionStatus}'
-            }, '*');
-          `);
+          setTimeout(() => {
+            try {
+              webViewRef.current?.injectJavaScript(`
+                (function() {
+                  try {
+                    window.postMessage({ 
+                      type: 'NATIVE_APP_READY', 
+                      platform: 'android',
+                      timestamp: Date.now(),
+                      features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+                    }, '*');
+                  } catch (error) {
+                    console.error('[Native App Android] Error sending ready signal:', error);
+                  }
+                })();
+                true;
+              `);
+              
+              // Also send current geofencing status
+              webViewRef.current?.injectJavaScript(`
+                (function() {
+                  try {
+                    window.postMessage({ 
+                      type: 'GEOFENCING_STATUS', 
+                      isActive: ${isGeofencingActive},
+                      permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
+                      locationCount: ${storeLocations.length},
+                      locations: ${JSON.stringify(storeLocations)},
+                      platform: 'android'
+                    }, '*');
+                  } catch (error) {
+                    console.error('[Native App Android] Error sending geofencing status:', error);
+                  }
+                })();
+                true;
+              `);
+              
+              // Also send permissions status
+              webViewRef.current?.injectJavaScript(`
+                (function() {
+                  try {
+                    window.postMessage({ 
+                      type: 'PERMISSIONS_STATUS', 
+                      contacts: '${contactsPermissionStatus}',
+                      location: '${locationPermissionStatus}'
+                    }, '*');
+                  } catch (error) {
+                    console.error('[Native App Android] Error sending permissions status:', error);
+                  }
+                })();
+                true;
+              `);
+            } catch (error) {
+              console.error('[Android HomeScreen] Error responding to WEB_PAGE_READY:', error);
+            }
+          }, 200);
           break;
 
         case 'natively.list.addToHomeScreen':
@@ -219,6 +313,7 @@ export default function HomeScreen() {
                   listId: '${data.list?.id}',
                   message: 'Share dialog opened. Select "Add to Home screen" from the options.'
                 }, '*');
+                true;
               `);
             } else {
               console.log('[Android HomeScreen] Sharing not available on this device');
@@ -228,6 +323,7 @@ export default function HomeScreen() {
                   success: false,
                   error: 'Sharing not available on this device'
                 }, '*');
+                true;
               `);
             }
           } catch (error) {
@@ -238,6 +334,7 @@ export default function HomeScreen() {
                 success: false,
                 error: 'Failed to add list to home screen'
               }, '*');
+              true;
             `);
           }
           break;
@@ -254,6 +351,7 @@ export default function HomeScreen() {
                   success: ${started},
                   enabled: ${started}
                 }, '*');
+                true;
               `);
               
               // Send updated status
@@ -267,6 +365,7 @@ export default function HomeScreen() {
                   locations: ${JSON.stringify(updatedLocations)},
                   platform: 'android'
                 }, '*');
+                true;
               `);
             } else {
               await stopGeofencing();
@@ -277,6 +376,7 @@ export default function HomeScreen() {
                   success: true,
                   enabled: false
                 }, '*');
+                true;
               `);
               
               // Send updated status
@@ -290,6 +390,7 @@ export default function HomeScreen() {
                   locations: ${JSON.stringify(updatedLocations)},
                   platform: 'android'
                 }, '*');
+                true;
               `);
             }
           } catch (error) {
@@ -300,6 +401,7 @@ export default function HomeScreen() {
                 success: false,
                 error: 'Failed to toggle notifications'
               }, '*');
+              true;
             `);
           }
           break;
@@ -327,6 +429,7 @@ export default function HomeScreen() {
                         status: 'denied',
                         userCancelled: true
                       }, '*');
+                      true;
                     `);
                   }
                 },
@@ -350,6 +453,7 @@ export default function HomeScreen() {
                           permissionStatus: '${permissionGranted ? 'granted' : 'denied'}',
                           status: '${permissionGranted ? 'granted' : 'denied'}'
                         }, '*');
+                        true;
                       `);
                       
                       // Also send updated permissions status
@@ -359,6 +463,7 @@ export default function HomeScreen() {
                           contacts: '${contactsPermissionStatus}',
                           location: '${permissionGranted ? 'granted' : 'denied'}'
                         }, '*');
+                        true;
                       `);
                     } catch (permError) {
                       console.error('[Android HomeScreen] Error requesting location permission:', permError);
@@ -372,6 +477,7 @@ export default function HomeScreen() {
                           status: 'denied',
                           error: 'Failed to request permission'
                         }, '*');
+                        true;
                       `);
                     }
                   }
@@ -390,6 +496,7 @@ export default function HomeScreen() {
                 status: 'denied',
                 error: 'Failed to show permission prompt'
               }, '*');
+              true;
             `);
           }
           break;
@@ -406,6 +513,7 @@ export default function HomeScreen() {
               locations: ${JSON.stringify(locations)},
               platform: 'android'
             }, '*');
+            true;
           `);
           break;
 
@@ -419,6 +527,7 @@ export default function HomeScreen() {
                 success: true,
                 locationId: '${data.location.id}'
               }, '*');
+              true;
             `);
             
             // Send updated status
@@ -432,6 +541,7 @@ export default function HomeScreen() {
                 locations: ${JSON.stringify(updatedLocations)},
                 platform: 'android'
               }, '*');
+              true;
             `);
           } catch (error) {
             console.error('[Android HomeScreen] Error adding geofence:', error);
@@ -441,6 +551,7 @@ export default function HomeScreen() {
                 success: false,
                 error: 'Failed to add location'
               }, '*');
+              true;
             `);
           }
           break;
@@ -455,6 +566,7 @@ export default function HomeScreen() {
                 success: true,
                 locationId: '${data.locationId}'
               }, '*');
+              true;
             `);
             
             // Send updated status
@@ -468,6 +580,7 @@ export default function HomeScreen() {
                 locations: ${JSON.stringify(updatedLocations)},
                 platform: 'android'
               }, '*');
+              true;
             `);
           } catch (error) {
             console.error('[Android HomeScreen] Error removing geofence:', error);
@@ -477,6 +590,7 @@ export default function HomeScreen() {
                 success: false,
                 error: 'Failed to remove location'
               }, '*');
+              true;
             `);
           }
           break;
@@ -490,6 +604,7 @@ export default function HomeScreen() {
               type: 'GEOFENCE_LIST_RESPONSE', 
               locations: ${JSON.stringify(allLocations)}
             }, '*');
+            true;
           `);
           break;
 
@@ -512,6 +627,7 @@ export default function HomeScreen() {
                         granted: false,
                         userCancelled: true
                       }, '*');
+                      true;
                     `);
                   }
                 },
@@ -527,6 +643,7 @@ export default function HomeScreen() {
                           type: 'MICROPHONE_PERMISSION_RESPONSE', 
                           granted: ${micPermissionGranted}
                         }, '*');
+                        true;
                       `);
                     } catch (permError) {
                       console.error('[Android HomeScreen] Error requesting microphone permission:', permError);
@@ -536,6 +653,7 @@ export default function HomeScreen() {
                           granted: false,
                           error: 'Failed to request permission'
                         }, '*');
+                        true;
                       `);
                     }
                   }
@@ -550,6 +668,7 @@ export default function HomeScreen() {
                 granted: false,
                 error: 'Failed to show permission prompt'
               }, '*');
+              true;
             `);
           }
           break;
@@ -564,6 +683,7 @@ export default function HomeScreen() {
                 type: 'AUDIO_RECORDING_STARTED', 
                 success: true
               }, '*');
+              true;
             `);
           } else {
             webViewRef.current?.injectJavaScript(`
@@ -572,6 +692,7 @@ export default function HomeScreen() {
                 success: false,
                 error: 'Failed to start recording'
               }, '*');
+              true;
             `);
           }
           break;
@@ -588,6 +709,7 @@ export default function HomeScreen() {
                   success: true,
                   uri: '${uri}'
                 }, '*');
+                true;
               `);
             } else {
               webViewRef.current?.injectJavaScript(`
@@ -596,6 +718,7 @@ export default function HomeScreen() {
                   success: false,
                   error: 'Failed to stop recording'
                 }, '*');
+                true;
               `);
             }
           } else {
@@ -605,6 +728,7 @@ export default function HomeScreen() {
                 success: false,
                 error: 'No active recording'
               }, '*');
+              true;
             `);
           }
           break;
@@ -618,6 +742,7 @@ export default function HomeScreen() {
                 type: 'AUDIO_RECORDING_PAUSED', 
                 success: ${paused}
               }, '*');
+              true;
             `);
           }
           break;
@@ -631,6 +756,7 @@ export default function HomeScreen() {
                 type: 'AUDIO_RECORDING_RESUMED', 
                 success: ${resumed}
               }, '*');
+              true;
             `);
           }
           break;
@@ -644,6 +770,7 @@ export default function HomeScreen() {
                   type: 'AUDIO_RECORDING_STATUS', 
                   status: ${JSON.stringify(status)}
                 }, '*');
+                true;
               `);
             }
           }
@@ -664,6 +791,7 @@ export default function HomeScreen() {
                       type: 'ACCOUNT_DELETE_RESPONSE', 
                       cancelled: true
                     }, '*');
+                    true;
                   `);
                 }
               },
@@ -680,6 +808,7 @@ export default function HomeScreen() {
                       type: 'ACCOUNT_DELETE_RESPONSE', 
                       confirmed: true
                     }, '*');
+                    true;
                   `);
                 }
               }
@@ -691,6 +820,7 @@ export default function HomeScreen() {
           const text = await Clipboard.getStringAsync();
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ type: 'CLIPBOARD_READ_RESPONSE', text: '${text}' }, '*');
+            true;
           `);
           break;
           
@@ -731,6 +861,7 @@ export default function HomeScreen() {
           if (!result.canceled) {
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ type: 'IMAGE_SELECTED', uri: '${result.assets[0].uri}' }, '*');
+              true;
             `);
           }
           break;
@@ -760,6 +891,7 @@ export default function HomeScreen() {
                         status: 'denied',
                         userCancelled: true
                       }, '*');
+                      true;
                     `);
                   }
                 },
@@ -781,6 +913,7 @@ export default function HomeScreen() {
                           granted: ${permissionGranted},
                           status: '${permissionGranted ? 'granted' : 'denied'}'
                         }, '*');
+                        true;
                       `);
                       
                       // Also send updated permissions status
@@ -790,6 +923,7 @@ export default function HomeScreen() {
                           contacts: '${permissionGranted ? 'granted' : 'denied'}',
                           location: '${locationPermissionStatus}'
                         }, '*');
+                        true;
                       `);
                     } catch (permError) {
                       console.error('[Android HomeScreen] Error requesting contacts permission:', permError);
@@ -801,6 +935,7 @@ export default function HomeScreen() {
                           status: 'denied',
                           error: 'Failed to request permission'
                         }, '*');
+                        true;
                       `);
                     }
                   }
@@ -817,6 +952,7 @@ export default function HomeScreen() {
                 status: 'denied',
                 error: 'Failed to show permission prompt'
               }, '*');
+              true;
             `);
           }
           break;
@@ -842,6 +978,7 @@ export default function HomeScreen() {
                   type: 'CONTACTS_GET_ALL_RESPONSE', 
                   contacts: ${JSON.stringify(allContacts)}
                 }, '*');
+                true;
               `);
             } else {
               // No permission, show prompt
@@ -865,6 +1002,7 @@ export default function HomeScreen() {
                           error: 'Permission denied',
                           userCancelled: true
                         }, '*');
+                        true;
                       `);
                     }
                   },
@@ -885,6 +1023,7 @@ export default function HomeScreen() {
                               contacts: [],
                               error: 'Permission denied'
                             }, '*');
+                            true;
                           `);
                           return;
                         }
@@ -897,6 +1036,7 @@ export default function HomeScreen() {
                             type: 'CONTACTS_GET_ALL_RESPONSE', 
                             contacts: ${JSON.stringify(allContacts)}
                           }, '*');
+                          true;
                         `);
                       } catch (permError) {
                         console.error('[Android HomeScreen] Error requesting contacts permission:', permError);
@@ -906,6 +1046,7 @@ export default function HomeScreen() {
                             contacts: [],
                             error: 'Failed to request permission'
                           }, '*');
+                          true;
                         `);
                       }
                     }
@@ -921,6 +1062,7 @@ export default function HomeScreen() {
                 contacts: [],
                 error: 'Failed to get contacts'
               }, '*');
+              true;
             `);
           }
           break;
@@ -935,6 +1077,7 @@ export default function HomeScreen() {
               contacts: ${JSON.stringify(searchResults)},
               query: '${data.query || ''}'
             }, '*');
+            true;
           `);
           break;
           
@@ -946,6 +1089,7 @@ export default function HomeScreen() {
               key: '${data.key}',
               value: ${JSON.stringify(storedValue)}
             }, '*');
+            true;
           `);
           break;
           
@@ -957,6 +1101,7 @@ export default function HomeScreen() {
               key: '${data.key}',
               success: true
             }, '*');
+            true;
           `);
           break;
           
@@ -971,6 +1116,7 @@ export default function HomeScreen() {
               type: 'SYNC_MANUAL_RESPONSE', 
               success: ${syncSuccess}
             }, '*');
+            true;
           `);
           break;
           
@@ -982,6 +1128,7 @@ export default function HomeScreen() {
               success: true,
               listId: '${data.list.id}'
             }, '*');
+            true;
           `);
           break;
           
@@ -992,6 +1139,7 @@ export default function HomeScreen() {
               type: 'LISTS_GET_RESPONSE', 
               lists: ${JSON.stringify(lists)}
             }, '*');
+            true;
           `);
           break;
           
@@ -1003,6 +1151,7 @@ export default function HomeScreen() {
               success: true,
               listId: '${data.listId}'
             }, '*');
+            true;
           `);
           break;
           
@@ -1016,6 +1165,7 @@ export default function HomeScreen() {
               granted: ${locationPermissionGranted},
               status: '${locationPermissionGranted ? 'granted' : 'denied'}'
             }, '*');
+            true;
           `);
           break;
           
@@ -1028,6 +1178,7 @@ export default function HomeScreen() {
                 type: 'LOCATION_CURRENT_RESPONSE', 
                 location: ${JSON.stringify(currentLocation.coords)}
               }, '*');
+              true;
             `);
           } else {
             webViewRef.current?.injectJavaScript(`
@@ -1035,6 +1186,7 @@ export default function HomeScreen() {
                 type: 'LOCATION_CURRENT_RESPONSE', 
                 error: 'Failed to get location'
               }, '*');
+              true;
             `);
           }
           break;
@@ -1051,6 +1203,7 @@ export default function HomeScreen() {
               barcode: '${data.barcode}',
               product: ${JSON.stringify(cachedProduct)}
             }, '*');
+            true;
           `);
           break;
           
@@ -1240,12 +1393,27 @@ export default function HomeScreen() {
         pullToRefreshEnabled={true}
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
+        onLoadStart={() => {
+          console.log('[Android HomeScreen] WebView started loading');
+          setWebViewLoaded(false);
+        }}
         onLoadEnd={() => {
           console.log('[Android HomeScreen] WebView finished loading');
+          setWebViewLoaded(true);
           // Re-inject after page loads to ensure it takes effect
           if (webViewRef.current) {
-            webViewRef.current.injectJavaScript(injectedJavaScript);
+            setTimeout(() => {
+              try {
+                webViewRef.current?.injectJavaScript(injectedJavaScript);
+              } catch (error) {
+                console.error('[Android HomeScreen] Error re-injecting JavaScript:', error);
+              }
+            }, 300);
           }
+        }}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('[Android HomeScreen] WebView error:', nativeEvent);
         }}
       />
     </View>
