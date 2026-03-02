@@ -1,8 +1,9 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "shopwell-mobile-app-sucsxc",
-    "version": "1.0.10",
+    "slug": "ShopWell-ai-Mobile",
+    "version": "1.0.11",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
     "scheme": "shopwellai",
@@ -15,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.shopwell.app",
-      "buildNumber": "1.0.12",
+      "buildNumber": "1.0.13",
       "infoPlist": {
         "NSCameraUsageDescription": "ShopWell needs access to your camera to scan product barcodes and QR codes.",
         "NSPhotoLibraryUsageDescription": "ShopWell needs access to your photo library to let you select images for your shopping lists.",
@@ -26,6 +27,7 @@
         "NSLocationAlwaysUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
         "NSUserTrackingUsageDescription": "ShopWell would like to track your activity to provide personalized shopping recommendations and improve your experience.",
         "NSUserNotificationsUsageDescription": "Allow ShopWell.ai to send you notifications about product alerts and updates.",
+        "NSAppTrackingTransparencyUsageDescription": "Your data will be used to deliver personalized ads and improve your experience.",
         "UIBackgroundModes": [
           "location",
           "fetch",
@@ -42,7 +44,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.axiomstrategies.shopwellai",
-      "versionCode": 14,
+      "versionCode": 15,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",

@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
@@ -13,57 +13,62 @@ const STORE_LOCATIONS_KEY = '@shopwell/store_locations';
 // Define the geofencing task (only on native platforms)
 // This is defined at module level, not inside a hook or component
 if (Platform.OS !== 'web') {
-  TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
-    if (error) {
-      console.error('[Geofencing Task] Error:', error);
-      return;
-    }
+  try {
+    TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
+      if (error) {
+        console.error('[Geofencing Task] Error:', error);
+        return;
+      }
 
-    if (data) {
-      const { eventType, region } = data as any;
-      console.log('[Geofencing Task] Event:', eventType, 'Region:', region.identifier);
+      if (data) {
+        const { eventType, region } = data as any;
+        console.log('[Geofencing Task] Event:', eventType, 'Region:', region.identifier);
 
-      if (eventType === 1) { // Enter event
-        console.log('[Geofencing Task] User entered geofence:', region.identifier);
-        
-        try {
-          // Get store information from storage
-          const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
-          const storeLocations = storeLocationsData || [];
-          const store = storeLocations.find(s => s.id === region.identifier);
+        if (eventType === 1) { // Enter event
+          console.log('[Geofencing Task] User entered geofence:', region.identifier);
+          
+          try {
+            // Get store information from storage
+            const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
+            const storeLocations = storeLocationsData || [];
+            const store = storeLocations.find(s => s.id === region.identifier);
 
-          if (store) {
-            console.log('[Geofencing Task] Triggering notification for store:', store.name);
-            
-            // Schedule notification
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
-                body: store.listName 
-                  ? `You're near ${store.name}! Tap to view your list.`
-                  : store.reservationNumber
-                  ? `Reservation #${store.reservationNumber} - Tap to view details.`
-                  : `You're near ${store.name}`,
-                data: {
-                  type: 'geofence',
-                  storeId: store.id,
-                  storeName: store.name,
-                  listId: store.listId,
-                  listName: store.listName,
-                  reservationNumber: store.reservationNumber,
+            if (store) {
+              console.log('[Geofencing Task] Triggering notification for store:', store.name);
+              
+              // Schedule notification
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
+                  body: store.listName 
+                    ? `You're near ${store.name}! Tap to view your list.`
+                    : store.reservationNumber
+                    ? `Reservation #${store.reservationNumber} - Tap to view details.`
+                    : `You're near ${store.name}`,
+                  data: {
+                    type: 'geofence',
+                    storeId: store.id,
+                    storeName: store.name,
+                    listId: store.listId,
+                    listName: store.listName,
+                    reservationNumber: store.reservationNumber,
+                  },
+                  sound: true,
+                  badge: 1,
                 },
-                sound: true,
-                badge: 1,
-              },
-              trigger: null, // Immediate notification
-            });
+                trigger: null, // Immediate notification
+              });
+            }
+          } catch (taskError) {
+            console.error('[Geofencing Task] Error processing geofence event:', taskError);
           }
-        } catch (taskError) {
-          console.error('[Geofencing Task] Error processing geofence event:', taskError);
         }
       }
-    }
-  });
+    });
+    console.log('[useGeofencing] Geofencing task defined successfully');
+  } catch (error) {
+    console.error('[useGeofencing] Error defining geofencing task:', error);
+  }
 }
 
 export function useGeofencing() {
@@ -71,6 +76,12 @@ export function useGeofencing() {
   const [isActive, setIsActive] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const [storeLocations, setStoreLocations] = useState<StoreLocation[]>([]);
+
+  // Load store locations on mount (safe operation, no permissions needed)
+  useEffect(() => {
+    console.log('[useGeofencing] Loading store locations on mount...');
+    loadStoreLocations();
+  }, []);
 
   // Load store locations from storage (safe operation, no permissions needed)
   const loadStoreLocations = useCallback(async () => {
@@ -124,8 +135,12 @@ export function useGeofencing() {
       // Restart geofencing with updated locations (only on native and if already active)
       if (Platform.OS !== 'web' && hasPermission && isActive) {
         console.log('[useGeofencing] Restarting geofencing with updated locations...');
-        await LocationHandler.stopGeofencing();
-        await LocationHandler.startGeofencing(updatedLocations);
+        try {
+          await LocationHandler.stopGeofencing();
+          await LocationHandler.startGeofencing(updatedLocations);
+        } catch (error) {
+          console.error('[useGeofencing] Error restarting geofencing:', error);
+        }
       }
       
       return true;
@@ -146,12 +161,16 @@ export function useGeofencing() {
       // Restart geofencing with updated locations (only on native and if already active)
       if (Platform.OS !== 'web' && hasPermission && isActive) {
         console.log('[useGeofencing] Restarting geofencing with updated locations...');
-        await LocationHandler.stopGeofencing();
-        if (updatedLocations.length > 0) {
-          await LocationHandler.startGeofencing(updatedLocations);
-        } else {
-          console.log('[useGeofencing] No locations left, geofencing stopped');
-          setIsActive(false);
+        try {
+          await LocationHandler.stopGeofencing();
+          if (updatedLocations.length > 0) {
+            await LocationHandler.startGeofencing(updatedLocations);
+          } else {
+            console.log('[useGeofencing] No locations left, geofencing stopped');
+            setIsActive(false);
+          }
+        } catch (error) {
+          console.error('[useGeofencing] Error restarting geofencing:', error);
         }
       }
       
@@ -177,19 +196,25 @@ export function useGeofencing() {
 
       // Check permission (native only)
       console.log('[useGeofencing] Checking location permission...');
-      const permission = await LocationHandler.hasLocationPermission();
-      
-      if (!permission) {
-        console.log('[useGeofencing] No permission, requesting...');
-        const granted = await LocationHandler.requestLocationPermission();
-        if (!granted) {
-          console.warn('[useGeofencing] Location permission not granted');
-          setHasPermission(false);
-          return false;
+      try {
+        const permission = await LocationHandler.hasLocationPermission();
+        
+        if (!permission) {
+          console.log('[useGeofencing] No permission, requesting...');
+          const granted = await LocationHandler.requestLocationPermission();
+          if (!granted) {
+            console.warn('[useGeofencing] Location permission not granted');
+            setHasPermission(false);
+            return false;
+          }
         }
-      }
 
-      setHasPermission(true);
+        setHasPermission(true);
+      } catch (permError) {
+        console.error('[useGeofencing] Error checking/requesting permission:', permError);
+        setHasPermission(false);
+        return false;
+      }
 
       // Load store locations
       const locations = await loadStoreLocations();
@@ -202,18 +227,24 @@ export function useGeofencing() {
 
       // Start geofencing
       console.log('[useGeofencing] Starting geofencing for', locations.length, 'locations...');
-      const started = await LocationHandler.startGeofencing(locations);
-      setIsActive(started);
-      
-      if (started) {
-        console.log('[useGeofencing] ✅ Geofencing started successfully');
-      } else {
-        console.warn('[useGeofencing] ⚠️ Failed to start geofencing');
+      try {
+        const started = await LocationHandler.startGeofencing(locations);
+        setIsActive(started);
+        
+        if (started) {
+          console.log('[useGeofencing] ✅ Geofencing started successfully');
+        } else {
+          console.warn('[useGeofencing] ⚠️ Failed to start geofencing');
+        }
+        
+        return started;
+      } catch (startError) {
+        console.error('[useGeofencing] Error starting geofencing:', startError);
+        setIsActive(false);
+        return false;
       }
-      
-      return started;
     } catch (error) {
-      console.error('[useGeofencing] Error starting geofencing:', error);
+      console.error('[useGeofencing] Error in startGeofencing:', error);
       setIsActive(false);
       return false;
     }
@@ -231,16 +262,17 @@ export function useGeofencing() {
         return;
       }
 
-      await LocationHandler.stopGeofencing();
-      setIsActive(false);
-      console.log('[useGeofencing] ✅ Geofencing stopped successfully');
+      try {
+        await LocationHandler.stopGeofencing();
+        setIsActive(false);
+        console.log('[useGeofencing] ✅ Geofencing stopped successfully');
+      } catch (stopError) {
+        console.error('[useGeofencing] Error stopping geofencing:', stopError);
+      }
     } catch (error) {
-      console.error('[useGeofencing] Error stopping geofencing:', error);
+      console.error('[useGeofencing] Error in stopGeofencing:', error);
     }
   }, []);
-
-  // NO useEffect - no automatic initialization
-  // Everything is user-initiated
 
   return {
     isActive,
