@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ShopWell.ai",
+    "name": "ShopWell.ai Mobile",
     "slug": "shopwell-mobile-app-sucsxc",
     "version": "1.0.11",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
-    "scheme": "shopwellai",
+    "scheme": "shopwellaimobile",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/shopwell-ai-app-icon.png",
