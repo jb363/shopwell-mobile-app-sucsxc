@@ -62,11 +62,11 @@ export function useNotifications() {
     console.log('[useNotifications] Checking existing notification permissions (not requesting)');
     
     // Wrap in try-catch to handle native module unavailability
-    // Add delay to ensure native modules are fully initialized
+    // Add longer delay to ensure native modules are fully initialized on older devices
     const checkPermissions = async () => {
       try {
-        // Small delay to ensure native modules are ready
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Longer delay to ensure native modules are ready on older iOS devices
+        await new Promise(resolve => setTimeout(resolve, 900));
         
         if (!isMounted) return;
         
@@ -97,8 +97,8 @@ export function useNotifications() {
     // Check for notification that opened the app
     const checkLastNotification = async () => {
       try {
-        // Small delay to ensure native modules are ready
-        await new Promise(resolve => setTimeout(resolve, 700));
+        // Longer delay to ensure native modules are ready on older iOS devices
+        await new Promise(resolve => setTimeout(resolve, 1100));
         
         if (!isMounted) return;
         
@@ -116,7 +116,7 @@ export function useNotifications() {
     checkLastNotification();
 
     // Set up notification listeners with error handling
-    // Add delay to ensure native modules are ready
+    // Add longer delay to ensure native modules are ready on older devices
     setTimeout(() => {
       if (!isMounted) return;
       
@@ -136,7 +136,7 @@ export function useNotifications() {
       } catch (error) {
         console.error('[useNotifications] Error setting up notification listeners:', error);
       }
-    }, 800);
+    }, 1200); // Increased delay for older iOS devices
 
     return () => {
       isMounted = false;

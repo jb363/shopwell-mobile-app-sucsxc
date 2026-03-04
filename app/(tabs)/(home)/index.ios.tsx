@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { StyleSheet, View, Platform, Alert, ActivityIndicator, Text } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
@@ -38,62 +38,28 @@ export default function HomeScreen() {
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
   
-  // Initialize hooks with error handling
-  let expoPushToken = null;
-  let isSyncing = false;
-  let queueSize = 0;
-  let isOnline = true;
-  let manualSync = async () => {};
-  let isGeofencingActive = false;
-  let geofencePermissionStatus = false;
-  let storeLocations: any[] = [];
-  let addStoreLocation = async () => {};
-  let removeStoreLocation = async () => {};
-  let loadStoreLocations = async () => [];
-  let startGeofencing = async () => false;
-  let stopGeofencing = async () => {};
+  // ALWAYS call hooks unconditionally - React rules
+  const notificationsHook = useNotifications();
+  const offlineSyncHook = useOfflineSync();
+  const geofencingHook = useGeofencing();
+  useQuickActions(webViewRef);
   
-  try {
-    const notificationsHook = useNotifications();
-    expoPushToken = notificationsHook.expoPushToken;
-  } catch (error) {
-    console.error('[iOS HomeScreen] Error initializing notifications hook:', error);
-  }
+  // Extract values from hooks
+  const expoPushToken = notificationsHook.expoPushToken;
+  const isSyncing = offlineSyncHook.isSyncing;
+  const queueSize = offlineSyncHook.queueSize;
+  const isOnline = offlineSyncHook.isOnline;
+  const manualSync = offlineSyncHook.manualSync;
+  const isGeofencingActive = geofencingHook.isActive;
+  const geofencePermissionStatus = geofencingHook.hasPermission;
+  const addStoreLocation = geofencingHook.addStoreLocation;
+  const removeStoreLocation = geofencingHook.removeStoreLocation;
+  const loadStoreLocations = geofencingHook.loadStoreLocations;
+  const startGeofencing = geofencingHook.startGeofencing;
+  const stopGeofencing = geofencingHook.stopGeofencing;
   
-  try {
-    const offlineSyncHook = useOfflineSync();
-    isSyncing = offlineSyncHook.isSyncing;
-    queueSize = offlineSyncHook.queueSize;
-    isOnline = offlineSyncHook.isOnline;
-    manualSync = offlineSyncHook.manualSync;
-  } catch (error) {
-    console.error('[iOS HomeScreen] Error initializing offline sync hook:', error);
-  }
-  
-  try {
-    const geofencingHook = useGeofencing();
-    isGeofencingActive = geofencingHook.isActive;
-    geofencePermissionStatus = geofencingHook.hasPermission;
-    storeLocations = geofencingHook.storeLocations;
-    addStoreLocation = geofencingHook.addStoreLocation;
-    removeStoreLocation = geofencingHook.removeStoreLocation;
-    loadStoreLocations = geofencingHook.loadStoreLocations;
-    startGeofencing = geofencingHook.startGeofencing;
-    stopGeofencing = geofencingHook.stopGeofencing;
-  } catch (error) {
-    console.error('[iOS HomeScreen] Error initializing geofencing hook:', error);
-  }
-  
-  try {
-    useQuickActions(webViewRef);
-  } catch (error) {
-    console.error('[iOS HomeScreen] Error initializing quick actions hook:', error);
-  }
-  
-  console.log('[iOS HomeScreen] ✅ All hooks initialized successfully');
-  console.log('[iOS HomeScreen] Push token:', expoPushToken ? 'Available' : 'Not yet available');
-  console.log('[iOS HomeScreen] Online status:', isOnline);
-  console.log('[iOS HomeScreen] Geofencing active:', isGeofencingActive);
+  // Memoize storeLocations to prevent dependency issues
+  const storeLocations = useMemo(() => geofencingHook.storeLocations, [geofencingHook.storeLocations]);
 
   useEffect(() => {
     if (!isNativeReady && webViewRef.current && webViewLoaded) {
@@ -123,7 +89,7 @@ export default function HomeScreen() {
         } catch (error) {
           console.error('[iOS HomeScreen] ❌ Error sending ready signal:', error);
         }
-      }, 800);
+      }, 1000);
     }
   }, [isNativeReady, webViewLoaded]);
 
@@ -903,53 +869,53 @@ export default function HomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <WebView
-        ref={webViewRef}
-        source={{ uri: SHOPWELL_URL }}
-        style={styles.webview}
-        onMessage={handleMessage}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        startInLoadingState={true}
-        pullToRefreshEnabled={true}
-        sharedCookiesEnabled={true}
-        injectedJavaScript={injectedJavaScript}
-        onLoadStart={() => {
-          console.log('[iOS HomeScreen] 🌐 WebView loading started...');
-          console.log('[iOS HomeScreen] Loading URL:', SHOPWELL_URL);
-          setWebViewLoaded(false);
-          setWebViewError(null);
-        }}
-        onLoadEnd={() => {
-          console.log('[iOS HomeScreen] ✅ WebView loaded successfully');
-          setWebViewLoaded(true);
-          if (webViewRef.current) {
-            setTimeout(() => {
-              try {
-                console.log('[iOS HomeScreen] 💉 Re-injecting JavaScript bridge...');
-                webViewRef.current?.injectJavaScript(injectedJavaScript);
-              } catch (error) {
-                console.error('[iOS HomeScreen] ❌ Error re-injecting JS:', error);
-              }
-            }, 300);
-          }
-        }}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] ❌ WebView error:', nativeEvent);
-          setWebViewError(`Error loading website: ${nativeEvent.description || 'Unknown error'}`);
-        }}
-        onHttpError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] ❌ HTTP error:', nativeEvent.statusCode);
-          setWebViewError(`HTTP Error ${nativeEvent.statusCode}: Unable to load ShopWell.ai`);
-        }}
-        renderLoading={() => (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading ShopWell.ai...</Text>
-          </View>
-        )}
-      />
+          ref={webViewRef}
+          source={{ uri: SHOPWELL_URL }}
+          style={styles.webview}
+          onMessage={handleMessage}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          pullToRefreshEnabled={true}
+          sharedCookiesEnabled={true}
+          injectedJavaScript={injectedJavaScript}
+          onLoadStart={() => {
+            console.log('[iOS HomeScreen] 🌐 WebView loading started...');
+            console.log('[iOS HomeScreen] Loading URL:', SHOPWELL_URL);
+            setWebViewLoaded(false);
+            setWebViewError(null);
+          }}
+          onLoadEnd={() => {
+            console.log('[iOS HomeScreen] ✅ WebView loaded successfully');
+            setWebViewLoaded(true);
+            if (webViewRef.current) {
+              setTimeout(() => {
+                try {
+                  console.log('[iOS HomeScreen] 💉 Re-injecting JavaScript bridge...');
+                  webViewRef.current?.injectJavaScript(injectedJavaScript);
+                } catch (error) {
+                  console.error('[iOS HomeScreen] ❌ Error re-injecting JS:', error);
+                }
+              }, 300);
+            }
+          }}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error('[iOS HomeScreen] ❌ WebView error:', nativeEvent);
+            setWebViewError(`Error loading website: ${nativeEvent.description || 'Unknown error'}`);
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error('[iOS HomeScreen] ❌ HTTP error:', nativeEvent.statusCode);
+            setWebViewError(`HTTP Error ${nativeEvent.statusCode}: Unable to load ShopWell.ai`);
+          }}
+          renderLoading={() => (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.loadingText}>Loading ShopWell.ai...</Text>
+            </View>
+          )}
+        />
     </View>
   );
 }

@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { StyleSheet, View, Platform, Alert } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
@@ -32,61 +32,30 @@ export default function HomeScreen() {
   const [isNativeReady, setIsNativeReady] = useState(false);
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   
-  // Initialize hooks with error handling
-  let expoPushToken = null;
-  let notificationPermissionStatus = 'undetermined';
-  let requestNotificationPermissions = async () => false;
-  let isSyncing = false;
-  let queueSize = 0;
-  let isOnline = true;
-  let manualSync = async () => {};
-  let isGeofencingActive = false;
-  let geofencePermissionStatus = false;
-  let storeLocations: any[] = [];
-  let addStoreLocation = async () => {};
-  let removeStoreLocation = async () => {};
-  let loadStoreLocations = async () => [];
-  let startGeofencing = async () => false;
-  let stopGeofencing = async () => {};
+  // ALWAYS call hooks unconditionally - React rules
+  const notificationsHook = useNotifications();
+  const offlineSyncHook = useOfflineSync();
+  const geofencingHook = useGeofencing();
+  useQuickActions(webViewRef);
   
-  try {
-    const notificationsHook = useNotifications();
-    expoPushToken = notificationsHook.expoPushToken;
-    notificationPermissionStatus = notificationsHook.permissionStatus;
-    requestNotificationPermissions = notificationsHook.requestPermissions;
-  } catch (error) {
-    console.error('[Android HomeScreen] Error initializing notifications hook:', error);
-  }
+  // Extract values from hooks
+  const expoPushToken = notificationsHook.expoPushToken;
+  const notificationPermissionStatus = notificationsHook.permissionStatus;
+  const requestNotificationPermissions = notificationsHook.requestPermissions;
+  const isSyncing = offlineSyncHook.isSyncing;
+  const queueSize = offlineSyncHook.queueSize;
+  const isOnline = offlineSyncHook.isOnline;
+  const manualSync = offlineSyncHook.manualSync;
+  const isGeofencingActive = geofencingHook.isActive;
+  const geofencePermissionStatus = geofencingHook.hasPermission;
+  const addStoreLocation = geofencingHook.addStoreLocation;
+  const removeStoreLocation = geofencingHook.removeStoreLocation;
+  const loadStoreLocations = geofencingHook.loadStoreLocations;
+  const startGeofencing = geofencingHook.startGeofencing;
+  const stopGeofencing = geofencingHook.stopGeofencing;
   
-  try {
-    const offlineSyncHook = useOfflineSync();
-    isSyncing = offlineSyncHook.isSyncing;
-    queueSize = offlineSyncHook.queueSize;
-    isOnline = offlineSyncHook.isOnline;
-    manualSync = offlineSyncHook.manualSync;
-  } catch (error) {
-    console.error('[Android HomeScreen] Error initializing offline sync hook:', error);
-  }
-  
-  try {
-    const geofencingHook = useGeofencing();
-    isGeofencingActive = geofencingHook.isActive;
-    geofencePermissionStatus = geofencingHook.hasPermission;
-    storeLocations = geofencingHook.storeLocations;
-    addStoreLocation = geofencingHook.addStoreLocation;
-    removeStoreLocation = geofencingHook.removeStoreLocation;
-    loadStoreLocations = geofencingHook.loadStoreLocations;
-    startGeofencing = geofencingHook.startGeofencing;
-    stopGeofencing = geofencingHook.stopGeofencing;
-  } catch (error) {
-    console.error('[Android HomeScreen] Error initializing geofencing hook:', error);
-  }
-  
-  try {
-    useQuickActions(webViewRef);
-  } catch (error) {
-    console.error('[Android HomeScreen] Error initializing quick actions hook:', error);
-  }
+  // Memoize storeLocations to prevent dependency issues
+  const storeLocations = useMemo(() => geofencingHook.storeLocations, [geofencingHook.storeLocations]);
   
   console.log('[Android HomeScreen] Hooks initialized');
 

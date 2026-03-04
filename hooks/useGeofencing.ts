@@ -15,65 +15,70 @@ const STORE_LOCATIONS_KEY = '@shopwell/store_locations';
 // Wrapped in try-catch to prevent crashes if native modules aren't ready
 if (Platform.OS !== 'web') {
   try {
-    // Add a small delay to ensure TaskManager is fully initialized
+    // Add a delay to ensure TaskManager is fully initialized
+    // Increased delay for older iOS devices
     setTimeout(() => {
       try {
-        TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
-          if (error) {
-            console.error('[Geofencing Task] Error:', error);
-            return;
-          }
+        if (typeof TaskManager !== 'undefined' && TaskManager.defineTask) {
+          TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
+            if (error) {
+              console.error('[Geofencing Task] Error:', error);
+              return;
+            }
 
-          if (data) {
-            const { eventType, region } = data as any;
-            console.log('[Geofencing Task] Event:', eventType, 'Region:', region.identifier);
+            if (data) {
+              const { eventType, region } = data as any;
+              console.log('[Geofencing Task] Event:', eventType, 'Region:', region.identifier);
 
-            if (eventType === 1) { // Enter event
-              console.log('[Geofencing Task] User entered geofence:', region.identifier);
-              
-              try {
-                // Get store information from storage
-                const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
-                const storeLocations = storeLocationsData || [];
-                const store = storeLocations.find(s => s.id === region.identifier);
+              if (eventType === 1) { // Enter event
+                console.log('[Geofencing Task] User entered geofence:', region.identifier);
+                
+                try {
+                  // Get store information from storage
+                  const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
+                  const storeLocations = storeLocationsData || [];
+                  const store = storeLocations.find(s => s.id === region.identifier);
 
-                if (store) {
-                  console.log('[Geofencing Task] Triggering notification for store:', store.name);
-                  
-                  // Schedule notification
-                  await Notifications.scheduleNotificationAsync({
-                    content: {
-                      title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
-                      body: store.listName 
-                        ? `You're near ${store.name}! Tap to view your list.`
-                        : store.reservationNumber
-                        ? `Reservation #${store.reservationNumber} - Tap to view details.`
-                        : `You're near ${store.name}`,
-                      data: {
-                        type: 'geofence',
-                        storeId: store.id,
-                        storeName: store.name,
-                        listId: store.listId,
-                        listName: store.listName,
-                        reservationNumber: store.reservationNumber,
+                  if (store) {
+                    console.log('[Geofencing Task] Triggering notification for store:', store.name);
+                    
+                    // Schedule notification
+                    await Notifications.scheduleNotificationAsync({
+                      content: {
+                        title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
+                        body: store.listName 
+                          ? `You're near ${store.name}! Tap to view your list.`
+                          : store.reservationNumber
+                          ? `Reservation #${store.reservationNumber} - Tap to view details.`
+                          : `You're near ${store.name}`,
+                        data: {
+                          type: 'geofence',
+                          storeId: store.id,
+                          storeName: store.name,
+                          listId: store.listId,
+                          listName: store.listName,
+                          reservationNumber: store.reservationNumber,
+                        },
+                        sound: true,
+                        badge: 1,
                       },
-                      sound: true,
-                      badge: 1,
-                    },
-                    trigger: null, // Immediate notification
-                  });
+                      trigger: null, // Immediate notification
+                    });
+                  }
+                } catch (taskError) {
+                  console.error('[Geofencing Task] Error processing geofence event:', taskError);
                 }
-              } catch (taskError) {
-                console.error('[Geofencing Task] Error processing geofence event:', taskError);
               }
             }
-          }
-        });
-        console.log('[useGeofencing] Geofencing task defined successfully');
+          });
+          console.log('[useGeofencing] Geofencing task defined successfully');
+        } else {
+          console.warn('[useGeofencing] TaskManager not available yet');
+        }
       } catch (defineError) {
         console.error('[useGeofencing] Error defining geofencing task:', defineError);
       }
-    }, 100);
+    }, 1500); // Increased delay for older iOS devices like iPhone X
   } catch (error) {
     console.error('[useGeofencing] Error in task definition setup:', error);
   }
@@ -101,7 +106,7 @@ export function useGeofencing() {
   }, []);
 
   // Load store locations on mount (safe operation, no permissions needed)
-  // Add a delay to ensure native modules are fully initialized
+  // Add a longer delay to ensure native modules are fully initialized on older devices
   useEffect(() => {
     let isMounted = true;
     
@@ -112,7 +117,7 @@ export function useGeofencing() {
           console.error('[useGeofencing] Error loading store locations on mount:', error);
         });
       }
-    }, 500); // Delay to ensure native modules are ready
+    }, 800); // Increased delay for older iOS devices
     
     return () => {
       isMounted = false;
