@@ -8,7 +8,7 @@ const config = getDefaultConfig(__dirname);
 config.resolver.unstable_enablePackageExports = true;
 
 // Metro will use its default caching mechanism
-// Removed problematic metro-cache import and custom cache configuration
+// Removed custom FileStore cache configuration as metro-cache is not available in Expo SDK 54+
 
 // Custom server middleware to receive console.log messages from the app
 const LOG_FILE_PATH = path.join(__dirname, '.natively', 'app_console.log');
