@@ -12,62 +12,70 @@ const STORE_LOCATIONS_KEY = '@shopwell/store_locations';
 
 // Define the geofencing task (only on native platforms)
 // This is defined at module level, not inside a hook or component
+// Wrapped in try-catch to prevent crashes if native modules aren't ready
 if (Platform.OS !== 'web') {
   try {
-    TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
-      if (error) {
-        console.error('[Geofencing Task] Error:', error);
-        return;
-      }
-
-      if (data) {
-        const { eventType, region } = data as any;
-        console.log('[Geofencing Task] Event:', eventType, 'Region:', region.identifier);
-
-        if (eventType === 1) { // Enter event
-          console.log('[Geofencing Task] User entered geofence:', region.identifier);
-          
-          try {
-            // Get store information from storage
-            const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
-            const storeLocations = storeLocationsData || [];
-            const store = storeLocations.find(s => s.id === region.identifier);
-
-            if (store) {
-              console.log('[Geofencing Task] Triggering notification for store:', store.name);
-              
-              // Schedule notification
-              await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
-                  body: store.listName 
-                    ? `You're near ${store.name}! Tap to view your list.`
-                    : store.reservationNumber
-                    ? `Reservation #${store.reservationNumber} - Tap to view details.`
-                    : `You're near ${store.name}`,
-                  data: {
-                    type: 'geofence',
-                    storeId: store.id,
-                    storeName: store.name,
-                    listId: store.listId,
-                    listName: store.listName,
-                    reservationNumber: store.reservationNumber,
-                  },
-                  sound: true,
-                  badge: 1,
-                },
-                trigger: null, // Immediate notification
-              });
-            }
-          } catch (taskError) {
-            console.error('[Geofencing Task] Error processing geofence event:', taskError);
+    // Add a small delay to ensure TaskManager is fully initialized
+    setTimeout(() => {
+      try {
+        TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
+          if (error) {
+            console.error('[Geofencing Task] Error:', error);
+            return;
           }
-        }
+
+          if (data) {
+            const { eventType, region } = data as any;
+            console.log('[Geofencing Task] Event:', eventType, 'Region:', region.identifier);
+
+            if (eventType === 1) { // Enter event
+              console.log('[Geofencing Task] User entered geofence:', region.identifier);
+              
+              try {
+                // Get store information from storage
+                const storeLocationsData = await OfflineStorage.getItem<StoreLocation[]>(STORE_LOCATIONS_KEY);
+                const storeLocations = storeLocationsData || [];
+                const store = storeLocations.find(s => s.id === region.identifier);
+
+                if (store) {
+                  console.log('[Geofencing Task] Triggering notification for store:', store.name);
+                  
+                  // Schedule notification
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: store.listName ? `📋 ${store.listName}` : `📍 Near ${store.name}`,
+                      body: store.listName 
+                        ? `You're near ${store.name}! Tap to view your list.`
+                        : store.reservationNumber
+                        ? `Reservation #${store.reservationNumber} - Tap to view details.`
+                        : `You're near ${store.name}`,
+                      data: {
+                        type: 'geofence',
+                        storeId: store.id,
+                        storeName: store.name,
+                        listId: store.listId,
+                        listName: store.listName,
+                        reservationNumber: store.reservationNumber,
+                      },
+                      sound: true,
+                      badge: 1,
+                    },
+                    trigger: null, // Immediate notification
+                  });
+                }
+              } catch (taskError) {
+                console.error('[Geofencing Task] Error processing geofence event:', taskError);
+              }
+            }
+          }
+        });
+        console.log('[useGeofencing] Geofencing task defined successfully');
+      } catch (defineError) {
+        console.error('[useGeofencing] Error defining geofencing task:', defineError);
       }
-    });
-    console.log('[useGeofencing] Geofencing task defined successfully');
+    }, 100);
   } catch (error) {
-    console.error('[useGeofencing] Error defining geofencing task:', error);
+    console.error('[useGeofencing] Error in task definition setup:', error);
   }
 }
 
@@ -93,9 +101,23 @@ export function useGeofencing() {
   }, []);
 
   // Load store locations on mount (safe operation, no permissions needed)
+  // Add a delay to ensure native modules are fully initialized
   useEffect(() => {
-    console.log('[useGeofencing] Loading store locations on mount...');
-    loadStoreLocations();
+    let isMounted = true;
+    
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        console.log('[useGeofencing] Loading store locations on mount...');
+        loadStoreLocations().catch((error) => {
+          console.error('[useGeofencing] Error loading store locations on mount:', error);
+        });
+      }
+    }, 500); // Delay to ensure native modules are ready
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [loadStoreLocations]);
 
   // Save store locations to storage

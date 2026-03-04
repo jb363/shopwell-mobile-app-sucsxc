@@ -6,6 +6,8 @@ import { Platform } from 'react-native';
 
 export function useQuickActions(webViewRef: React.RefObject<any>) {
   useEffect(() => {
+    let isMounted = true;
+    
     if (Platform.OS === 'web') {
       console.log('[QuickActions] Quick actions not supported on web');
       return;
@@ -39,12 +41,17 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
     ];
 
     // Set the quick actions with error handling
-    try {
-      QuickActions.setItems(quickActions);
-      console.log('[QuickActions] Quick actions set successfully:', quickActions.length);
-    } catch (error) {
-      console.error('[QuickActions] Error setting quick actions:', error);
-    }
+    // Add delay to ensure native modules are ready
+    setTimeout(() => {
+      if (!isMounted) return;
+      
+      try {
+        QuickActions.setItems(quickActions);
+        console.log('[QuickActions] Quick actions set successfully:', quickActions.length);
+      } catch (error) {
+        console.error('[QuickActions] Error setting quick actions:', error);
+      }
+    }, 600);
 
     // Handle quick action selection
     const handleQuickAction = (action: QuickActions.Action) => {
@@ -166,24 +173,51 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
     };
 
     // Listen for initial quick action (app launched via quick action)
-    QuickActions.initial()
-      .then((action) => {
-        if (action) {
-          console.log('[QuickActions] Initial quick action detected:', action.id);
-          // Wait a bit for WebView to be ready
-          setTimeout(() => handleQuickAction(action), 1500);
-        }
-      })
-      .catch((error) => {
-        console.error('[QuickActions] Error getting initial quick action:', error);
-      });
+    // Add delay to ensure native modules are ready
+    setTimeout(() => {
+      if (!isMounted) return;
+      
+      QuickActions.initial()
+        .then((action) => {
+          if (!isMounted) return;
+          
+          if (action) {
+            console.log('[QuickActions] Initial quick action detected:', action.id);
+            // Wait a bit for WebView to be ready
+            setTimeout(() => {
+              if (isMounted) {
+                handleQuickAction(action);
+              }
+            }, 1500);
+          }
+        })
+        .catch((error) => {
+          console.error('[QuickActions] Error getting initial quick action:', error);
+        });
+    }, 800);
 
     // Listen for subsequent quick actions (app already running)
-    const listener = QuickActions.addListener(handleQuickAction);
+    let listener: any;
+    setTimeout(() => {
+      if (!isMounted) return;
+      
+      try {
+        listener = QuickActions.addListener(handleQuickAction);
+      } catch (error) {
+        console.error('[QuickActions] Error adding quick action listener:', error);
+      }
+    }, 900);
 
     return () => {
+      isMounted = false;
       console.log('[QuickActions] Cleaning up quick actions...');
-      listener.remove();
+      try {
+        if (listener) {
+          listener.remove();
+        }
+      } catch (error) {
+        console.error('[QuickActions] Error removing quick action listener:', error);
+      }
     };
   }, [webViewRef]);
 }

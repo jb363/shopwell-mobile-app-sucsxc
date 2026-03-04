@@ -47,6 +47,8 @@ export function useNotifications() {
   const responseListener = useRef<Notifications.Subscription>();
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Only run on native platforms
     if (Platform.OS === 'web') {
       console.log('[useNotifications] Notifications are not supported on web');
@@ -59,15 +61,23 @@ export function useNotifications() {
     console.log('[useNotifications] Checking existing notification permissions (not requesting)');
     
     // Wrap in try-catch to handle native module unavailability
+    // Add delay to ensure native modules are fully initialized
     const checkPermissions = async () => {
       try {
+        // Small delay to ensure native modules are ready
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (!isMounted) return;
+        
         const { status } = await Notifications.getPermissionsAsync();
         if (status === 'granted') {
           console.log('[useNotifications] Already have notification permission, getting token');
           try {
             const tokenData = await Notifications.getExpoPushTokenAsync();
-            setExpoPushToken(tokenData.data);
-            console.log('[useNotifications] Push token:', tokenData.data);
+            if (isMounted) {
+              setExpoPushToken(tokenData.data);
+              console.log('[useNotifications] Push token:', tokenData.data);
+            }
           } catch (tokenError) {
             console.error('[useNotifications] Error getting push token:', tokenError);
           }
@@ -84,6 +94,11 @@ export function useNotifications() {
     // Check for notification that opened the app
     const checkLastNotification = async () => {
       try {
+        // Small delay to ensure native modules are ready
+        await new Promise(resolve => setTimeout(resolve, 700));
+        
+        if (!isMounted) return;
+        
         const response = await Notifications.getLastNotificationResponseAsync();
         if (response) {
           console.log('App opened from notification:', response);
@@ -98,22 +113,30 @@ export function useNotifications() {
     checkLastNotification();
 
     // Set up notification listeners with error handling
-    try {
-      notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-        console.log('Notification received:', notification);
-        setNotification(notification);
-      });
+    // Add delay to ensure native modules are ready
+    setTimeout(() => {
+      if (!isMounted) return;
+      
+      try {
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+          console.log('Notification received:', notification);
+          if (isMounted) {
+            setNotification(notification);
+          }
+        });
 
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-        console.log('Notification response:', response);
-        const data = response.notification.request.content.data;
-        handleNotificationData(data);
-      });
-    } catch (error) {
-      console.error('[useNotifications] Error setting up notification listeners:', error);
-    }
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+          console.log('Notification response:', response);
+          const data = response.notification.request.content.data;
+          handleNotificationData(data);
+        });
+      } catch (error) {
+        console.error('[useNotifications] Error setting up notification listeners:', error);
+      }
+    }, 800);
 
     return () => {
+      isMounted = false;
       try {
         notificationListener.current?.remove();
         responseListener.current?.remove();

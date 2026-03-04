@@ -9,37 +9,71 @@ export function useOfflineSync() {
   const [queueSize, setQueueSize] = useState(0);
 
   const updateQueueSize = useCallback(async () => {
-    const queue = await getOfflineQueue();
-    setQueueSize(queue.length);
+    try {
+      const queue = await getOfflineQueue();
+      setQueueSize(queue.length);
+    } catch (error) {
+      console.error('[useOfflineSync] Error updating queue size:', error);
+      setQueueSize(0);
+    }
   }, []);
 
   const syncOfflineData = useCallback(async () => {
     if (isSyncing) {
-      console.log('Sync already in progress');
+      console.log('[useOfflineSync] Sync already in progress');
       return;
     }
 
     setIsSyncing(true);
     try {
-      console.log('Starting offline sync...');
+      console.log('[useOfflineSync] Starting offline sync...');
       await processOfflineQueue();
       await updateQueueSize();
-      console.log('Offline sync completed');
+      console.log('[useOfflineSync] Offline sync completed');
     } catch (error) {
-      console.error('Error syncing offline data:', error);
+      console.error('[useOfflineSync] Error syncing offline data:', error);
     } finally {
       setIsSyncing(false);
     }
   }, [isSyncing, updateQueueSize]);
 
   useEffect(() => {
-    updateQueueSize();
+    let isMounted = true;
+    
+    // Add delay to ensure storage is ready
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        updateQueueSize().catch((error) => {
+          console.error('[useOfflineSync] Error in initial queue size update:', error);
+        });
+      }
+    }, 300);
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [updateQueueSize]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     if (networkState.isConnected && networkState.isInternetReachable && queueSize > 0) {
-      console.log('Network connected, syncing offline queue...');
-      syncOfflineData();
+      console.log('[useOfflineSync] Network connected, syncing offline queue...');
+      
+      // Add delay before syncing
+      const timer = setTimeout(() => {
+        if (isMounted) {
+          syncOfflineData().catch((error) => {
+            console.error('[useOfflineSync] Error in auto-sync:', error);
+          });
+        }
+      }, 500);
+      
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
     }
   }, [networkState.isConnected, networkState.isInternetReachable, queueSize, syncOfflineData]);
 

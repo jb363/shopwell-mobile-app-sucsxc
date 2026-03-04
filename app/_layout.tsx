@@ -1,12 +1,12 @@
 
 import "react-native-reanimated";
-import React, { useEffect } from "react";
+import React, { useEffect, Component, ErrorInfo, ReactNode } from "react";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from 'expo-linking';
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useColorScheme, Alert, Platform } from "react-native";
+import { useColorScheme, Alert, Platform, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useNetworkState } from "expo-network";
 import {
   DarkTheme,
@@ -52,6 +52,97 @@ const errorHandler = (error: Error, isFatal?: boolean) => {
 export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
+
+// Error Boundary Component
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    console.error('[ErrorBoundary] Caught error:', error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[ErrorBoundary] Error details:', error, errorInfo);
+    try {
+      crashReporter.logCrash(error, {
+        location: 'ErrorBoundary',
+        componentStack: errorInfo.componentStack,
+      });
+    } catch (logError) {
+      console.error('[ErrorBoundary] Error logging crash:', logError);
+    }
+  }
+
+  handleReload = () => {
+    console.log('[ErrorBoundary] Reloading app...');
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.title}>Something went wrong</Text>
+          <Text style={errorStyles.message}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </Text>
+          <TouchableOpacity style={errorStyles.button} onPress={this.handleReload}>
+            <Text style={errorStyles.buttonText}>Reload App</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#ffffff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  button: {
+    backgroundColor: shopWellColors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -279,7 +370,7 @@ export default function RootLayout() {
   };
 
   return (
-    <>
+    <ErrorBoundary>
       <StatusBar style="auto" animated />
       <ThemeProvider
         value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
@@ -318,6 +409,6 @@ export default function RootLayout() {
           <SystemBars style={"auto"} />
         </GestureHandlerRootView>
       </ThemeProvider>
-    </>
+    </ErrorBoundary>
   );
 }

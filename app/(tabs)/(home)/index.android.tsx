@@ -32,21 +32,57 @@ export default function HomeScreen() {
   const [isNativeReady, setIsNativeReady] = useState(false);
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   
-  // Initialize hooks
-  const { expoPushToken } = useNotifications();
-  const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
-  const { 
-    isActive: isGeofencingActive, 
-    hasPermission: geofencePermissionStatus, 
-    storeLocations,
-    addStoreLocation,
-    removeStoreLocation,
-    loadStoreLocations,
-    startGeofencing,
-    stopGeofencing
-  } = useGeofencing();
+  // Initialize hooks with error handling
+  let expoPushToken = null;
+  let isSyncing = false;
+  let queueSize = 0;
+  let isOnline = true;
+  let manualSync = async () => {};
+  let isGeofencingActive = false;
+  let geofencePermissionStatus = false;
+  let storeLocations: any[] = [];
+  let addStoreLocation = async () => {};
+  let removeStoreLocation = async () => {};
+  let loadStoreLocations = async () => [];
+  let startGeofencing = async () => false;
+  let stopGeofencing = async () => {};
   
-  useQuickActions(webViewRef);
+  try {
+    const notificationsHook = useNotifications();
+    expoPushToken = notificationsHook.expoPushToken;
+  } catch (error) {
+    console.error('[Android HomeScreen] Error initializing notifications hook:', error);
+  }
+  
+  try {
+    const offlineSyncHook = useOfflineSync();
+    isSyncing = offlineSyncHook.isSyncing;
+    queueSize = offlineSyncHook.queueSize;
+    isOnline = offlineSyncHook.isOnline;
+    manualSync = offlineSyncHook.manualSync;
+  } catch (error) {
+    console.error('[Android HomeScreen] Error initializing offline sync hook:', error);
+  }
+  
+  try {
+    const geofencingHook = useGeofencing();
+    isGeofencingActive = geofencingHook.isActive;
+    geofencePermissionStatus = geofencingHook.hasPermission;
+    storeLocations = geofencingHook.storeLocations;
+    addStoreLocation = geofencingHook.addStoreLocation;
+    removeStoreLocation = geofencingHook.removeStoreLocation;
+    loadStoreLocations = geofencingHook.loadStoreLocations;
+    startGeofencing = geofencingHook.startGeofencing;
+    stopGeofencing = geofencingHook.stopGeofencing;
+  } catch (error) {
+    console.error('[Android HomeScreen] Error initializing geofencing hook:', error);
+  }
+  
+  try {
+    useQuickActions(webViewRef);
+  } catch (error) {
+    console.error('[Android HomeScreen] Error initializing quick actions hook:', error);
+  }
   
   console.log('[Android HomeScreen] Hooks initialized');
 
