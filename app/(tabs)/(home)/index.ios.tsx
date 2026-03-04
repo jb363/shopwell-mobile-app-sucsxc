@@ -209,7 +209,8 @@ export default function HomeScreen() {
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
                 contacts: '${contactsPermissionStatus}',
-                location: '${locationPermissionStatus}'
+                location: '${locationPermissionStatus}',
+                notifications: '${notificationsHook.permissionStatus}'
               }, '*');
             } catch (error) {
               console.error('[ShopWell Native] Error sending permissions status:', error);
@@ -221,7 +222,7 @@ export default function HomeScreen() {
         console.error('[iOS HomeScreen] Error injecting permissions status:', error);
       }
     }
-  }, [contactsPermissionStatus, locationPermissionStatus, isNativeReady]);
+  }, [contactsPermissionStatus, locationPermissionStatus, notificationsHook.permissionStatus, isNativeReady]);
 
   const handleMessage = async (event: any) => {
     try {
@@ -278,7 +279,8 @@ export default function HomeScreen() {
                     window.postMessage({ 
                       type: 'PERMISSIONS_STATUS', 
                       contacts: '${contactsPermissionStatus}',
-                      location: '${locationPermissionStatus}'
+                      location: '${locationPermissionStatus}',
+                      notifications: '${notificationsHook.permissionStatus}'
                     }, '*');
                   } catch (error) {
                     console.error('[ShopWell Native] Error sending permissions status:', error);
@@ -774,6 +776,59 @@ export default function HomeScreen() {
             }, '*');
             true;
           `);
+          break;
+
+        case 'natively.notifications.requestPermission':
+          console.log('[iOS HomeScreen] 📲 Request notification permission');
+          try {
+            const granted = await notificationsHook.requestPermissions();
+            console.log('[iOS HomeScreen] Notification permission result:', granted);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
+                granted: ${granted},
+                status: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${contactsPermissionStatus}',
+                location: '${locationPermissionStatus}',
+                notifications: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error requesting notification permission:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
+                granted: false,
+                status: 'denied',
+                error: 'Failed to request permission'
+              }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.notifications.getStatus':
+          console.log('[iOS HomeScreen] 📊 Get notification status');
+          try {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'NOTIFICATIONS_STATUS_RESPONSE', 
+                status: '${notificationsHook.permissionStatus}',
+                granted: ${notificationsHook.permissionStatus === 'granted'}
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error getting notification status:', error);
+          }
           break;
 
         case 'natively.offline.sync':

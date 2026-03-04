@@ -368,6 +368,7 @@ export default function HomeScreen() {
           console.log('[Android HomeScreen] Request notification permission');
           try {
             const granted = await requestNotificationPermissions();
+            console.log('[Android HomeScreen] Notification permission result:', granted);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
@@ -397,6 +398,22 @@ export default function HomeScreen() {
               }, '*');
               true;
             `);
+          }
+          break;
+
+        case 'natively.notifications.getStatus':
+          console.log('[Android HomeScreen] Get notification status');
+          try {
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'NOTIFICATIONS_STATUS_RESPONSE', 
+                status: '${notificationPermissionStatus}',
+                granted: ${notificationPermissionStatus === 'granted'}
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[Android HomeScreen] Error getting notification status:', error);
           }
           break;
 

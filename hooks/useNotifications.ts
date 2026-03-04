@@ -71,6 +71,7 @@ export function useNotifications() {
         if (!isMounted) return;
         
         const { status } = await Notifications.getPermissionsAsync();
+        console.log('[useNotifications] Current permission status:', status);
         setPermissionStatus(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined');
         
         if (status === 'granted') {
