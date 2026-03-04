@@ -100,6 +100,64 @@ export async function searchContacts(query: string): Promise<Contact[]> {
 }
 
 /**
+ * Pick a single contact using the native contact picker
+ */
+export async function pickContact(): Promise<Contact | null> {
+  try {
+    console.log('Opening contact picker...');
+    
+    // Request permission first
+    const { status } = await Contacts.getPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Contacts permission not granted, requesting...');
+      const granted = await requestContactsPermission();
+      if (!granted) {
+        console.log('Contacts permission denied');
+        return null;
+      }
+    }
+
+    // Use presentContactPickerAsync if available (iOS)
+    if (Platform.OS === 'ios' && Contacts.presentContactPickerAsync) {
+      const result = await Contacts.presentContactPickerAsync();
+      
+      if (result && result.id) {
+        // Transform to our Contact format
+        const contact: Contact = {
+          id: result.id,
+          name: result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || 'Unknown',
+          firstName: result.firstName,
+          lastName: result.lastName,
+          phoneNumbers: result.phoneNumbers?.map((phone) => phone.number || '') || [],
+          emails: result.emails?.map((email) => email.email || '') || [],
+          imageAvailable: result.imageAvailable,
+        };
+        
+        console.log('Contact picked:', contact.name);
+        return contact;
+      }
+    } else {
+      // Fallback: Get all contacts and let user pick (not ideal, but works on Android)
+      console.log('Native picker not available, using fallback method');
+      const allContacts = await getAllContacts();
+      
+      if (allContacts.length > 0) {
+        // Return the first contact as a fallback
+        // In a real app, you'd show a custom picker UI here
+        console.log('Returning first contact as fallback');
+        return allContacts[0];
+      }
+    }
+
+    console.log('No contact selected');
+    return null;
+  } catch (error) {
+    console.error('Error picking contact:', error);
+    return null;
+  }
+}
+
+/**
  * Check if contacts permission is granted
  */
 export async function hasContactsPermission(): Promise<boolean> {

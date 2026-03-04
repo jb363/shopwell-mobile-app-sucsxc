@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Platform, Alert } from 'react-native';
+import { StyleSheet, View, Platform, Alert, ActivityIndicator, Text } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,20 +22,22 @@ import { crashReporter } from '@/utils/crashReporter';
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
-  console.log('[iOS HomeScreen] ✅ Module loaded successfully');
+  console.log('[iOS HomeScreen] ═══════════════════════════════════════');
+  console.log('[iOS HomeScreen] Component mounting - ShopWell.ai iOS App');
+  console.log('[iOS HomeScreen] Target URL:', SHOPWELL_URL);
+  console.log('[iOS HomeScreen] ═══════════════════════════════════════');
   
-  // CRITICAL: All hooks MUST be called unconditionally at the top level
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   
-  // State initialization with defensive defaults
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const [contactsPermissionStatus, setContactsPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [isNativeReady, setIsNativeReady] = useState(false);
-
-  // CRITICAL: Call all hooks unconditionally
+  const [webViewLoaded, setWebViewLoaded] = useState(false);
+  const [webViewError, setWebViewError] = useState<string | null>(null);
+  
   const { expoPushToken } = useNotifications();
   const { isSyncing, queueSize, isOnline, manualSync } = useOfflineSync();
   const { 
@@ -49,48 +51,49 @@ export default function HomeScreen() {
     stopGeofencing
   } = useGeofencing();
   
-  // Set up quick actions (app shortcuts)
   useQuickActions(webViewRef);
+  
+  console.log('[iOS HomeScreen] ✅ All hooks initialized successfully');
+  console.log('[iOS HomeScreen] Push token:', expoPushToken ? 'Available' : 'Not yet available');
+  console.log('[iOS HomeScreen] Online status:', isOnline);
+  console.log('[iOS HomeScreen] Geofencing active:', isGeofencingActive);
 
-  // Signal to website that native app is ready to receive messages
   useEffect(() => {
-    if (!isNativeReady && webViewRef.current) {
-      console.log('[iOS HomeScreen] ✅ Native app is ready, signaling to website...');
+    if (!isNativeReady && webViewRef.current && webViewLoaded) {
+      console.log('[iOS HomeScreen] 🚀 Native app ready, signaling to website...');
       setIsNativeReady(true);
       
-      // Send ready signal to website with a delay to ensure WebView is fully initialized
       setTimeout(() => {
         try {
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
+                console.log('[ShopWell Native] Sending NATIVE_APP_READY signal');
                 window.postMessage({ 
                   type: 'NATIVE_APP_READY', 
                   platform: 'ios',
                   timestamp: Date.now(),
                   features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
                 }, '*');
-                console.log('[Native App iOS] Sent NATIVE_APP_READY signal to website');
+                console.log('[ShopWell Native] ✅ NATIVE_APP_READY signal sent');
               } catch (error) {
-                console.error('[Native App iOS] Error sending ready signal:', error);
+                console.error('[ShopWell Native] ❌ Error sending ready signal:', error);
               }
             })();
             true;
           `);
+          console.log('[iOS HomeScreen] ✅ Ready signal injected');
         } catch (error) {
-          console.error('[iOS HomeScreen] Error sending ready signal:', error);
-          crashReporter.logCrash(error as Error, { location: 'sendReadySignal' });
+          console.error('[iOS HomeScreen] ❌ Error sending ready signal:', error);
         }
       }, 800);
     }
-  }, [isNativeReady]);
+  }, [isNativeReady, webViewLoaded]);
 
-  // Handle shared content from share-target screen
   useEffect(() => {
     if (params.sharedContent && params.sharedType && webViewRef.current && isNativeReady) {
-      console.log('[iOS HomeScreen] Received shared content:', { type: params.sharedType, content: params.sharedContent });
+      console.log('[iOS HomeScreen] 📤 Received shared content');
       
-      // Send shared content to the web app
       const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
       const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
       
@@ -105,27 +108,21 @@ export default function HomeScreen() {
                   content: ${JSON.stringify(sharedContentStr)}
                 }, '*');
               } catch (error) {
-                console.error('[Native App iOS] Error sending shared content:', error);
+                console.error('[ShopWell Native] Error sending shared content:', error);
               }
             })();
             true;
           `);
         } catch (error) {
           console.error('[iOS HomeScreen] Error injecting shared content:', error);
-          crashReporter.logCrash(error as Error, { location: 'injectSharedContent' });
         }
       }, 500);
     }
   }, [params.sharedContent, params.sharedType, isNativeReady]);
 
-  // DO NOT check permissions automatically on mount
-  // Permissions will be checked only when the user explicitly requests them
-  // This prevents crashes where early permission checks fail
-  console.log('[iOS HomeScreen] Skipping automatic permission checks - will request in context when needed');
-
   useEffect(() => {
     if (expoPushToken && webViewRef.current && isNativeReady) {
-      console.log('[iOS HomeScreen] Sending push token to web:', expoPushToken);
+      console.log('[iOS HomeScreen] 📲 Sending push token to web');
       setTimeout(() => {
         try {
           webViewRef.current?.injectJavaScript(`
@@ -133,21 +130,19 @@ export default function HomeScreen() {
               try {
                 window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
               } catch (error) {
-                console.error('[Native App iOS] Error sending push token:', error);
+                console.error('[ShopWell Native] Error sending push token:', error);
               }
             })();
             true;
           `);
         } catch (error) {
           console.error('[iOS HomeScreen] Error injecting push token:', error);
-          crashReporter.logCrash(error as Error, { location: 'injectPushToken' });
         }
       }, 300);
     }
   }, [expoPushToken, isNativeReady]);
 
   useEffect(() => {
-    // Inject sync status
     if (webViewRef.current && isNativeReady) {
       try {
         webViewRef.current.injectJavaScript(`
@@ -160,22 +155,20 @@ export default function HomeScreen() {
                 isOnline: ${isOnline}
               }, '*');
             } catch (error) {
-              console.error('[Native App iOS] Error sending sync status:', error);
+              console.error('[ShopWell Native] Error sending sync status:', error);
             }
           })();
           true;
         `);
       } catch (error) {
         console.error('[iOS HomeScreen] Error injecting sync status:', error);
-        crashReporter.logCrash(error as Error, { location: 'injectSyncStatus' });
       }
     }
   }, [isSyncing, queueSize, isOnline, isNativeReady]);
 
   useEffect(() => {
-    // Send geofencing status to web
     if (webViewRef.current && isNativeReady) {
-      console.log('[iOS HomeScreen] Sending geofencing status to web:', { 
+      console.log('[iOS HomeScreen] 📍 Sending geofencing status to web:', { 
         isGeofencingActive, 
         geofencePermissionStatus,
         locationCount: storeLocations.length 
@@ -193,22 +186,19 @@ export default function HomeScreen() {
                 platform: 'ios'
               }, '*');
             } catch (error) {
-              console.error('[Native App iOS] Error sending geofencing status:', error);
+              console.error('[ShopWell Native] Error sending geofencing status:', error);
             }
           })();
           true;
         `);
       } catch (error) {
         console.error('[iOS HomeScreen] Error injecting geofencing status:', error);
-        crashReporter.logCrash(error as Error, { location: 'injectGeofencingStatus' });
       }
     }
   }, [isGeofencingActive, geofencePermissionStatus, storeLocations, isNativeReady]);
 
-  // Send permission statuses to web when they change
   useEffect(() => {
     if (webViewRef.current && isNativeReady) {
-      console.log('[iOS HomeScreen] Sending permission statuses to web:', { contactsPermissionStatus, locationPermissionStatus });
       try {
         webViewRef.current.injectJavaScript(`
           (function() {
@@ -219,14 +209,13 @@ export default function HomeScreen() {
                 location: '${locationPermissionStatus}'
               }, '*');
             } catch (error) {
-              console.error('[Native App iOS] Error sending permissions status:', error);
+              console.error('[ShopWell Native] Error sending permissions status:', error);
             }
           })();
           true;
         `);
       } catch (error) {
         console.error('[iOS HomeScreen] Error injecting permissions status:', error);
-        crashReporter.logCrash(error as Error, { location: 'injectPermissionsStatus' });
       }
     }
   }, [contactsPermissionStatus, locationPermissionStatus, isNativeReady]);
@@ -234,18 +223,16 @@ export default function HomeScreen() {
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log('[iOS HomeScreen] Received message from web:', data.type);
+      console.log('[iOS HomeScreen] 📨 Received message:', data.type);
       
-      // Ignore messages until native app is ready
       if (!isNativeReady && !data.type?.startsWith('WEB_')) {
-        console.log('[iOS HomeScreen] ⚠️ Native app not ready yet, ignoring message:', data.type);
+        console.log('[iOS HomeScreen] ⏸️ Native not ready, ignoring message');
         return;
       }
       
       switch (data.type) {
         case 'WEB_PAGE_READY':
-          console.log('[iOS HomeScreen] Website signals it is ready');
-          // Re-send ready signal and current status to ensure website knows we're ready
+          console.log('[iOS HomeScreen] 🌐 Website ready, sending native capabilities...');
           setTimeout(() => {
             try {
               webViewRef.current?.injectJavaScript(`
@@ -258,13 +245,12 @@ export default function HomeScreen() {
                       features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
                     }, '*');
                   } catch (error) {
-                    console.error('[Native App iOS] Error sending ready signal:', error);
+                    console.error('[ShopWell Native] Error sending ready signal:', error);
                   }
                 })();
                 true;
               `);
               
-              // Also send current geofencing status
               webViewRef.current?.injectJavaScript(`
                 (function() {
                   try {
@@ -277,13 +263,12 @@ export default function HomeScreen() {
                       platform: 'ios'
                     }, '*');
                   } catch (error) {
-                    console.error('[Native App iOS] Error sending geofencing status:', error);
+                    console.error('[ShopWell Native] Error sending geofencing status:', error);
                   }
                 })();
                 true;
               `);
               
-              // Also send permissions status
               webViewRef.current?.injectJavaScript(`
                 (function() {
                   try {
@@ -293,34 +278,317 @@ export default function HomeScreen() {
                       location: '${locationPermissionStatus}'
                     }, '*');
                   } catch (error) {
-                    console.error('[Native App iOS] Error sending permissions status:', error);
+                    console.error('[ShopWell Native] Error sending permissions status:', error);
                   }
                 })();
                 true;
               `);
+              console.log('[iOS HomeScreen] ✅ All native capabilities sent to website');
             } catch (error) {
-              console.error('[iOS HomeScreen] Error responding to WEB_PAGE_READY:', error);
-              crashReporter.logCrash(error as Error, { location: 'handleWebPageReady' });
+              console.error('[iOS HomeScreen] ❌ Error responding to WEB_PAGE_READY:', error);
             }
           }, 200);
           break;
 
-        // ... (rest of the message handlers remain the same as Android version)
-        // I'll include the critical location permission handler:
+        case 'natively.clipboard.copy':
+          console.log('[iOS HomeScreen] 📋 Copy to clipboard');
+          try {
+            await Clipboard.setStringAsync(data.text);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CLIPBOARD_COPY_RESPONSE', success: true }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error copying to clipboard:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CLIPBOARD_COPY_RESPONSE', success: false, error: 'Failed to copy' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.share':
+          console.log('[iOS HomeScreen] 🔗 Share content');
+          try {
+            const shareOptions: any = {};
+            if (data.url) shareOptions.url = data.url;
+            if (data.message) shareOptions.message = data.message;
+            
+            const canShare = await Sharing.isAvailableAsync();
+            if (canShare) {
+              if (data.url) {
+                await Sharing.shareAsync(data.url, shareOptions);
+              } else if (data.message) {
+                await Sharing.shareAsync(data.message);
+              }
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'SHARE_RESPONSE', success: true }, '*');
+                true;
+              `);
+            } else {
+              throw new Error('Sharing not available');
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error sharing:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'SHARE_RESPONSE', success: false, error: 'Failed to share' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.camera.takePicture':
+          console.log('[iOS HomeScreen] 📷 Take picture');
+          try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+              throw new Error('Camera permission denied');
+            }
+            
+            const result = await ImagePicker.launchCameraAsync({
+              mediaTypes: 'images',
+              allowsEditing: data.allowsEditing !== false,
+              quality: data.quality || 0.8,
+            });
+            
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CAMERA_RESPONSE', 
+                  success: true, 
+                  uri: '${result.assets[0].uri}',
+                  width: ${result.assets[0].width},
+                  height: ${result.assets[0].height}
+                }, '*');
+                true;
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'CAMERA_RESPONSE', success: false, cancelled: true }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error taking picture:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CAMERA_RESPONSE', success: false, error: 'Failed to take picture' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.imagePicker.pick':
+          console.log('[iOS HomeScreen] 🖼️ Pick image');
+          try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permissionResult.granted) {
+              throw new Error('Media library permission denied');
+            }
+            
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: 'images',
+              allowsEditing: data.allowsEditing !== false,
+              quality: data.quality || 0.8,
+            });
+            
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'IMAGE_PICKER_RESPONSE', 
+                  success: true, 
+                  uri: '${result.assets[0].uri}',
+                  width: ${result.assets[0].width},
+                  height: ${result.assets[0].height}
+                }, '*');
+                true;
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'IMAGE_PICKER_RESPONSE', success: false, cancelled: true }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error picking image:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'IMAGE_PICKER_RESPONSE', success: false, error: 'Failed to pick image' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.contacts.pick':
+          console.log('[iOS HomeScreen] 👤 Pick contact');
+          try {
+            const contact = await ContactsHandler.pickContact();
+            if (contact) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CONTACT_PICKER_RESPONSE', 
+                  success: true, 
+                  contact: ${JSON.stringify(contact)}
+                }, '*');
+                true;
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'CONTACT_PICKER_RESPONSE', success: false, cancelled: true }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error picking contact:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CONTACT_PICKER_RESPONSE', success: false, error: 'Failed to pick contact' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.audio.startRecording':
+          console.log('[iOS HomeScreen] 🎤 Start audio recording');
+          try {
+            const recording = await AudioHandler.startRecording();
+            setCurrentRecording(recording);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'AUDIO_RECORDING_STARTED', success: true }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error starting recording:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'AUDIO_RECORDING_STARTED', success: false, error: 'Failed to start recording' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.audio.stopRecording':
+          console.log('[iOS HomeScreen] ⏹️ Stop audio recording');
+          try {
+            if (currentRecording) {
+              const uri = await AudioHandler.stopRecording(currentRecording);
+              setCurrentRecording(null);
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_STOPPED', 
+                  success: true, 
+                  uri: '${uri}'
+                }, '*');
+                true;
+              `);
+            } else {
+              throw new Error('No active recording');
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error stopping recording:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'AUDIO_RECORDING_STOPPED', success: false, error: 'Failed to stop recording' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.haptics.impact':
+          console.log('[iOS HomeScreen] 📳 Haptic feedback');
+          try {
+            const style = data.style || 'medium';
+            if (style === 'light') {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } else if (style === 'heavy') {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            } else {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error with haptics:', error);
+          }
+          break;
+
+        case 'natively.geofence.enableNotifications':
+          console.log('[iOS HomeScreen] 📍 Toggle location notifications:', data.enabled);
+          try {
+            if (data.enabled) {
+              const started = await startGeofencing();
+              console.log('[iOS HomeScreen] Geofencing started:', started);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCE_ENABLE_RESPONSE', 
+                  success: ${started},
+                  enabled: ${started}
+                }, '*');
+                true;
+              `);
+              
+              const updatedLocations = await loadStoreLocations();
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCING_STATUS', 
+                  isActive: ${started},
+                  permissionStatus: 'granted',
+                  locationCount: ${updatedLocations.length},
+                  locations: ${JSON.stringify(updatedLocations)},
+                  platform: 'ios'
+                }, '*');
+                true;
+              `);
+            } else {
+              await stopGeofencing();
+              console.log('[iOS HomeScreen] Geofencing stopped');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCE_ENABLE_RESPONSE', 
+                  success: true,
+                  enabled: false
+                }, '*');
+                true;
+              `);
+              
+              const updatedLocations = await loadStoreLocations();
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'GEOFENCING_STATUS', 
+                  isActive: false,
+                  permissionStatus: 'granted',
+                  locationCount: ${updatedLocations.length},
+                  locations: ${JSON.stringify(updatedLocations)},
+                  platform: 'ios'
+                }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error toggling geofencing:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_ENABLE_RESPONSE', 
+                success: false,
+                error: 'Failed to toggle notifications'
+              }, '*');
+              true;
+            `);
+          }
+          break;
 
         case 'natively.geofence.requestPermission':
-          console.log('[iOS HomeScreen] User requesting location permission from web (profile page)');
+          console.log('[iOS HomeScreen] 🔐 Request location permission');
           try {
-            // Show user-friendly explanation before requesting permission
             Alert.alert(
               'Location Permission',
-              'ShopWell needs access to your location to notify you when you\'re near stores with active shopping lists or reservations. This helps you remember to pick up items when you\'re nearby.',
+              'ShopWell needs access to your location to notify you when you\'re near stores with active shopping lists or reservations.',
               [
                 {
                   text: 'Not Now',
                   style: 'cancel',
                   onPress: () => {
-                    console.log('[iOS HomeScreen] User declined location permission prompt');
+                    console.log('[iOS HomeScreen] User declined location permission');
                     setLocationPermissionStatus('denied');
                     webViewRef.current?.injectJavaScript(`
                       window.postMessage({ 
@@ -338,15 +606,13 @@ export default function HomeScreen() {
                 {
                   text: 'Allow',
                   onPress: async () => {
-                    console.log('[iOS HomeScreen] User accepted location permission prompt, requesting permission...');
+                    console.log('[iOS HomeScreen] User accepted, requesting permission...');
                     try {
                       const permissionGranted = await LocationHandler.requestLocationPermission();
-                      console.log('[iOS HomeScreen] Location permission granted:', permissionGranted);
+                      console.log('[iOS HomeScreen] Permission granted:', permissionGranted);
                       
-                      // Update local state
                       setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
                       
-                      // Send response to web
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
                           type: 'GEOFENCE_PERMISSION_RESPONSE', 
@@ -358,7 +624,6 @@ export default function HomeScreen() {
                         true;
                       `);
                       
-                      // Also send updated permissions status
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
                           type: 'PERMISSIONS_STATUS', 
@@ -368,8 +633,7 @@ export default function HomeScreen() {
                         true;
                       `);
                     } catch (permError) {
-                      console.error('[iOS HomeScreen] Error requesting location permission:', permError);
-                      crashReporter.logCrash(permError as Error, { location: 'requestLocationPermission' });
+                      console.error('[iOS HomeScreen] Error requesting permission:', permError);
                       setLocationPermissionStatus('denied');
                       webViewRef.current?.injectJavaScript(`
                         window.postMessage({ 
@@ -388,8 +652,7 @@ export default function HomeScreen() {
               ]
             );
           } catch (error) {
-            console.error('[iOS HomeScreen] Error showing location permission prompt:', error);
-            crashReporter.logCrash(error as Error, { location: 'showLocationPermissionPrompt' });
+            console.error('[iOS HomeScreen] Error showing permission prompt:', error);
             setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -405,39 +668,153 @@ export default function HomeScreen() {
           }
           break;
 
-        // ... (include all other message handlers from Android version)
+        case 'natively.geofence.getStatus':
+          console.log('[iOS HomeScreen] 📊 Get geofencing status');
+          const locations = await loadStoreLocations();
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'GEOFENCE_STATUS_RESPONSE', 
+              isActive: ${isGeofencingActive},
+              permissionStatus: '${geofencePermissionStatus ? 'granted' : 'denied'}',
+              locationCount: ${locations.length},
+              locations: ${JSON.stringify(locations)},
+              platform: 'ios'
+            }, '*');
+            true;
+          `);
+          break;
+
+        case 'natively.geofence.add':
+          console.log('[iOS HomeScreen] ➕ Add geofence:', data.location);
+          try {
+            await addStoreLocation(data.location);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_ADD_RESPONSE', 
+                success: true,
+                locationId: '${data.location.id}'
+              }, '*');
+              true;
+            `);
+            
+            const updatedLocations = await loadStoreLocations();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCING_STATUS', 
+                isActive: ${isGeofencingActive},
+                permissionStatus: 'granted',
+                locationCount: ${updatedLocations.length},
+                locations: ${JSON.stringify(updatedLocations)},
+                platform: 'ios'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error adding geofence:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_ADD_RESPONSE', 
+                success: false,
+                error: 'Failed to add location'
+              }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.geofence.remove':
+          console.log('[iOS HomeScreen] ➖ Remove geofence:', data.locationId);
+          try {
+            await removeStoreLocation(data.locationId);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_REMOVE_RESPONSE', 
+                success: true,
+                locationId: '${data.locationId}'
+              }, '*');
+              true;
+            `);
+            
+            const updatedLocations = await loadStoreLocations();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCING_STATUS', 
+                isActive: ${isGeofencingActive},
+                permissionStatus: 'granted',
+                locationCount: ${updatedLocations.length},
+                locations: ${JSON.stringify(updatedLocations)},
+                platform: 'ios'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error removing geofence:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_REMOVE_RESPONSE', 
+                success: false,
+                error: 'Failed to remove location'
+              }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.geofence.getAll':
+          console.log('[iOS HomeScreen] 📋 Get all monitored locations');
+          const allLocations = await loadStoreLocations();
+          console.log(`[iOS HomeScreen] Sending ${allLocations.length} locations to web`);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage({ 
+              type: 'GEOFENCE_LIST_RESPONSE', 
+              locations: ${JSON.stringify(allLocations)}
+            }, '*');
+            true;
+          `);
+          break;
+
+        case 'natively.offline.sync':
+          console.log('[iOS HomeScreen] 🔄 Manual sync requested');
+          try {
+            await manualSync();
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'OFFLINE_SYNC_RESPONSE', success: true }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error syncing:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'OFFLINE_SYNC_RESPONSE', success: false, error: 'Failed to sync' }, '*');
+              true;
+            `);
+          }
+          break;
         
         default:
-          console.log('[iOS HomeScreen] Unknown message type:', data.type);
+          console.log('[iOS HomeScreen] ❓ Unknown message type:', data.type);
       }
     } catch (error) {
-      console.error('[iOS HomeScreen] Error handling message:', error);
-      crashReporter.logCrash(error as Error, { 
-        location: 'handleMessage',
-        messageType: event?.nativeEvent?.data 
-      });
+      console.error('[iOS HomeScreen] ❌ Error handling message:', error);
     }
   };
 
-  // JavaScript to inject that tells the website it's running in native app
   const injectedJavaScript = `
     (function() {
-      console.log('[Native App iOS] Initializing native app bridge...');
+      console.log('[ShopWell Native] ═══════════════════════════════════════');
+      console.log('[ShopWell Native] Initializing native bridge...');
+      console.log('[ShopWell Native] ═══════════════════════════════════════');
       
-      // Set flag that we're in native app
       window.isNativeApp = true;
       window.nativeAppPlatform = 'ios';
       window.nativeAppReady = false;
-      
-      // Queue for messages sent before native app is ready
       window.nativelyMessageQueue = [];
       
-      // Override postMessage to queue messages until native is ready
       const originalPostMessage = window.postMessage;
       window.postMessage = function(message, targetOrigin) {
         if (typeof message === 'object' && message.type && message.type.startsWith('natively.')) {
           if (!window.nativeAppReady) {
-            console.log('[Native App iOS] Queueing message (native not ready):', message.type);
+            console.log('[ShopWell Native] ⏸️ Queueing message:', message.type);
             window.nativelyMessageQueue.push({ message, targetOrigin });
             return;
           }
@@ -445,35 +822,45 @@ export default function HomeScreen() {
         originalPostMessage.call(window, message, targetOrigin);
       };
       
-      // Listen for native ready signal
       window.addEventListener('message', function(event) {
         if (event.data && event.data.type === 'NATIVE_APP_READY') {
-          console.log('[Native App iOS] Native app is ready! Processing queued messages...');
+          console.log('[ShopWell Native] 🚀 Native app ready! Processing queue...');
           window.nativeAppReady = true;
           
-          // Process queued messages
           const queue = window.nativelyMessageQueue;
           window.nativelyMessageQueue = [];
+          console.log('[ShopWell Native] 📦 Processing', queue.length, 'queued messages');
           queue.forEach(function(item) {
-            console.log('[Native App iOS] Processing queued message:', item.message.type);
+            console.log('[ShopWell Native] ▶️ Processing queued:', item.message.type);
             originalPostMessage.call(window, item.message, item.targetOrigin);
           });
+          console.log('[ShopWell Native] ✅ Queue processed');
         }
       });
       
-      // Notify native that web page is ready
       setTimeout(function() {
         originalPostMessage.call(window, { 
           type: 'WEB_PAGE_READY',
           timestamp: Date.now()
         }, '*');
-        console.log('[Native App iOS] Sent WEB_PAGE_READY signal to native');
+        console.log('[ShopWell Native] 📤 Sent WEB_PAGE_READY signal');
       }, 100);
       
-      console.log('[Native App iOS] Native app bridge initialized - waiting for NATIVE_APP_READY signal');
+      console.log('[ShopWell Native] ✅ Native bridge initialized');
     })();
     true;
   `;
+
+  if (webViewError) {
+    return (
+      <View style={[styles.errorContainer, { paddingTop: insets.top }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Text style={styles.errorTitle}>Unable to Load ShopWell.ai</Text>
+        <Text style={styles.errorMessage}>{webViewError}</Text>
+        <Text style={styles.errorDetails}>Please check your internet connection and try again.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -489,28 +876,42 @@ export default function HomeScreen() {
         pullToRefreshEnabled={true}
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
+        onLoadStart={() => {
+          console.log('[iOS HomeScreen] 🌐 WebView loading started...');
+          console.log('[iOS HomeScreen] Loading URL:', SHOPWELL_URL);
+          setWebViewLoaded(false);
+          setWebViewError(null);
+        }}
         onLoadEnd={() => {
-          console.log('[iOS HomeScreen] WebView finished loading');
-          // Re-inject after page loads to ensure it takes effect
+          console.log('[iOS HomeScreen] ✅ WebView loaded successfully');
+          setWebViewLoaded(true);
           if (webViewRef.current) {
             setTimeout(() => {
               try {
+                console.log('[iOS HomeScreen] 💉 Re-injecting JavaScript bridge...');
                 webViewRef.current?.injectJavaScript(injectedJavaScript);
               } catch (error) {
-                console.error('[iOS HomeScreen] Error re-injecting JavaScript:', error);
-                crashReporter.logCrash(error as Error, { location: 'reInjectJavaScript' });
+                console.error('[iOS HomeScreen] ❌ Error re-injecting JS:', error);
               }
             }, 300);
           }
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] WebView error:', nativeEvent);
-          crashReporter.logCrash(new Error(`WebView error: ${JSON.stringify(nativeEvent)}`), { 
-            location: 'webViewError',
-            nativeEvent 
-          });
+          console.error('[iOS HomeScreen] ❌ WebView error:', nativeEvent);
+          setWebViewError(`Error loading website: ${nativeEvent.description || 'Unknown error'}`);
         }}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('[iOS HomeScreen] ❌ HTTP error:', nativeEvent.statusCode);
+          setWebViewError(`HTTP Error ${nativeEvent.statusCode}: Unable to load ShopWell.ai`);
+        }}
+        renderLoading={() => (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Loading ShopWell.ai...</Text>
+          </View>
+        )}
       />
     </View>
   );
@@ -519,8 +920,45 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   webview: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#ffffff',
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorDetails: {
+    fontSize: 14,
+    color: '#999999',
+    textAlign: 'center',
   },
 });

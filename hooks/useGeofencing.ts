@@ -77,12 +77,6 @@ export function useGeofencing() {
   const [hasPermission, setHasPermission] = useState(false);
   const [storeLocations, setStoreLocations] = useState<StoreLocation[]>([]);
 
-  // Load store locations on mount (safe operation, no permissions needed)
-  useEffect(() => {
-    console.log('[useGeofencing] Loading store locations on mount...');
-    loadStoreLocations();
-  }, []);
-
   // Load store locations from storage (safe operation, no permissions needed)
   const loadStoreLocations = useCallback(async () => {
     try {
@@ -97,6 +91,12 @@ export function useGeofencing() {
       return [];
     }
   }, []);
+
+  // Load store locations on mount (safe operation, no permissions needed)
+  useEffect(() => {
+    console.log('[useGeofencing] Loading store locations on mount...');
+    loadStoreLocations();
+  }, [loadStoreLocations]);
 
   // Save store locations to storage
   const saveStoreLocations = useCallback(async (locations: StoreLocation[]) => {
