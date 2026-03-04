@@ -56,9 +56,7 @@ export function useNotifications() {
       return;
     }
 
-    // DO NOT automatically request notification permissions on mount
-    // This was causing the permission prompt to appear immediately when the app opens
-    // Instead, we only check if we already have permission and get the token if we do
+    // Check existing permissions and get token if already granted
     console.log('[useNotifications] Checking existing notification permissions (not requesting)');
     
     // Wrap in try-catch to handle native module unavailability
@@ -179,55 +177,64 @@ export function useNotifications() {
     try {
       console.log('[useNotifications] Requesting notification permissions from user');
       
+      // Check current status first
+      const { status: currentStatus } = await Notifications.getPermissionsAsync();
+      console.log('[useNotifications] Current status before request:', currentStatus);
+      
+      // If already granted, just get the token
+      if (currentStatus === 'granted') {
+        console.log('[useNotifications] Permission already granted, getting token');
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        setExpoPushToken(tokenData.data);
+        console.log('[useNotifications] Push token:', tokenData.data);
+        return true;
+      }
+      
       // On Android 13+, show explanation first
-      if (Platform.OS === 'android') {
-        const { status: currentStatus } = await Notifications.getPermissionsAsync();
-        
-        if (currentStatus === 'undetermined') {
-          // Show explanation before requesting
-          return new Promise((resolve) => {
-            Alert.alert(
-              'Enable Notifications',
-              'Get notified about product alerts, price drops, and shopping reminders.',
-              [
-                {
-                  text: 'Not Now',
-                  style: 'cancel',
-                  onPress: () => {
-                    console.log('[useNotifications] User declined notification permission');
+      if (Platform.OS === 'android' && currentStatus === 'undetermined') {
+        // Show explanation before requesting
+        return new Promise((resolve) => {
+          Alert.alert(
+            'Enable Notifications',
+            'Get notified about product alerts, price drops, and shopping reminders.',
+            [
+              {
+                text: 'Not Now',
+                style: 'cancel',
+                onPress: () => {
+                  console.log('[useNotifications] User declined notification permission');
+                  setPermissionStatus('denied');
+                  resolve(false);
+                }
+              },
+              {
+                text: 'Enable',
+                onPress: async () => {
+                  try {
+                    const { status } = await Notifications.requestPermissionsAsync();
+                    const granted = status === 'granted';
+                    setPermissionStatus(granted ? 'granted' : 'denied');
+                    
+                    if (granted) {
+                      console.log('[useNotifications] Permission granted, getting token');
+                      const tokenData = await Notifications.getExpoPushTokenAsync();
+                      setExpoPushToken(tokenData.data);
+                      console.log('[useNotifications] Push token:', tokenData.data);
+                    } else {
+                      console.warn('[useNotifications] Notification permission denied');
+                    }
+                    
+                    resolve(granted);
+                  } catch (error) {
+                    console.error('[useNotifications] Error requesting permission:', error);
                     setPermissionStatus('denied');
                     resolve(false);
                   }
-                },
-                {
-                  text: 'Enable',
-                  onPress: async () => {
-                    try {
-                      const { status } = await Notifications.requestPermissionsAsync();
-                      const granted = status === 'granted';
-                      setPermissionStatus(granted ? 'granted' : 'denied');
-                      
-                      if (granted) {
-                        console.log('[useNotifications] Permission granted, getting token');
-                        const tokenData = await Notifications.getExpoPushTokenAsync();
-                        setExpoPushToken(tokenData.data);
-                        console.log('[useNotifications] Push token:', tokenData.data);
-                      } else {
-                        console.warn('[useNotifications] Notification permission denied');
-                      }
-                      
-                      resolve(granted);
-                    } catch (error) {
-                      console.error('[useNotifications] Error requesting permission:', error);
-                      setPermissionStatus('denied');
-                      resolve(false);
-                    }
-                  }
                 }
-              ]
-            );
-          });
-        }
+              }
+            ]
+          );
+        });
       }
       
       // Direct request for iOS or if already determined on Android

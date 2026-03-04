@@ -16,20 +16,25 @@ export default function ShareTargetScreen() {
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
-    console.log('[ShareTarget] Screen opened with params:', params);
+    console.log('[ShareTarget] Screen opened with params:', JSON.stringify(params));
     
     // Extract shared data from URL parameters
     const extractSharedData = () => {
-      // Handle text sharing
+      // Handle text sharing (from Android SEND intent with text/plain)
       if (params.text) {
         const textContent = Array.isArray(params.text) ? params.text[0] : params.text;
         console.log('[ShareTarget] Extracted text:', textContent);
+        
+        // Check if the text is a URL
+        const isUrl = textContent.startsWith('http://') || textContent.startsWith('https://');
+        
         setSharedData({
-          type: 'text',
+          type: isUrl ? 'url' : 'text',
           content: textContent,
+          url: isUrl ? textContent : undefined,
         });
       }
-      // Handle URL sharing
+      // Handle URL sharing (from Android VIEW intent)
       else if (params.url) {
         const urlContent = Array.isArray(params.url) ? params.url[0] : params.url;
         console.log('[ShareTarget] Extracted URL:', urlContent);
@@ -39,7 +44,7 @@ export default function ShareTargetScreen() {
           url: urlContent,
         });
       }
-      // Handle image sharing
+      // Handle image sharing (from Android SEND intent with image/*)
       else if (params.image) {
         const imageContent = Array.isArray(params.image) ? params.image[0] : params.image;
         console.log('[ShareTarget] Extracted image:', imageContent);
@@ -84,11 +89,13 @@ export default function ShareTargetScreen() {
 
   const handleContinue = () => {
     console.log('[ShareTarget] User continuing with shared data:', sharedData);
+    
     // Navigate to home and pass the shared data
+    // The WebView will receive this data and populate the "Product URL (Optional)" field
     router.replace({
       pathname: '/(tabs)/(home)/',
       params: {
-        sharedContent: sharedData?.content,
+        sharedContent: sharedData?.url || sharedData?.content,
         sharedType: sharedData?.type,
       },
     });

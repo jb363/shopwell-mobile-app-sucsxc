@@ -22,21 +22,21 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
         title: 'Voice Planner',
         subtitle: 'Start voice planning',
         icon: Platform.OS === 'ios' ? 'symbol:mic.fill' : 'mic',
-        params: { action: 'voice_planner' },
+        params: { action: 'VOICE_PLANNER' },
       },
       {
         id: 'product_search',
         title: 'Product Search',
         subtitle: 'Search for products',
         icon: Platform.OS === 'ios' ? 'symbol:magnifyingglass' : 'search',
-        params: { action: 'product_search' },
+        params: { action: 'PRODUCT_SEARCH' },
       },
       {
         id: 'photo_search',
         title: 'Photo Search',
         subtitle: 'Search by photo',
         icon: Platform.OS === 'ios' ? 'symbol:camera.fill' : 'camera-alt',
-        params: { action: 'photo_search' },
+        params: { action: 'PHOTO_SEARCH' },
       },
     ];
 
@@ -55,7 +55,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
 
     // Handle quick action selection
     const handleQuickAction = (action: QuickActions.Action) => {
-      console.log('[QuickActions] Quick action triggered:', action.id);
+      console.log('[QuickActions] Quick action triggered:', action.id, 'params:', action.params);
 
       if (!webViewRef.current) {
         console.warn('[QuickActions] WebView ref not available, deferring action');
@@ -68,14 +68,20 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
         return;
       }
 
+      // Get the action from params (Android) or id (iOS)
+      const actionType = (action.params as any)?.action || action.id;
+      console.log('[QuickActions] Action type:', actionType);
+
       // Inject JavaScript to trigger the appropriate action on the web page
       try {
-        switch (action.id) {
+        switch (actionType) {
+          case 'VOICE_PLANNER':
           case 'voice_planner':
             console.log('[QuickActions] Triggering voice planner...');
             webViewRef.current.injectJavaScript(`
               (function() {
                 try {
+                  console.log('[QuickActions] Executing voice planner action');
                   // Try to find and click the voice planner button
                   const voiceButton = document.querySelector('[data-voice-planner], [aria-label*="voice"], button[class*="voice"]');
                   if (voiceButton) {
@@ -102,11 +108,13 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
             `);
             break;
 
+          case 'PRODUCT_SEARCH':
           case 'product_search':
             console.log('[QuickActions] Triggering product search...');
             webViewRef.current.injectJavaScript(`
               (function() {
                 try {
+                  console.log('[QuickActions] Executing product search action');
                   // Try to find and focus the search input
                   const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i], input[aria-label*="search" i]');
                   if (searchInput) {
@@ -133,11 +141,13 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
             `);
             break;
 
+          case 'PHOTO_SEARCH':
           case 'photo_search':
             console.log('[QuickActions] Triggering photo search...');
             webViewRef.current.injectJavaScript(`
               (function() {
                 try {
+                  console.log('[QuickActions] Executing photo search action');
                   // Try to find and click the photo search button
                   const photoButton = document.querySelector('[data-photo-search], [aria-label*="photo"], button[class*="photo"], button[class*="camera"]');
                   if (photoButton) {
@@ -146,7 +156,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
                   } else {
                     // Fallback: trigger native image picker
                     window.postMessage({ 
-                      type: 'natively.imagePicker'
+                      type: 'natively.imagePicker.pick'
                     }, '*');
                     console.log('[QuickActions] Triggered native image picker');
                   }
@@ -165,7 +175,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
             break;
 
           default:
-            console.log('[QuickActions] Unknown quick action:', action.id);
+            console.log('[QuickActions] Unknown quick action:', actionType);
         }
       } catch (error) {
         console.error('[QuickActions] Error injecting JavaScript for quick action:', error);
@@ -182,7 +192,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
           if (!isMounted) return;
           
           if (action) {
-            console.log('[QuickActions] Initial quick action detected:', action.id);
+            console.log('[QuickActions] Initial quick action detected:', action.id, 'params:', action.params);
             // Wait a bit for WebView to be ready
             setTimeout(() => {
               if (isMounted) {
@@ -203,6 +213,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       
       try {
         listener = QuickActions.addListener(handleQuickAction);
+        console.log('[QuickActions] Quick action listener added');
       } catch (error) {
         console.error('[QuickActions] Error adding quick action listener:', error);
       }
