@@ -3,7 +3,7 @@
   "expo": {
     "name": "ShopWell.ai Mobile",
     "slug": "shopwell-mobile-app-sucsxc",
-    "version": "1.0.16",
+    "version": "1.0.15",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
     "scheme": "shopwellaimobile",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.shopwell.app",
-      "buildNumber": "1.0.17",
+      "buildNumber": "1.0.18",
       "infoPlist": {
         "NSCameraUsageDescription": "ShopWell needs access to your camera to scan product barcodes and QR codes.",
         "NSPhotoLibraryUsageDescription": "ShopWell needs access to your photo library to let you select images for your shopping lists.",
@@ -51,6 +51,7 @@
         "WRITE_EXTERNAL_STORAGE",
         "RECORD_AUDIO",
         "READ_CONTACTS",
+        "WRITE_CONTACTS",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",

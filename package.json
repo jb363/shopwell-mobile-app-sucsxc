@@ -1,3 +1,4 @@
+
 {
   "name": "shopwell-mobile-app-sucsxc",
   "version": "1.0.0",
@@ -8,7 +9,11 @@
     "ios": "EXPO_NO_TELEMETRY=1 expo start --ios",
     "web": "EXPO_NO_TELEMETRY=1 expo start --web",
     "build:web": "expo export -p web && npx workbox generateSW workbox-config.js",
-    "build:android": "expo prebuild -p android",
+    "prebuild": "node .expo-prebuild-validation.js && expo prebuild",
+    "prebuild:android": "node .expo-prebuild-validation.js && expo prebuild -p android",
+    "prebuild:ios": "node .expo-prebuild-validation.js && expo prebuild -p ios",
+    "build:android": "node .expo-prebuild-validation.js && expo prebuild -p android",
+    "validate": "node .expo-prebuild-validation.js",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -79,6 +84,7 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "babel-preset-expo": "~12.0.4",
     "eslint": "^8.57.0",
     "eslint-config-expo": "~10.0.0",
     "eslint-plugin-import": "^2.31.0",
