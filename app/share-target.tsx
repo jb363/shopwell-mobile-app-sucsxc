@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams, Redirect } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 
@@ -13,15 +13,17 @@ export default function ShareTargetScreen() {
     url?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
-    console.log('Share target screen opened with params:', params);
+    console.log('[ShareTarget] Screen opened with params:', params);
     
     // Extract shared data from URL parameters
     const extractSharedData = () => {
       // Handle text sharing
       if (params.text) {
         const textContent = Array.isArray(params.text) ? params.text[0] : params.text;
+        console.log('[ShareTarget] Extracted text:', textContent);
         setSharedData({
           type: 'text',
           content: textContent,
@@ -30,6 +32,7 @@ export default function ShareTargetScreen() {
       // Handle URL sharing
       else if (params.url) {
         const urlContent = Array.isArray(params.url) ? params.url[0] : params.url;
+        console.log('[ShareTarget] Extracted URL:', urlContent);
         setSharedData({
           type: 'url',
           content: urlContent,
@@ -39,6 +42,7 @@ export default function ShareTargetScreen() {
       // Handle image sharing
       else if (params.image) {
         const imageContent = Array.isArray(params.image) ? params.image[0] : params.image;
+        console.log('[ShareTarget] Extracted image:', imageContent);
         setSharedData({
           type: 'image',
           content: imageContent,
@@ -47,6 +51,7 @@ export default function ShareTargetScreen() {
       // Handle generic data
       else if (params.data) {
         const dataContent = Array.isArray(params.data) ? params.data[0] : params.data;
+        console.log('[ShareTarget] Extracted data:', dataContent);
         setSharedData({
           type: 'data',
           content: dataContent,
@@ -59,10 +64,15 @@ export default function ShareTargetScreen() {
           .join('\n');
         
         if (allParams) {
+          console.log('[ShareTarget] Extracted all params:', allParams);
           setSharedData({
             type: 'unknown',
             content: allParams,
           });
+        } else {
+          console.log('[ShareTarget] No shared data found, redirecting to home');
+          // No data, redirect immediately
+          setShouldRedirect(true);
         }
       }
       
@@ -73,7 +83,7 @@ export default function ShareTargetScreen() {
   }, [params]);
 
   const handleContinue = () => {
-    console.log('User continuing with shared data:', sharedData);
+    console.log('[ShareTarget] User continuing with shared data:', sharedData);
     // Navigate to home and pass the shared data
     router.replace({
       pathname: '/(tabs)/(home)/',
@@ -85,9 +95,15 @@ export default function ShareTargetScreen() {
   };
 
   const handleCancel = () => {
-    console.log('User cancelled share');
+    console.log('[ShareTarget] User cancelled share');
     router.replace('/(tabs)/(home)/');
   };
+
+  // Redirect immediately if no data
+  if (shouldRedirect) {
+    console.log('[ShareTarget] Redirecting to home (no data)');
+    return <Redirect href="/(tabs)/(home)/" />;
+  }
 
   const typeLabel = sharedData?.type === 'text' ? 'Text' :
                     sharedData?.type === 'url' ? 'Link' :

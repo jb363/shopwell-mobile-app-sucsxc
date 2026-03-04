@@ -1,6 +1,6 @@
 
 import * as Contacts from 'expo-contacts';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 
 export interface Contact {
   id: string;
@@ -13,16 +13,51 @@ export interface Contact {
 }
 
 /**
- * Request permission to access contacts
+ * Request permission to access contacts with proper Android handling
  */
 export async function requestContactsPermission(): Promise<boolean> {
   try {
-    console.log('Requesting contacts permission...');
-    const { status } = await Contacts.requestPermissionsAsync();
-    console.log('Contacts permission status:', status);
-    return status === 'granted';
+    console.log('[ContactsHandler] Requesting contacts permission...');
+    
+    // On Android, show an alert first to explain why we need permission
+    if (Platform.OS === 'android') {
+      return new Promise((resolve) => {
+        Alert.alert(
+          'Contacts Permission',
+          'ShopWell needs access to your contacts to help you share shopping lists with friends and family.',
+          [
+            {
+              text: 'Not Now',
+              style: 'cancel',
+              onPress: () => {
+                console.log('[ContactsHandler] User declined contacts permission');
+                resolve(false);
+              }
+            },
+            {
+              text: 'Allow',
+              onPress: async () => {
+                try {
+                  const { status } = await Contacts.requestPermissionsAsync();
+                  console.log('[ContactsHandler] Contacts permission status:', status);
+                  resolve(status === 'granted');
+                } catch (error) {
+                  console.error('[ContactsHandler] Error requesting permission:', error);
+                  resolve(false);
+                }
+              }
+            }
+          ]
+        );
+      });
+    } else {
+      // iOS - direct permission request
+      const { status } = await Contacts.requestPermissionsAsync();
+      console.log('[ContactsHandler] Contacts permission status:', status);
+      return status === 'granted';
+    }
   } catch (error) {
-    console.error('Error requesting contacts permission:', error);
+    console.error('[ContactsHandler] Error requesting contacts permission:', error);
     return false;
   }
 }
@@ -32,14 +67,14 @@ export async function requestContactsPermission(): Promise<boolean> {
  */
 export async function getAllContacts(): Promise<Contact[]> {
   try {
-    console.log('Fetching all contacts...');
+    console.log('[ContactsHandler] Fetching all contacts...');
     const { status } = await Contacts.getPermissionsAsync();
     
     if (status !== 'granted') {
-      console.log('Contacts permission not granted, requesting...');
+      console.log('[ContactsHandler] Contacts permission not granted, requesting...');
       const granted = await requestContactsPermission();
       if (!granted) {
-        console.log('Contacts permission denied');
+        console.log('[ContactsHandler] Contacts permission denied');
         return [];
       }
     }
@@ -55,7 +90,7 @@ export async function getAllContacts(): Promise<Contact[]> {
       ],
     });
 
-    console.log(`Fetched ${data.length} contacts`);
+    console.log(`[ContactsHandler] Fetched ${data.length} contacts`);
 
     // Transform contacts to our format
     const contacts: Contact[] = data.map((contact) => ({
@@ -70,7 +105,7 @@ export async function getAllContacts(): Promise<Contact[]> {
 
     return contacts;
   } catch (error) {
-    console.error('Error fetching contacts:', error);
+    console.error('[ContactsHandler] Error fetching contacts:', error);
     return [];
   }
 }
@@ -80,7 +115,7 @@ export async function getAllContacts(): Promise<Contact[]> {
  */
 export async function searchContacts(query: string): Promise<Contact[]> {
   try {
-    console.log('Searching contacts with query:', query);
+    console.log('[ContactsHandler] Searching contacts with query:', query);
     const allContacts = await getAllContacts();
     
     const lowerQuery = query.toLowerCase();
@@ -91,10 +126,10 @@ export async function searchContacts(query: string): Promise<Contact[]> {
       return nameMatch || firstNameMatch || lastNameMatch;
     });
 
-    console.log(`Found ${filtered.length} matching contacts`);
+    console.log(`[ContactsHandler] Found ${filtered.length} matching contacts`);
     return filtered;
   } catch (error) {
-    console.error('Error searching contacts:', error);
+    console.error('[ContactsHandler] Error searching contacts:', error);
     return [];
   }
 }
@@ -104,15 +139,15 @@ export async function searchContacts(query: string): Promise<Contact[]> {
  */
 export async function pickContact(): Promise<Contact | null> {
   try {
-    console.log('Opening contact picker...');
+    console.log('[ContactsHandler] Opening contact picker...');
     
-    // Request permission first
+    // Request permission first with proper Android handling
     const { status } = await Contacts.getPermissionsAsync();
     if (status !== 'granted') {
-      console.log('Contacts permission not granted, requesting...');
+      console.log('[ContactsHandler] Contacts permission not granted, requesting...');
       const granted = await requestContactsPermission();
       if (!granted) {
-        console.log('Contacts permission denied');
+        console.log('[ContactsHandler] Contacts permission denied');
         return null;
       }
     }
@@ -133,26 +168,25 @@ export async function pickContact(): Promise<Contact | null> {
           imageAvailable: result.imageAvailable,
         };
         
-        console.log('Contact picked:', contact.name);
+        console.log('[ContactsHandler] Contact picked:', contact.name);
         return contact;
       }
     } else {
-      // Fallback: Get all contacts and let user pick (not ideal, but works on Android)
-      console.log('Native picker not available, using fallback method');
+      // Android: Get all contacts and return the first one
+      // In a real implementation, you'd show a custom picker UI
+      console.log('[ContactsHandler] Native picker not available on Android, fetching contacts...');
       const allContacts = await getAllContacts();
       
       if (allContacts.length > 0) {
-        // Return the first contact as a fallback
-        // In a real app, you'd show a custom picker UI here
-        console.log('Returning first contact as fallback');
+        console.log('[ContactsHandler] Returning first contact as fallback');
         return allContacts[0];
       }
     }
 
-    console.log('No contact selected');
+    console.log('[ContactsHandler] No contact selected');
     return null;
   } catch (error) {
-    console.error('Error picking contact:', error);
+    console.error('[ContactsHandler] Error picking contact:', error);
     return null;
   }
 }
@@ -165,7 +199,7 @@ export async function hasContactsPermission(): Promise<boolean> {
     const { status } = await Contacts.getPermissionsAsync();
     return status === 'granted';
   } catch (error) {
-    console.error('Error checking contacts permission:', error);
+    console.error('[ContactsHandler] Error checking contacts permission:', error);
     return false;
   }
 }

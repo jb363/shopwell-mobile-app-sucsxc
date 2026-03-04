@@ -34,6 +34,8 @@ export default function HomeScreen() {
   
   // Initialize hooks with error handling
   let expoPushToken = null;
+  let notificationPermissionStatus = 'undetermined';
+  let requestNotificationPermissions = async () => false;
   let isSyncing = false;
   let queueSize = 0;
   let isOnline = true;
@@ -50,6 +52,8 @@ export default function HomeScreen() {
   try {
     const notificationsHook = useNotifications();
     expoPushToken = notificationsHook.expoPushToken;
+    notificationPermissionStatus = notificationsHook.permissionStatus;
+    requestNotificationPermissions = notificationsHook.requestPermissions;
   } catch (error) {
     console.error('[Android HomeScreen] Error initializing notifications hook:', error);
   }
@@ -238,7 +242,8 @@ export default function HomeScreen() {
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
                 contacts: '${contactsPermissionStatus}',
-                location: '${locationPermissionStatus}'
+                location: '${locationPermissionStatus}',
+                notifications: '${notificationPermissionStatus}'
               }, '*');
             } catch (error) {
               console.error('[Native App] Error sending permissions status:', error);
@@ -250,7 +255,7 @@ export default function HomeScreen() {
         console.error('[Android HomeScreen] Error injecting permissions status:', error);
       }
     }
-  }, [contactsPermissionStatus, locationPermissionStatus, isNativeReady]);
+  }, [contactsPermissionStatus, locationPermissionStatus, notificationPermissionStatus, isNativeReady]);
 
   const handleMessage = async (event: any) => {
     try {
@@ -307,7 +312,8 @@ export default function HomeScreen() {
                     window.postMessage({ 
                       type: 'PERMISSIONS_STATUS', 
                       contacts: '${contactsPermissionStatus}',
-                      location: '${locationPermissionStatus}'
+                      location: '${locationPermissionStatus}',
+                      notifications: '${notificationPermissionStatus}'
                     }, '*');
                   } catch (error) {
                     console.error('[Native App] Error sending permissions status:', error);
@@ -319,6 +325,110 @@ export default function HomeScreen() {
               console.error('[Android HomeScreen] Error responding to WEB_PAGE_READY:', error);
             }
           }, 200);
+          break;
+
+        case 'natively.contacts.pick':
+          console.log('[Android HomeScreen] Pick contact');
+          try {
+            const contact = await ContactsHandler.pickContact();
+            if (contact) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setContactsPermissionStatus('granted');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CONTACT_PICKER_RESPONSE', 
+                  success: true, 
+                  contact: ${JSON.stringify(contact)}
+                }, '*');
+                true;
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'CONTACT_PICKER_RESPONSE', success: false, cancelled: true }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[Android HomeScreen] Error picking contact:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CONTACT_PICKER_RESPONSE', success: false, error: 'Failed to pick contact' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.contacts.requestPermission':
+          console.log('[Android HomeScreen] Request contacts permission');
+          try {
+            const granted = await ContactsHandler.requestContactsPermission();
+            setContactsPermissionStatus(granted ? 'granted' : 'denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_PERMISSION_RESPONSE', 
+                granted: ${granted},
+                status: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${granted ? 'granted' : 'denied'}',
+                location: '${locationPermissionStatus}',
+                notifications: '${notificationPermissionStatus}'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[Android HomeScreen] Error requesting contacts permission:', error);
+            setContactsPermissionStatus('denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_PERMISSION_RESPONSE', 
+                granted: false,
+                status: 'denied',
+                error: 'Failed to request permission'
+              }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.notifications.requestPermission':
+          console.log('[Android HomeScreen] Request notification permission');
+          try {
+            const granted = await requestNotificationPermissions();
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
+                granted: ${granted},
+                status: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${contactsPermissionStatus}',
+                location: '${locationPermissionStatus}',
+                notifications: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[Android HomeScreen] Error requesting notification permission:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
+                granted: false,
+                status: 'denied',
+                error: 'Failed to request permission'
+              }, '*');
+              true;
+            `);
+          }
           break;
 
         case 'natively.geofence.enableNotifications':
@@ -389,79 +499,33 @@ export default function HomeScreen() {
         case 'natively.geofence.requestPermission':
           console.log('[Android HomeScreen] Request location permission');
           try {
-            Alert.alert(
-              'Location Permission',
-              'ShopWell needs access to your location to notify you when you\'re near stores with active shopping lists or reservations.',
-              [
-                {
-                  text: 'Not Now',
-                  style: 'cancel',
-                  onPress: () => {
-                    console.log('[Android HomeScreen] User declined location permission');
-                    setLocationPermissionStatus('denied');
-                    webViewRef.current?.injectJavaScript(`
-                      window.postMessage({ 
-                        type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                        foreground: false,
-                        background: false,
-                        permissionStatus: 'denied',
-                        status: 'denied',
-                        userCancelled: true
-                      }, '*');
-                      true;
-                    `);
-                  }
-                },
-                {
-                  text: 'Allow',
-                  onPress: async () => {
-                    console.log('[Android HomeScreen] User accepted, requesting permission...');
-                    try {
-                      const permissionGranted = await LocationHandler.requestLocationPermission();
-                      console.log('[Android HomeScreen] Permission granted:', permissionGranted);
-                      
-                      setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
-                      
-                      webViewRef.current?.injectJavaScript(`
-                        window.postMessage({ 
-                          type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                          foreground: ${permissionGranted},
-                          background: ${permissionGranted},
-                          permissionStatus: '${permissionGranted ? 'granted' : 'denied'}',
-                          status: '${permissionGranted ? 'granted' : 'denied'}'
-                        }, '*');
-                        true;
-                      `);
-                      
-                      webViewRef.current?.injectJavaScript(`
-                        window.postMessage({ 
-                          type: 'PERMISSIONS_STATUS', 
-                          contacts: '${contactsPermissionStatus}',
-                          location: '${permissionGranted ? 'granted' : 'denied'}'
-                        }, '*');
-                        true;
-                      `);
-                    } catch (permError) {
-                      console.error('[Android HomeScreen] Error requesting permission:', permError);
-                      setLocationPermissionStatus('denied');
-                      webViewRef.current?.injectJavaScript(`
-                        window.postMessage({ 
-                          type: 'GEOFENCE_PERMISSION_RESPONSE', 
-                          foreground: false,
-                          background: false,
-                          permissionStatus: 'denied',
-                          status: 'denied',
-                          error: 'Failed to request permission'
-                        }, '*');
-                        true;
-                      `);
-                    }
-                  }
-                }
-              ]
-            );
+            const permissionGranted = await LocationHandler.requestLocationPermission();
+            console.log('[Android HomeScreen] Permission granted:', permissionGranted);
+            
+            setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'GEOFENCE_PERMISSION_RESPONSE', 
+                foreground: ${permissionGranted},
+                background: ${permissionGranted},
+                permissionStatus: '${permissionGranted ? 'granted' : 'denied'}',
+                status: '${permissionGranted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${contactsPermissionStatus}',
+                location: '${permissionGranted ? 'granted' : 'denied'}',
+                notifications: '${notificationPermissionStatus}'
+              }, '*');
+              true;
+            `);
           } catch (error) {
-            console.error('[Android HomeScreen] Error showing permission prompt:', error);
+            console.error('[Android HomeScreen] Error requesting location permission:', error);
             setLocationPermissionStatus('denied');
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -470,7 +534,7 @@ export default function HomeScreen() {
                 background: false,
                 permissionStatus: 'denied',
                 status: 'denied',
-                error: 'Failed to show permission prompt'
+                error: 'Failed to request permission'
               }, '*');
               true;
             `);
@@ -582,9 +646,216 @@ export default function HomeScreen() {
           `);
           break;
 
-        // ... (include all other message handlers from the original file)
-        // For brevity, I'm showing just the geofencing-related handlers
-        // The rest remain the same
+        case 'natively.clipboard.copy':
+          console.log('[Android HomeScreen] Copy to clipboard');
+          try {
+            await Clipboard.setStringAsync(data.text);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CLIPBOARD_COPY_RESPONSE', success: true }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[Android HomeScreen] Error copying to clipboard:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CLIPBOARD_COPY_RESPONSE', success: false, error: 'Failed to copy' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.share':
+          console.log('[Android HomeScreen] Share content');
+          try {
+            const shareOptions: any = {};
+            if (data.url) shareOptions.url = data.url;
+            if (data.message) shareOptions.message = data.message;
+            
+            const canShare = await Sharing.isAvailableAsync();
+            if (canShare) {
+              if (data.url) {
+                await Sharing.shareAsync(data.url, shareOptions);
+              } else if (data.message) {
+                await Sharing.shareAsync(data.message);
+              }
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'SHARE_RESPONSE', success: true }, '*');
+                true;
+              `);
+            } else {
+              throw new Error('Sharing not available');
+            }
+          } catch (error) {
+            console.error('[Android HomeScreen] Error sharing:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'SHARE_RESPONSE', success: false, error: 'Failed to share' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.camera.takePicture':
+          console.log('[Android HomeScreen] Take picture');
+          try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+              throw new Error('Camera permission denied');
+            }
+            
+            const result = await ImagePicker.launchCameraAsync({
+              mediaTypes: 'images',
+              allowsEditing: data.allowsEditing !== false,
+              quality: data.quality || 0.8,
+            });
+            
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'CAMERA_RESPONSE', 
+                  success: true, 
+                  uri: '${result.assets[0].uri}',
+                  width: ${result.assets[0].width},
+                  height: ${result.assets[0].height}
+                }, '*');
+                true;
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'CAMERA_RESPONSE', success: false, cancelled: true }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[Android HomeScreen] Error taking picture:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'CAMERA_RESPONSE', success: false, error: 'Failed to take picture' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.imagePicker.pick':
+          console.log('[Android HomeScreen] Pick image');
+          try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permissionResult.granted) {
+              throw new Error('Media library permission denied');
+            }
+            
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: 'images',
+              allowsEditing: data.allowsEditing !== false,
+              quality: data.quality || 0.8,
+            });
+            
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'IMAGE_PICKER_RESPONSE', 
+                  success: true, 
+                  uri: '${result.assets[0].uri}',
+                  width: ${result.assets[0].width},
+                  height: ${result.assets[0].height}
+                }, '*');
+                true;
+              `);
+            } else {
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ type: 'IMAGE_PICKER_RESPONSE', success: false, cancelled: true }, '*');
+                true;
+              `);
+            }
+          } catch (error) {
+            console.error('[Android HomeScreen] Error picking image:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'IMAGE_PICKER_RESPONSE', success: false, error: 'Failed to pick image' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.audio.startRecording':
+          console.log('[Android HomeScreen] Start audio recording');
+          try {
+            const recording = await AudioHandler.startRecording();
+            setCurrentRecording(recording);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'AUDIO_RECORDING_STARTED', success: true }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[Android HomeScreen] Error starting recording:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'AUDIO_RECORDING_STARTED', success: false, error: 'Failed to start recording' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.audio.stopRecording':
+          console.log('[Android HomeScreen] Stop audio recording');
+          try {
+            if (currentRecording) {
+              const uri = await AudioHandler.stopRecording(currentRecording);
+              setCurrentRecording(null);
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage({ 
+                  type: 'AUDIO_RECORDING_STOPPED', 
+                  success: true, 
+                  uri: '${uri}'
+                }, '*');
+                true;
+              `);
+            } else {
+              throw new Error('No active recording');
+            }
+          } catch (error) {
+            console.error('[Android HomeScreen] Error stopping recording:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'AUDIO_RECORDING_STOPPED', success: false, error: 'Failed to stop recording' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.haptics.impact':
+          console.log('[Android HomeScreen] Haptic feedback');
+          try {
+            const style = data.style || 'medium';
+            if (style === 'light') {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } else if (style === 'heavy') {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            } else {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+          } catch (error) {
+            console.error('[Android HomeScreen] Error with haptics:', error);
+          }
+          break;
+
+        case 'natively.offline.sync':
+          console.log('[Android HomeScreen] Manual sync requested');
+          try {
+            await manualSync();
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'OFFLINE_SYNC_RESPONSE', success: true }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[Android HomeScreen] Error syncing:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ type: 'OFFLINE_SYNC_RESPONSE', success: false, error: 'Failed to sync' }, '*');
+              true;
+            `);
+          }
+          break;
         
         default:
           console.log('[Android HomeScreen] Unknown message type:', data.type);

@@ -15,22 +15,22 @@ Notifications.setNotificationHandler({
 
 // Handle notification data and deep linking
 function handleNotificationData(data: any) {
-  console.log('Handling notification data:', data);
+  console.log('[useNotifications] Handling notification data:', data);
   
   if (!data) return;
 
   // Handle geofence notifications
   if (data.type === 'geofence') {
-    console.log('Geofence notification:', data.storeName);
+    console.log('[useNotifications] Geofence notification:', data.storeName);
     
     if (data.listId) {
       // Navigate to list detail
-      console.log('Navigating to list:', data.listId);
+      console.log('[useNotifications] Navigating to list:', data.listId);
       // TODO: Backend Integration - Navigate to list detail screen when backend provides list endpoints
       // router.push(`/lists/${data.listId}`);
     } else if (data.reservationNumber) {
       // Navigate to reservation detail
-      console.log('Navigating to reservation:', data.reservationNumber);
+      console.log('[useNotifications] Navigating to reservation:', data.reservationNumber);
       // TODO: Backend Integration - Navigate to reservation detail screen when backend provides reservation endpoints
       // router.push(`/reservations/${data.reservationNumber}`);
     }
@@ -43,6 +43,7 @@ function handleNotificationData(data: any) {
 export function useNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string>();
   const [notification, setNotification] = useState<Notifications.Notification>();
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
 
@@ -70,6 +71,8 @@ export function useNotifications() {
         if (!isMounted) return;
         
         const { status } = await Notifications.getPermissionsAsync();
+        setPermissionStatus(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined');
+        
         if (status === 'granted') {
           console.log('[useNotifications] Already have notification permission, getting token');
           try {
@@ -101,7 +104,7 @@ export function useNotifications() {
         
         const response = await Notifications.getLastNotificationResponseAsync();
         if (response) {
-          console.log('App opened from notification:', response);
+          console.log('[useNotifications] App opened from notification:', response);
           const data = response.notification.request.content.data;
           handleNotificationData(data);
         }
@@ -119,14 +122,14 @@ export function useNotifications() {
       
       try {
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          console.log('Notification received:', notification);
+          console.log('[useNotifications] Notification received:', notification);
           if (isMounted) {
             setNotification(notification);
           }
         });
 
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          console.log('Notification response:', response);
+          console.log('[useNotifications] Notification response:', response);
           const data = response.notification.request.content.data;
           handleNotificationData(data);
         });
@@ -148,7 +151,7 @@ export function useNotifications() {
 
   const schedulePushNotification = async () => {
     if (Platform.OS === 'web') {
-      console.warn('Push notifications not supported on web');
+      console.warn('[useNotifications] Push notifications not supported on web');
       return;
     }
 
@@ -166,12 +169,45 @@ export function useNotifications() {
     }
   };
 
-  return { schedulePushNotification, expoPushToken, notification };
+  const requestPermissions = async (): Promise<boolean> => {
+    if (Platform.OS === 'web') {
+      console.log('[useNotifications] Push notifications not available on web');
+      return false;
+    }
+
+    try {
+      console.log('[useNotifications] Requesting notification permissions from user');
+      const { status } = await Notifications.requestPermissionsAsync();
+      setPermissionStatus(status === 'granted' ? 'granted' : 'denied');
+      
+      if (status === 'granted') {
+        console.log('[useNotifications] Permission granted, getting token');
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        setExpoPushToken(tokenData.data);
+        console.log('[useNotifications] Push token:', tokenData.data);
+        return true;
+      } else {
+        console.warn('[useNotifications] Notification permission denied');
+        return false;
+      }
+    } catch (error) {
+      console.error('[useNotifications] Error requesting permissions:', error);
+      return false;
+    }
+  };
+
+  return { 
+    schedulePushNotification, 
+    expoPushToken, 
+    notification,
+    permissionStatus,
+    requestPermissions
+  };
 }
 
 export async function registerForPushNotificationsAsync() {
   if (Platform.OS === 'web') {
-    console.log('Push notifications not available on web');
+    console.log('[registerForPushNotifications] Push notifications not available on web');
     return undefined;
   }
 
@@ -187,12 +223,12 @@ export async function registerForPushNotificationsAsync() {
     }
     
     if (finalStatus !== 'granted') {
-      console.warn('Failed to get push token for push notification!');
+      console.warn('[registerForPushNotifications] Failed to get push token for push notification!');
       return;
     }
     
     token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log('Expo push token:', token);
+    console.log('[registerForPushNotifications] Expo push token:', token);
     
     return token;
   } catch (error) {
