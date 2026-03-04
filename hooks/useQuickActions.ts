@@ -35,7 +35,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
         id: 'photo_search',
         title: 'Photo Search',
         subtitle: 'Search by photo',
-        icon: Platform.OS === 'ios' ? 'symbol:camera.fill' : 'camera',
+        icon: Platform.OS === 'ios' ? 'symbol:camera.fill' : 'camera-alt',
         params: { action: 'photo_search' },
       },
     ];

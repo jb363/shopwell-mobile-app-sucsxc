@@ -19,41 +19,25 @@ export async function requestContactsPermission(): Promise<boolean> {
   try {
     console.log('[ContactsHandler] Requesting contacts permission...');
     
-    // On Android, show an alert first to explain why we need permission
+    // Check current permission status first
+    const { status: currentStatus } = await Contacts.getPermissionsAsync();
+    console.log('[ContactsHandler] Current permission status:', currentStatus);
+    
+    if (currentStatus === 'granted') {
+      console.log('[ContactsHandler] Permission already granted');
+      return true;
+    }
+    
+    // On Android, request permission directly (system will show dialog)
     if (Platform.OS === 'android') {
-      return new Promise((resolve) => {
-        Alert.alert(
-          'Contacts Permission',
-          'ShopWell needs access to your contacts to help you share shopping lists with friends and family.',
-          [
-            {
-              text: 'Not Now',
-              style: 'cancel',
-              onPress: () => {
-                console.log('[ContactsHandler] User declined contacts permission');
-                resolve(false);
-              }
-            },
-            {
-              text: 'Allow',
-              onPress: async () => {
-                try {
-                  const { status } = await Contacts.requestPermissionsAsync();
-                  console.log('[ContactsHandler] Contacts permission status:', status);
-                  resolve(status === 'granted');
-                } catch (error) {
-                  console.error('[ContactsHandler] Error requesting permission:', error);
-                  resolve(false);
-                }
-              }
-            }
-          ]
-        );
-      });
+      console.log('[ContactsHandler] Requesting Android contacts permission...');
+      const { status } = await Contacts.requestPermissionsAsync();
+      console.log('[ContactsHandler] Android permission result:', status);
+      return status === 'granted';
     } else {
       // iOS - direct permission request
       const { status } = await Contacts.requestPermissionsAsync();
-      console.log('[ContactsHandler] Contacts permission status:', status);
+      console.log('[ContactsHandler] iOS permission result:', status);
       return status === 'granted';
     }
   } catch (error) {
@@ -148,6 +132,11 @@ export async function pickContact(): Promise<Contact | null> {
       const granted = await requestContactsPermission();
       if (!granted) {
         console.log('[ContactsHandler] Contacts permission denied');
+        Alert.alert(
+          'Permission Required',
+          'Please grant contacts permission in your device settings to import contacts.',
+          [{ text: 'OK' }]
+        );
         return null;
       }
     }
@@ -187,6 +176,11 @@ export async function pickContact(): Promise<Contact | null> {
     return null;
   } catch (error) {
     console.error('[ContactsHandler] Error picking contact:', error);
+    Alert.alert(
+      'Error',
+      'Failed to access contacts. Please check your permissions.',
+      [{ text: 'OK' }]
+    );
     return null;
   }
 }
