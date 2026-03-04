@@ -850,6 +850,79 @@ export default function HomeScreen() {
       }, 100);
       
       console.log('[ShopWell Native] ✅ Native bridge initialized');
+      
+      // Hide "Download App" menu item from More Options menu
+      function hideDownloadAppMenuItem() {
+        try {
+          console.log('[ShopWell Native] 🔍 Searching for Download App menu item...');
+          
+          // Try multiple selectors to find the Download App menu item
+          const selectors = [
+            'a[href*="download"]',
+            'button:contains("Download App")',
+            '[data-action="download-app"]',
+            '.download-app',
+            '#download-app'
+          ];
+          
+          selectors.forEach(function(selector) {
+            try {
+              const elements = document.querySelectorAll(selector);
+              elements.forEach(function(element) {
+                const text = element.textContent || element.innerText || '';
+                if (text.toLowerCase().includes('download') && text.toLowerCase().includes('app')) {
+                  console.log('[ShopWell Native] ✅ Found and hiding Download App menu item');
+                  element.style.display = 'none';
+                  // Also hide parent list item if it exists
+                  const parentLi = element.closest('li');
+                  if (parentLi) {
+                    parentLi.style.display = 'none';
+                  }
+                }
+              });
+            } catch (e) {
+              console.log('[ShopWell Native] Error with selector:', selector, e);
+            }
+          });
+          
+          // Also try to find by text content in all clickable elements
+          const clickableElements = document.querySelectorAll('a, button, [role="button"], [role="menuitem"]');
+          clickableElements.forEach(function(element) {
+            const text = element.textContent || element.innerText || '';
+            if (text.toLowerCase().includes('download') && text.toLowerCase().includes('app')) {
+              console.log('[ShopWell Native] ✅ Found and hiding Download App element by text');
+              element.style.display = 'none';
+              const parentLi = element.closest('li');
+              if (parentLi) {
+                parentLi.style.display = 'none';
+              }
+            }
+          });
+        } catch (error) {
+          console.error('[ShopWell Native] Error hiding Download App menu item:', error);
+        }
+      }
+      
+      // Run immediately
+      hideDownloadAppMenuItem();
+      
+      // Run after DOM is fully loaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideDownloadAppMenuItem);
+      } else {
+        setTimeout(hideDownloadAppMenuItem, 500);
+      }
+      
+      // Run periodically to catch dynamically added elements
+      setInterval(hideDownloadAppMenuItem, 2000);
+      
+      // Watch for DOM changes
+      if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(function(mutations) {
+          hideDownloadAppMenuItem();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
     })();
     true;
   `;
