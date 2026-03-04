@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -44,7 +43,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.axiomstrategies.shopwellai",
-      "versionCode": 20,
+      "versionCode": 19,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
