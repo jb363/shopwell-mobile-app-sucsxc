@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -125,12 +126,7 @@
       ],
       "expo-tracking-transparency",
       "expo-contacts",
-      [
-        "expo-quick-actions",
-        {
-          "androidResourcePath": "./assets/images"
-        }
-      ],
+      "expo-quick-actions",
       [
         "expo-image-picker",
         {
