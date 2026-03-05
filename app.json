@@ -1,8 +1,7 @@
-
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "shopwell-mobile-app-sucsxc",
+    "slug": "shopwell-ai-mobile",
     "version": "1.0.17",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
@@ -64,6 +63,23 @@
       ],
       "intentFilters": [
         {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "shopwell.ai"
+            },
+            {
+              "scheme": "shopwellaimobile"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
           "action": "SEND",
           "category": [
             "DEFAULT"
@@ -83,23 +99,6 @@
             {
               "mimeType": "image/*"
             }
-          ]
-        },
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "shopwell.ai"
-            },
-            {
-              "scheme": "shopwellaimobile"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
           ]
         }
       ]

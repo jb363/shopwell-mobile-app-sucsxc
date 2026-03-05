@@ -91,34 +91,48 @@ export default function HomeScreen() {
     }
   }, [isNativeReady, webViewLoaded]);
 
-  // Handle shared content
+  // Handle shared content from share-target or direct share intents
   useEffect(() => {
     if (params.sharedContent && params.sharedType && webViewRef.current && isNativeReady) {
-      console.log('[Android HomeScreen] Received shared content');
+      console.log('[Android HomeScreen] ═══════════════════════════════════════');
+      console.log('[Android HomeScreen] 📤 SHARED CONTENT RECEIVED');
+      console.log('[Android HomeScreen] Type:', params.sharedType);
+      console.log('[Android HomeScreen] Content:', params.sharedContent);
+      console.log('[Android HomeScreen] ═══════════════════════════════════════');
       
       const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
       const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
       
       setTimeout(() => {
         try {
+          console.log('[Android HomeScreen] 💉 Injecting shared content into WebView...');
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
+                console.log('[Native App] Sending SHARED_CONTENT to web app');
                 window.postMessage({ 
                   type: 'SHARED_CONTENT', 
                   contentType: '${sharedTypeStr}',
                   content: ${JSON.stringify(sharedContentStr)}
                 }, '*');
+                console.log('[Native App] ✅ SHARED_CONTENT sent successfully');
               } catch (error) {
-                console.error('[Native App] Error sending shared content:', error);
+                console.error('[Native App] ❌ Error sending shared content:', error);
               }
             })();
             true;
           `);
+          console.log('[Android HomeScreen] ✅ Shared content injection complete');
         } catch (error) {
-          console.error('[Android HomeScreen] Error injecting shared content:', error);
+          console.error('[Android HomeScreen] ❌ Error injecting shared content:', error);
         }
-      }, 500);
+      }, 1000); // Increased delay to ensure WebView is fully ready
+    } else if (params.sharedContent || params.sharedType) {
+      console.log('[Android HomeScreen] ⏸️ Shared content present but conditions not met:');
+      console.log('[Android HomeScreen] - sharedContent:', !!params.sharedContent);
+      console.log('[Android HomeScreen] - sharedType:', !!params.sharedType);
+      console.log('[Android HomeScreen] - webViewRef:', !!webViewRef.current);
+      console.log('[Android HomeScreen] - isNativeReady:', isNativeReady);
     }
   }, [params.sharedContent, params.sharedType, isNativeReady]);
 
@@ -432,11 +446,15 @@ export default function HomeScreen() {
           try {
             const granted = await requestNotificationPermissions();
             console.log('[Android HomeScreen] Notification permission result:', granted);
+            
+            // Update local state
+            const newStatus = granted ? 'granted' : 'denied';
+            
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
                 granted: ${granted},
-                status: '${granted ? 'granted' : 'denied'}'
+                status: '${newStatus}'
               }, '*');
               true;
             `);
@@ -446,7 +464,7 @@ export default function HomeScreen() {
                 type: 'PERMISSIONS_STATUS', 
                 contacts: '${contactsPermissionStatus}',
                 location: '${locationPermissionStatus}',
-                notifications: '${granted ? 'granted' : 'denied'}'
+                notifications: '${newStatus}'
               }, '*');
               true;
             `);

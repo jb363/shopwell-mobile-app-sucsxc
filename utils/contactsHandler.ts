@@ -145,8 +145,9 @@ export async function pickContact(): Promise<Contact | null> {
       }
     }
 
-    // Use presentContactPickerAsync if available (iOS)
-    if (Platform.OS === 'ios' && Contacts.presentContactPickerAsync) {
+    // Use presentContactPickerAsync for both iOS and Android
+    if (Contacts.presentContactPickerAsync) {
+      console.log('[ContactsHandler] Using native contact picker...');
       const result = await Contacts.presentContactPickerAsync();
       
       if (result && result.id) {
@@ -163,21 +164,19 @@ export async function pickContact(): Promise<Contact | null> {
         
         console.log('[ContactsHandler] Contact picked:', contact.name);
         return contact;
+      } else {
+        console.log('[ContactsHandler] Contact picker cancelled or no contact selected');
+        return null;
       }
     } else {
-      // Android: Get all contacts and return the first one
-      // In a real implementation, you'd show a custom picker UI
-      console.log('[ContactsHandler] Native picker not available on Android, fetching contacts...');
-      const allContacts = await getAllContacts();
-      
-      if (allContacts.length > 0) {
-        console.log('[ContactsHandler] Returning first contact as fallback');
-        return allContacts[0];
-      }
+      console.error('[ContactsHandler] presentContactPickerAsync not available');
+      Alert.alert(
+        'Not Supported',
+        'Contact picker is not available on this device.',
+        [{ text: 'OK' }]
+      );
+      return null;
     }
-
-    console.log('[ContactsHandler] No contact selected');
-    return null;
   } catch (error) {
     console.error('[ContactsHandler] Error picking contact:', error);
     Alert.alert(

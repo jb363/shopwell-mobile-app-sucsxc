@@ -246,10 +246,13 @@ export default function RootLayout() {
         const url = Linking.parse(event.url);
         console.log('[RootLayout] Parsed URL:', JSON.stringify(url, null, 2));
 
-        // Handle share target deep links
+        // Handle share target deep links (from Android share intents)
         if (url.path === 'share-target' || url.hostname === 'share-target') {
-          console.log('[RootLayout] Navigating to share-target with params:', url.queryParams);
+          console.log('[RootLayout] Share intent detected, navigating to share-target');
+          console.log('[RootLayout] Query params:', url.queryParams);
+          
           try {
+            // Navigate to share-target with all query params
             router.push({
               pathname: '/share-target',
               params: url.queryParams || {},
@@ -282,7 +285,7 @@ export default function RootLayout() {
       }
     };
 
-    // Get initial URL (app opened via deep link)
+    // Get initial URL (app opened via deep link or share intent)
     Linking.getInitialURL().then((url) => {
       if (!isMounted) return;
       
@@ -291,6 +294,14 @@ export default function RootLayout() {
         handleDeepLink({ url });
       } else {
         console.log('[RootLayout] No initial URL (normal app launch)');
+        
+        // On Android, check if app was opened via share intent
+        // Share intents don't always provide a URL, so we need to check for shared content
+        if (Platform.OS === 'android') {
+          console.log('[RootLayout] Checking for Android share intent...');
+          // The share intent will be handled by the WebView's message handler
+          // We'll navigate to share-target if we detect shared content in the home screen
+        }
       }
     }).catch((error) => {
       console.error('[RootLayout] Error getting initial URL:', error);

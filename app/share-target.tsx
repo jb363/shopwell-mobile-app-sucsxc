@@ -92,11 +92,16 @@ export default function ShareTargetScreen() {
     
     // Navigate to home and pass the shared data
     // The WebView will receive this data and populate the "Product URL (Optional)" field
+    const sharedContent = sharedData?.url || sharedData?.content || '';
+    const sharedType = sharedData?.type || 'text';
+    
+    console.log('[ShareTarget] Navigating to home with:', { sharedContent, sharedType });
+    
     router.replace({
       pathname: '/(tabs)/(home)/',
       params: {
-        sharedContent: sharedData?.url || sharedData?.content,
-        sharedType: sharedData?.type,
+        sharedContent: sharedContent,
+        sharedType: sharedType,
       },
     });
   };

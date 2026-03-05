@@ -1,18 +1,16 @@
-
 const { getDefaultConfig } = require('expo/metro-config');
+const { FileStore } = require('metro-cache');
 const path = require('path');
 const fs = require('fs');
 
 const config = getDefaultConfig(__dirname);
 
-// Enable package exports for better module resolution
 config.resolver.unstable_enablePackageExports = true;
 
-// Ensure assetExts includes common file types
-config.resolver.assetExts = config.resolver.assetExts || [];
-if (!config.resolver.assetExts.includes('db')) {
-  config.resolver.assetExts.push('db');
-}
+// Use turborepo to restore the cache when possible
+config.cacheStores = [
+    new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
+  ];
 
 // Custom server middleware to receive console.log messages from the app
 const LOG_FILE_PATH = path.join(__dirname, '.natively', 'app_console.log');
@@ -21,16 +19,13 @@ const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
 // Ensure log directory exists
 const logDir = path.dirname(LOG_FILE_PATH);
 if (!fs.existsSync(logDir)) {
-  try {
-    fs.mkdirSync(logDir, { recursive: true });
-  } catch (e) {
-    console.warn('[METRO] Could not create log directory:', e.message);
-  }
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 config.server = config.server || {};
 config.server.enhanceMiddleware = (middleware) => {
   return (req, res, next) => {
+
     // DEBUG: log all metro bundle requests
     if (req.url.includes('index.bundle') || req.url.includes('.bundle')) {
       console.log('[METRO] Request:', req.method, req.url);

@@ -96,31 +96,45 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (params.sharedContent && params.sharedType && webViewRef.current && isNativeReady) {
-      console.log('[iOS HomeScreen] 📤 Received shared content');
+      console.log('[iOS HomeScreen] ═══════════════════════════════════════');
+      console.log('[iOS HomeScreen] 📤 SHARED CONTENT RECEIVED');
+      console.log('[iOS HomeScreen] Type:', params.sharedType);
+      console.log('[iOS HomeScreen] Content:', params.sharedContent);
+      console.log('[iOS HomeScreen] ═══════════════════════════════════════');
       
       const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
       const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
       
       setTimeout(() => {
         try {
+          console.log('[iOS HomeScreen] 💉 Injecting shared content into WebView...');
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
+                console.log('[ShopWell Native] Sending SHARED_CONTENT to web app');
                 window.postMessage({ 
                   type: 'SHARED_CONTENT', 
                   contentType: '${sharedTypeStr}',
                   content: ${JSON.stringify(sharedContentStr)}
                 }, '*');
+                console.log('[ShopWell Native] ✅ SHARED_CONTENT sent successfully');
               } catch (error) {
-                console.error('[ShopWell Native] Error sending shared content:', error);
+                console.error('[ShopWell Native] ❌ Error sending shared content:', error);
               }
             })();
             true;
           `);
+          console.log('[iOS HomeScreen] ✅ Shared content injection complete');
         } catch (error) {
-          console.error('[iOS HomeScreen] Error injecting shared content:', error);
+          console.error('[iOS HomeScreen] ❌ Error injecting shared content:', error);
         }
-      }, 500);
+      }, 1000); // Increased delay to ensure WebView is fully ready
+    } else if (params.sharedContent || params.sharedType) {
+      console.log('[iOS HomeScreen] ⏸️ Shared content present but conditions not met:');
+      console.log('[iOS HomeScreen] - sharedContent:', !!params.sharedContent);
+      console.log('[iOS HomeScreen] - sharedType:', !!params.sharedType);
+      console.log('[iOS HomeScreen] - webViewRef:', !!webViewRef.current);
+      console.log('[iOS HomeScreen] - isNativeReady:', isNativeReady);
     }
   }, [params.sharedContent, params.sharedType, isNativeReady]);
 
@@ -886,11 +900,15 @@ export default function HomeScreen() {
           try {
             const granted = await notificationsHook.requestPermissions();
             console.log('[iOS HomeScreen] Notification permission result:', granted);
+            
+            // Update local state
+            const newStatus = granted ? 'granted' : 'denied';
+            
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
                 granted: ${granted},
-                status: '${granted ? 'granted' : 'denied'}'
+                status: '${newStatus}'
               }, '*');
               true;
             `);
@@ -900,7 +918,7 @@ export default function HomeScreen() {
                 type: 'PERMISSIONS_STATUS', 
                 contacts: '${contactsPermissionStatus}',
                 location: '${locationPermissionStatus}',
-                notifications: '${granted ? 'granted' : 'denied'}'
+                notifications: '${newStatus}'
               }, '*');
               true;
             `);
