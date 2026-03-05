@@ -4,6 +4,8 @@ import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
+import * as Contacts from 'expo-contacts';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -20,29 +22,35 @@ export default function HomeScreen() {
   // Handle shared content from params
   useEffect(() => {
     if (params.sharedContent && params.sharedType && webViewRef.current && webViewLoaded) {
-      console.log('[iOS HomeScreen] Processing shared content');
+      console.log('[iOS HomeScreen] 📤 Processing shared content:', params.sharedType);
       
       const sharedContentStr = Array.isArray(params.sharedContent) ? params.sharedContent[0] : params.sharedContent;
       const sharedTypeStr = Array.isArray(params.sharedType) ? params.sharedType[0] : params.sharedType;
       
       setTimeout(() => {
         try {
+          const message = {
+            type: 'SHARED_CONTENT',
+            contentType: sharedTypeStr,
+            content: sharedContentStr
+          };
+          
+          console.log('[iOS HomeScreen] 📨 Sending shared content to WebView:', message);
+          
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
-                window.postMessage({ 
-                  type: 'SHARED_CONTENT', 
-                  contentType: '${sharedTypeStr}',
-                  content: ${JSON.stringify(sharedContentStr)}
-                }, '*');
+                console.log('[Native Bridge] Sending SHARED_CONTENT message');
+                window.postMessage(${JSON.stringify(message)}, '*');
+                console.log('[Native Bridge] SHARED_CONTENT message sent');
               } catch (error) {
-                console.error('[Native] Error sending shared content:', error);
+                console.error('[Native Bridge] Error sending shared content:', error);
               }
             })();
             true;
           `);
         } catch (error) {
-          console.error('[iOS HomeScreen] Error injecting shared content:', error);
+          console.error('[iOS HomeScreen] ❌ Error injecting shared content:', error);
         }
       }, 1500);
     }
@@ -51,34 +59,190 @@ export default function HomeScreen() {
   const handleMessage = useCallback(async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log('[iOS HomeScreen] Message received:', data.type);
+      console.log('[iOS HomeScreen] 📩 Message received from WebView:', data.type);
       
-      // Handle messages from the website
-      // For now, just log them - the website handles most functionality
+      // Handle contact picker request
+      if (data.type === 'natively.contacts.pick') {
+        console.log('[iOS HomeScreen] 📱 Contact picker requested');
+        
+        try {
+          // Check permission
+          const { status } = await Contacts.getPermissionsAsync();
+          
+          if (status !== 'granted') {
+            console.log('[iOS HomeScreen] 🔐 Requesting contacts permission...');
+            const { status: newStatus } = await Contacts.requestPermissionsAsync();
+            
+            if (newStatus !== 'granted') {
+              console.log('[iOS HomeScreen] ❌ Contacts permission denied');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(${JSON.stringify({
+                  type: 'CONTACT_PICKER_RESPONSE',
+                  success: false,
+                  error: 'Permission denied',
+                  cancelled: false
+                })}, '*');
+                true;
+              `);
+              return;
+            }
+          }
+          
+          // Open contact picker
+          if (Contacts.presentContactPickerAsync) {
+            console.log('[iOS HomeScreen] 🎯 Opening native contact picker...');
+            const result = await Contacts.presentContactPickerAsync();
+            
+            if (result && result.id) {
+              const contact = {
+                name: result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || 'Unknown',
+                phoneNumbers: result.phoneNumbers?.map(p => ({ number: p.number || '' })) || [],
+                emails: result.emails?.map(e => ({ email: e.email || '' })) || []
+              };
+              
+              console.log('[iOS HomeScreen] ✅ Contact selected:', contact.name);
+              
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(${JSON.stringify({
+                  type: 'CONTACT_PICKER_RESPONSE',
+                  success: true,
+                  contact: contact
+                })}, '*');
+                true;
+              `);
+            } else {
+              console.log('[iOS HomeScreen] ⏸️ Contact picker cancelled');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(${JSON.stringify({
+                  type: 'CONTACT_PICKER_RESPONSE',
+                  success: false,
+                  cancelled: true
+                })}, '*');
+                true;
+              `);
+            }
+          } else {
+            console.error('[iOS HomeScreen] ❌ Contact picker not available');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage(${JSON.stringify({
+                type: 'CONTACT_PICKER_RESPONSE',
+                success: false,
+                error: 'Contact picker not available'
+              })}, '*');
+              true;
+            `);
+          }
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error picking contact:', error);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'CONTACT_PICKER_RESPONSE',
+              success: false,
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
+      
+      // Handle notification permission request
+      else if (data.type === 'natively.notifications.requestPermission') {
+        console.log('[iOS HomeScreen] 🔔 Notification permission requested');
+        
+        try {
+          // Check current status
+          const { status: currentStatus } = await Notifications.getPermissionsAsync();
+          console.log('[iOS HomeScreen] Current notification status:', currentStatus);
+          
+          let finalStatus = currentStatus;
+          
+          // Request if not granted
+          if (currentStatus !== 'granted') {
+            console.log('[iOS HomeScreen] 📱 Requesting notification permission...');
+            const { status: newStatus } = await Notifications.requestPermissionsAsync();
+            finalStatus = newStatus;
+            console.log('[iOS HomeScreen] Permission result:', newStatus);
+          }
+          
+          const granted = finalStatus === 'granted';
+          
+          // Send permission response
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_PERMISSION_RESPONSE',
+              granted: granted,
+              status: finalStatus
+            })}, '*');
+            true;
+          `);
+          
+          // Get push token if granted
+          if (granted) {
+            try {
+              console.log('[iOS HomeScreen] 📲 Getting push token...');
+              const tokenData = await Notifications.getExpoPushTokenAsync();
+              console.log('[iOS HomeScreen] ✅ Push token obtained:', tokenData.data);
+              
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(${JSON.stringify({
+                  type: 'PUSH_TOKEN',
+                  token: tokenData.data
+                })}, '*');
+                true;
+              `);
+            } catch (tokenError) {
+              console.error('[iOS HomeScreen] ❌ Error getting push token:', tokenError);
+            }
+          } else {
+            console.log('[iOS HomeScreen] ⚠️ Notification permission not granted');
+          }
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error requesting notification permission:', error);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_PERMISSION_RESPONSE',
+              granted: false,
+              status: 'denied',
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
       
     } catch (error) {
-      console.error('[iOS HomeScreen] Error handling message:', error);
+      console.error('[iOS HomeScreen] ❌ Error handling message:', error);
     }
   }, []);
 
   const injectedJavaScript = `
     (function() {
-      console.log('[Native Bridge] Initializing...');
+      console.log('[Native Bridge] Initializing iOS bridge...');
       
       window.isNativeApp = true;
       window.nativeAppPlatform = 'ios';
+      window.nativeAppReady = false;
+      
+      // Feature flags
+      window.nativeFeatures = {
+        contacts: true,
+        notifications: true,
+        sharing: true,
+        biometrics: true
+      };
       
       // Signal that we're ready
       setTimeout(function() {
+        window.nativeAppReady = true;
         window.postMessage({ 
           type: 'NATIVE_APP_READY',
           platform: 'ios',
+          features: window.nativeFeatures,
           timestamp: Date.now()
         }, '*');
-        console.log('[Native Bridge] Ready signal sent');
+        console.log('[Native Bridge] ✅ iOS bridge ready');
       }, 100);
       
-      console.log('[Native Bridge] Initialized');
     })();
     true;
   `;
@@ -111,22 +275,22 @@ export default function HomeScreen() {
         cacheEnabled={false}
         incognito={false}
         onLoadStart={() => {
-          console.log('[iOS HomeScreen] Loading started');
+          console.log('[iOS HomeScreen] 🔄 Loading started');
           setWebViewLoaded(false);
           setWebViewError(null);
         }}
         onLoadEnd={() => {
-          console.log('[iOS HomeScreen] Loading complete');
+          console.log('[iOS HomeScreen] ✅ Loading complete');
           setWebViewLoaded(true);
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] WebView error:', nativeEvent);
+          console.error('[iOS HomeScreen] ❌ WebView error:', nativeEvent);
           setWebViewError(`Error loading website: ${nativeEvent.description || 'Unknown error'}`);
         }}
         onHttpError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[iOS HomeScreen] HTTP error:', nativeEvent.statusCode);
+          console.error('[iOS HomeScreen] ❌ HTTP error:', nativeEvent.statusCode);
           setWebViewError(`HTTP Error ${nativeEvent.statusCode}: Unable to load ShopWell.ai`);
         }}
         renderLoading={() => (
