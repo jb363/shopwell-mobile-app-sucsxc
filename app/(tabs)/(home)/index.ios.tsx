@@ -17,6 +17,7 @@ import * as OfflineStorage from '@/utils/offlineStorage';
 import * as ContactsHandler from '@/utils/contactsHandler';
 import * as AudioHandler from '@/utils/audioHandler';
 import * as LocationHandler from '@/utils/locationHandler';
+import * as BiometricHandler from '@/utils/biometricHandler';
 import { crashReporter } from '@/utils/crashReporter';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
@@ -76,7 +77,7 @@ export default function HomeScreen() {
                   type: 'NATIVE_APP_READY', 
                   platform: 'ios',
                   timestamp: Date.now(),
-                  features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+                  features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen', 'biometric']
                 }, '*');
                 console.log('[ShopWell Native] ✅ NATIVE_APP_READY signal sent');
               } catch (error) {
@@ -246,7 +247,7 @@ export default function HomeScreen() {
                       type: 'NATIVE_APP_READY', 
                       platform: 'ios',
                       timestamp: Date.now(),
-                      features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen']
+                      features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen', 'biometric']
                     }, '*');
                   } catch (error) {
                     console.error('[ShopWell Native] Error sending ready signal:', error);
@@ -293,6 +294,68 @@ export default function HomeScreen() {
               console.error('[iOS HomeScreen] ❌ Error responding to WEB_PAGE_READY:', error);
             }
           }, 200);
+          break;
+
+        case 'natively.biometric.isSupported':
+          console.log('[iOS HomeScreen] 🔐 Check biometric support');
+          try {
+            const capabilities = await BiometricHandler.checkBiometricCapabilities();
+            const biometricName = BiometricHandler.getBiometricTypeName(capabilities);
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'BIOMETRIC_SUPPORT_RESPONSE', 
+                isSupported: ${capabilities.isAvailable},
+                hasHardware: ${capabilities.hasHardware},
+                isEnrolled: ${capabilities.isEnrolled},
+                biometricType: '${biometricName}'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error checking biometric support:', error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'BIOMETRIC_SUPPORT_RESPONSE', 
+                isSupported: false,
+                error: 'Failed to check biometric support'
+              }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.biometric.authenticate':
+          console.log('[iOS HomeScreen] 🔐 Authenticate with biometrics');
+          try {
+            const reason = data.reason || 'Authenticate to continue';
+            const success = await BiometricHandler.authenticateWithBiometrics(reason);
+            
+            if (success) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'BIOMETRIC_AUTH_RESPONSE', 
+                success: ${success}
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error authenticating with biometrics:', error);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'BIOMETRIC_AUTH_RESPONSE', 
+                success: false,
+                error: 'Failed to authenticate'
+              }, '*');
+              true;
+            `);
+          }
           break;
 
         case 'natively.clipboard.copy':
@@ -432,6 +495,7 @@ export default function HomeScreen() {
             const contact = await ContactsHandler.pickContact();
             if (contact) {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setContactsPermissionStatus('granted');
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ 
                   type: 'CONTACT_PICKER_RESPONSE', 
@@ -450,6 +514,44 @@ export default function HomeScreen() {
             console.error('[iOS HomeScreen] Error picking contact:', error);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ type: 'CONTACT_PICKER_RESPONSE', success: false, error: 'Failed to pick contact' }, '*');
+              true;
+            `);
+          }
+          break;
+
+        case 'natively.contacts.requestPermission':
+          console.log('[iOS HomeScreen] 🔐 Request contacts permission');
+          try {
+            const granted = await ContactsHandler.requestContactsPermission();
+            setContactsPermissionStatus(granted ? 'granted' : 'denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_PERMISSION_RESPONSE', 
+                granted: ${granted},
+                status: '${granted ? 'granted' : 'denied'}'
+              }, '*');
+              true;
+            `);
+            
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'PERMISSIONS_STATUS', 
+                contacts: '${granted ? 'granted' : 'denied'}',
+                location: '${locationPermissionStatus}',
+                notifications: '${notificationsHook.permissionStatus}'
+              }, '*');
+              true;
+            `);
+          } catch (error) {
+            console.error('[iOS HomeScreen] Error requesting contacts permission:', error);
+            setContactsPermissionStatus('denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage({ 
+                type: 'CONTACTS_PERMISSION_RESPONSE', 
+                granted: false,
+                status: 'denied',
+                error: 'Failed to request permission'
+              }, '*');
               true;
             `);
           }
@@ -633,7 +735,8 @@ export default function HomeScreen() {
                         window.postMessage({ 
                           type: 'PERMISSIONS_STATUS', 
                           contacts: '${contactsPermissionStatus}',
-                          location: '${permissionGranted ? 'granted' : 'denied'}'
+                          location: '${permissionGranted ? 'granted' : 'denied'}',
+                          notifications: '${notificationsHook.permissionStatus}'
                         }, '*');
                         true;
                       `);

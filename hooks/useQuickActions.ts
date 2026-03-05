@@ -72,36 +72,22 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       const actionType = (action.params as any)?.action || action.id;
       console.log('[QuickActions] Action type:', actionType);
 
-      // Inject JavaScript to trigger the appropriate action on the web page
+      // Send QUICK_ACTION message to WebView
       try {
         switch (actionType) {
           case 'VOICE_PLANNER':
           case 'voice_planner':
-            console.log('[QuickActions] Triggering voice planner...');
+            console.log('[QuickActions] Sending VOICE_PLANNER action to WebView');
             webViewRef.current.injectJavaScript(`
               (function() {
                 try {
-                  console.log('[QuickActions] Executing voice planner action');
-                  // Try to find and click the voice planner button
-                  const voiceButton = document.querySelector('[data-voice-planner], [aria-label*="voice"], button[class*="voice"]');
-                  if (voiceButton) {
-                    voiceButton.click();
-                    console.log('[QuickActions] Voice planner button clicked');
-                  } else {
-                    // Fallback: navigate to voice planner URL if it exists
-                    if (window.location.pathname !== '/voice-planner') {
-                      window.location.href = '/voice-planner';
-                    }
-                    console.log('[QuickActions] Navigated to voice planner');
-                  }
-                  
-                  // Notify native app
+                  console.log('[QuickActions] Received VOICE_PLANNER action');
                   window.postMessage({ 
-                    type: 'QUICK_ACTION_EXECUTED', 
-                    action: 'voice_planner' 
+                    type: 'QUICK_ACTION', 
+                    action: 'VOICE_PLANNER' 
                   }, '*');
                 } catch (error) {
-                  console.error('[QuickActions] Error executing voice planner action:', error);
+                  console.error('[QuickActions] Error processing VOICE_PLANNER action:', error);
                 }
               })();
               true;
@@ -110,31 +96,17 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
 
           case 'PRODUCT_SEARCH':
           case 'product_search':
-            console.log('[QuickActions] Triggering product search...');
+            console.log('[QuickActions] Sending PRODUCT_SEARCH action to WebView');
             webViewRef.current.injectJavaScript(`
               (function() {
                 try {
-                  console.log('[QuickActions] Executing product search action');
-                  // Try to find and focus the search input
-                  const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i], input[aria-label*="search" i]');
-                  if (searchInput) {
-                    searchInput.focus();
-                    console.log('[QuickActions] Search input focused');
-                  } else {
-                    // Fallback: navigate to search page if it exists
-                    if (window.location.pathname !== '/search') {
-                      window.location.href = '/search';
-                    }
-                    console.log('[QuickActions] Navigated to search page');
-                  }
-                  
-                  // Notify native app
+                  console.log('[QuickActions] Received PRODUCT_SEARCH action');
                   window.postMessage({ 
-                    type: 'QUICK_ACTION_EXECUTED', 
-                    action: 'product_search' 
+                    type: 'QUICK_ACTION', 
+                    action: 'PRODUCT_SEARCH' 
                   }, '*');
                 } catch (error) {
-                  console.error('[QuickActions] Error executing product search action:', error);
+                  console.error('[QuickActions] Error processing PRODUCT_SEARCH action:', error);
                 }
               })();
               true;
@@ -143,31 +115,17 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
 
           case 'PHOTO_SEARCH':
           case 'photo_search':
-            console.log('[QuickActions] Triggering photo search...');
+            console.log('[QuickActions] Sending PHOTO_SEARCH action to WebView');
             webViewRef.current.injectJavaScript(`
               (function() {
                 try {
-                  console.log('[QuickActions] Executing photo search action');
-                  // Try to find and click the photo search button
-                  const photoButton = document.querySelector('[data-photo-search], [aria-label*="photo"], button[class*="photo"], button[class*="camera"]');
-                  if (photoButton) {
-                    photoButton.click();
-                    console.log('[QuickActions] Photo search button clicked');
-                  } else {
-                    // Fallback: trigger native image picker
-                    window.postMessage({ 
-                      type: 'natively.imagePicker.pick'
-                    }, '*');
-                    console.log('[QuickActions] Triggered native image picker');
-                  }
-                  
-                  // Notify native app
+                  console.log('[QuickActions] Received PHOTO_SEARCH action');
                   window.postMessage({ 
-                    type: 'QUICK_ACTION_EXECUTED', 
-                    action: 'photo_search' 
+                    type: 'QUICK_ACTION', 
+                    action: 'PHOTO_SEARCH' 
                   }, '*');
                 } catch (error) {
-                  console.error('[QuickActions] Error executing photo search action:', error);
+                  console.error('[QuickActions] Error processing PHOTO_SEARCH action:', error);
                 }
               })();
               true;
