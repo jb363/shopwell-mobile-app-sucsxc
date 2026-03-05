@@ -22,7 +22,9 @@ import { crashReporter } from '@/utils/crashReporter';
 const SHOPWELL_URL = 'https://shopwell.ai';
 
 export default function HomeScreen() {
-  console.log('[Android HomeScreen] Component mounting');
+  console.log('[Android HomeScreen] ═══════════════════════════════════════');
+  console.log('[Android HomeScreen] Component mounting - ShopWell.ai Android App');
+  console.log('[Android HomeScreen] ═══════════════════════════════════════');
   
   const webViewRef = useRef<WebView>(null);
   const params = useLocalSearchParams();
@@ -63,7 +65,7 @@ export default function HomeScreen() {
   // Signal to website that native app is ready
   useEffect(() => {
     if (!isNativeReady && webViewRef.current && webViewLoaded) {
-      console.log('[Android HomeScreen] Native app ready, signaling to website...');
+      console.log('[Android HomeScreen] 🚀 Native app ready, signaling to website...');
       setIsNativeReady(true);
       
       setTimeout(() => {
@@ -71,23 +73,25 @@ export default function HomeScreen() {
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
+                console.log('[ShopWell Native] 📤 Sending NATIVE_APP_READY signal');
                 window.postMessage({ 
                   type: 'NATIVE_APP_READY', 
                   platform: 'android',
                   timestamp: Date.now(),
                   features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen', 'biometric']
                 }, '*');
-                console.log('[Native App] Sent NATIVE_APP_READY signal');
+                console.log('[ShopWell Native] ✅ NATIVE_APP_READY signal sent');
               } catch (error) {
-                console.error('[Native App] Error sending ready signal:', error);
+                console.error('[ShopWell Native] ❌ Error sending ready signal:', error);
               }
             })();
             true;
           `);
+          console.log('[Android HomeScreen] ✅ Ready signal injected');
         } catch (error) {
-          console.error('[Android HomeScreen] Error sending ready signal:', error);
+          console.error('[Android HomeScreen] ❌ Error sending ready signal:', error);
         }
-      }, 500);
+      }, 1000);
     }
   }, [isNativeReady, webViewLoaded]);
 
@@ -109,15 +113,18 @@ export default function HomeScreen() {
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
-                console.log('[Native App] Sending SHARED_CONTENT to web app');
+                console.log('[ShopWell Native] 📤 Sending SHARED_CONTENT to web app');
+                console.log('[ShopWell Native] Content type:', '${sharedTypeStr}');
+                console.log('[ShopWell Native] Content:', ${JSON.stringify(sharedContentStr)});
                 window.postMessage({ 
                   type: 'SHARED_CONTENT', 
                   contentType: '${sharedTypeStr}',
                   content: ${JSON.stringify(sharedContentStr)}
                 }, '*');
-                console.log('[Native App] ✅ SHARED_CONTENT sent successfully');
+                console.log('[ShopWell Native] ✅ SHARED_CONTENT sent successfully');
+                console.log('[ShopWell Native] ⚠️ Web app must listen for this message with window.addEventListener("message", ...)');
               } catch (error) {
-                console.error('[Native App] ❌ Error sending shared content:', error);
+                console.error('[ShopWell Native] ❌ Error sending shared content:', error);
               }
             })();
             true;
@@ -126,7 +133,7 @@ export default function HomeScreen() {
         } catch (error) {
           console.error('[Android HomeScreen] ❌ Error injecting shared content:', error);
         }
-      }, 1500);
+      }, 2000);
     } else if (params.sharedContent || params.sharedType) {
       console.log('[Android HomeScreen] ⏸️ Shared content present but conditions not met:');
       console.log('[Android HomeScreen] - sharedContent:', !!params.sharedContent);
@@ -139,7 +146,7 @@ export default function HomeScreen() {
   // Send push token to web
   useEffect(() => {
     if (expoPushToken && webViewRef.current && isNativeReady) {
-      console.log('[Android HomeScreen] Sending push token to web');
+      console.log('[Android HomeScreen] 📲 Sending push token to web');
       setTimeout(() => {
         try {
           webViewRef.current?.injectJavaScript(`
@@ -147,7 +154,7 @@ export default function HomeScreen() {
               try {
                 window.postMessage({ type: 'PUSH_TOKEN', token: '${expoPushToken}' }, '*');
               } catch (error) {
-                console.error('[Native App] Error sending push token:', error);
+                console.error('[ShopWell Native] Error sending push token:', error);
               }
             })();
             true;
@@ -173,7 +180,7 @@ export default function HomeScreen() {
                 isOnline: ${isOnline}
               }, '*');
             } catch (error) {
-              console.error('[Native App] Error sending sync status:', error);
+              console.error('[ShopWell Native] Error sending sync status:', error);
             }
           })();
           true;
@@ -187,7 +194,7 @@ export default function HomeScreen() {
   // Send geofencing status to web
   useEffect(() => {
     if (webViewRef.current && isNativeReady) {
-      console.log('[Android HomeScreen] Sending geofencing status to web:', { 
+      console.log('[Android HomeScreen] 📍 Sending geofencing status to web:', { 
         isGeofencingActive, 
         geofencePermissionStatus,
         locationCount: storeLocations.length 
@@ -205,7 +212,7 @@ export default function HomeScreen() {
                 platform: 'android'
               }, '*');
             } catch (error) {
-              console.error('[Native App] Error sending geofencing status:', error);
+              console.error('[ShopWell Native] Error sending geofencing status:', error);
             }
           })();
           true;
@@ -219,18 +226,28 @@ export default function HomeScreen() {
   // Send permission statuses to web
   useEffect(() => {
     if (webViewRef.current && isNativeReady) {
+      console.log('[Android HomeScreen] 🔐 Sending permissions status to web:', {
+        contacts: contactsPermissionStatus,
+        location: locationPermissionStatus,
+        notifications: notificationPermissionStatus
+      });
       try {
         webViewRef.current.injectJavaScript(`
           (function() {
             try {
+              console.log('[ShopWell Native] 📤 Sending PERMISSIONS_STATUS');
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
-                contacts: '${contactsPermissionStatus}',
-                location: '${locationPermissionStatus}',
-                notifications: '${notificationPermissionStatus}'
+                permissions: {
+                  contacts: '${contactsPermissionStatus}',
+                  location: '${locationPermissionStatus}',
+                  notifications: '${notificationPermissionStatus}',
+                  biometrics: 'undetermined'
+                }
               }, '*');
+              console.log('[ShopWell Native] ⚠️ Web app must listen for PERMISSIONS_STATUS message');
             } catch (error) {
-              console.error('[Native App] Error sending permissions status:', error);
+              console.error('[ShopWell Native] Error sending permissions status:', error);
             }
           })();
           true;
@@ -244,21 +261,22 @@ export default function HomeScreen() {
   const handleMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log('[Android HomeScreen] Received message:', data.type);
+      console.log('[Android HomeScreen] 📨 Received message from web:', data.type);
       
       if (!isNativeReady && !data.type?.startsWith('WEB_')) {
-        console.log('[Android HomeScreen] Native not ready, ignoring message');
+        console.log('[Android HomeScreen] ⏸️ Native not ready, ignoring message');
         return;
       }
       
       switch (data.type) {
         case 'WEB_PAGE_READY':
-          console.log('[Android HomeScreen] Website ready');
+          console.log('[Android HomeScreen] 🌐 Website ready, sending native capabilities...');
           setTimeout(() => {
             try {
               webViewRef.current?.injectJavaScript(`
                 (function() {
                   try {
+                    console.log('[ShopWell Native] 📤 Sending NATIVE_APP_READY (triggered by WEB_PAGE_READY)');
                     window.postMessage({ 
                       type: 'NATIVE_APP_READY', 
                       platform: 'android',
@@ -266,7 +284,7 @@ export default function HomeScreen() {
                       features: ['contacts', 'camera', 'sharing', 'notifications', 'offline', 'accountDeletion', 'microphone', 'audioRecording', 'location', 'geofencing', 'locationNotifications', 'quickActions', 'addToHomeScreen', 'biometric']
                     }, '*');
                   } catch (error) {
-                    console.error('[Native App] Error sending ready signal:', error);
+                    console.error('[ShopWell Native] Error sending ready signal:', error);
                   }
                 })();
                 true;
@@ -284,7 +302,7 @@ export default function HomeScreen() {
                       platform: 'android'
                     }, '*');
                   } catch (error) {
-                    console.error('[Native App] Error sending geofencing status:', error);
+                    console.error('[ShopWell Native] Error sending geofencing status:', error);
                   }
                 })();
                 true;
@@ -293,20 +311,25 @@ export default function HomeScreen() {
               webViewRef.current?.injectJavaScript(`
                 (function() {
                   try {
+                    console.log('[ShopWell Native] 📤 Sending PERMISSIONS_STATUS');
                     window.postMessage({ 
                       type: 'PERMISSIONS_STATUS', 
-                      contacts: '${contactsPermissionStatus}',
-                      location: '${locationPermissionStatus}',
-                      notifications: '${notificationPermissionStatus}'
+                      permissions: {
+                        contacts: '${contactsPermissionStatus}',
+                        location: '${locationPermissionStatus}',
+                        notifications: '${notificationPermissionStatus}',
+                        biometrics: 'undetermined'
+                      }
                     }, '*');
                   } catch (error) {
-                    console.error('[Native App] Error sending permissions status:', error);
+                    console.error('[ShopWell Native] Error sending permissions status:', error);
                   }
                 })();
                 true;
               `);
+              console.log('[Android HomeScreen] ✅ All native capabilities sent to website');
             } catch (error) {
-              console.error('[Android HomeScreen] Error responding to WEB_PAGE_READY:', error);
+              console.error('[Android HomeScreen] ❌ Error responding to WEB_PAGE_READY:', error);
             }
           }, 200);
           break;
@@ -317,14 +340,30 @@ export default function HomeScreen() {
             const capabilities = await BiometricHandler.checkBiometricCapabilities();
             const biometricName = BiometricHandler.getBiometricTypeName(capabilities);
             
+            console.log('[Android HomeScreen] Biometric capabilities:', {
+              isSupported: capabilities.isAvailable,
+              hasHardware: capabilities.hasHardware,
+              isEnrolled: capabilities.isEnrolled,
+              biometricType: biometricName
+            });
+            
             webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'BIOMETRIC_SUPPORT_RESPONSE', 
-                isSupported: ${capabilities.isAvailable},
-                hasHardware: ${capabilities.hasHardware},
-                isEnrolled: ${capabilities.isEnrolled},
-                biometricType: '${biometricName}'
-              }, '*');
+              (function() {
+                try {
+                  console.log('[ShopWell Native] 📤 Sending BIOMETRIC_SUPPORT_RESPONSE');
+                  console.log('[ShopWell Native] Supported:', ${capabilities.isAvailable}, 'Type:', '${biometricName}');
+                  window.postMessage({ 
+                    type: 'BIOMETRIC_SUPPORT_RESPONSE', 
+                    isSupported: ${capabilities.isAvailable},
+                    hasHardware: ${capabilities.hasHardware},
+                    isEnrolled: ${capabilities.isEnrolled},
+                    biometricType: '${biometricName}'
+                  }, '*');
+                  console.log('[ShopWell Native] ⚠️ Web app must listen for BIOMETRIC_SUPPORT_RESPONSE message');
+                } catch (error) {
+                  console.error('[ShopWell Native] Error sending biometric support response:', error);
+                }
+              })();
               true;
             `);
           } catch (error) {
@@ -344,7 +383,10 @@ export default function HomeScreen() {
           console.log('[Android HomeScreen] 🔐 Authenticate with biometrics');
           try {
             const reason = data.reason || 'Authenticate to continue';
+            console.log('[Android HomeScreen] Biometric prompt reason:', reason);
             const success = await BiometricHandler.authenticateWithBiometrics(reason);
+            
+            console.log('[Android HomeScreen] Biometric authentication result:', success);
             
             if (success) {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -353,10 +395,19 @@ export default function HomeScreen() {
             }
             
             webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'BIOMETRIC_AUTH_RESPONSE', 
-                success: ${success}
-              }, '*');
+              (function() {
+                try {
+                  console.log('[ShopWell Native] 📤 Sending BIOMETRIC_AUTH_RESPONSE');
+                  console.log('[ShopWell Native] Success:', ${success});
+                  window.postMessage({ 
+                    type: 'BIOMETRIC_AUTH_RESPONSE', 
+                    success: ${success}
+                  }, '*');
+                  console.log('[ShopWell Native] ⚠️ Web app must listen for BIOMETRIC_AUTH_RESPONSE message');
+                } catch (error) {
+                  console.error('[ShopWell Native] Error sending biometric auth response:', error);
+                }
+              })();
               true;
             `);
           } catch (error) {
@@ -374,21 +425,32 @@ export default function HomeScreen() {
           break;
 
         case 'natively.contacts.pick':
-          console.log('[Android HomeScreen] Pick contact');
+          console.log('[Android HomeScreen] 👤 Pick contact');
           try {
             const contact = await ContactsHandler.pickContact();
             if (contact) {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               setContactsPermissionStatus('granted');
+              console.log('[Android HomeScreen] Contact picked:', contact.name);
               webViewRef.current?.injectJavaScript(`
-                window.postMessage({ 
-                  type: 'CONTACT_PICKER_RESPONSE', 
-                  success: true, 
-                  contact: ${JSON.stringify(contact)}
-                }, '*');
+                (function() {
+                  try {
+                    console.log('[ShopWell Native] 📤 Sending CONTACT_PICKER_RESPONSE');
+                    console.log('[ShopWell Native] Contact:', ${JSON.stringify(contact)});
+                    window.postMessage({ 
+                      type: 'CONTACT_PICKER_RESPONSE', 
+                      success: true, 
+                      contact: ${JSON.stringify(contact)}
+                    }, '*');
+                    console.log('[ShopWell Native] ⚠️ Web app must listen for CONTACT_PICKER_RESPONSE message');
+                  } catch (error) {
+                    console.error('[ShopWell Native] Error sending contact picker response:', error);
+                  }
+                })();
                 true;
               `);
             } else {
+              console.log('[Android HomeScreen] Contact picker cancelled');
               webViewRef.current?.injectJavaScript(`
                 window.postMessage({ type: 'CONTACT_PICKER_RESPONSE', success: false, cancelled: true }, '*');
                 true;
@@ -404,10 +466,11 @@ export default function HomeScreen() {
           break;
 
         case 'natively.contacts.requestPermission':
-          console.log('[Android HomeScreen] Request contacts permission');
+          console.log('[Android HomeScreen] 🔐 Request contacts permission');
           try {
             const granted = await ContactsHandler.requestContactsPermission();
             setContactsPermissionStatus(granted ? 'granted' : 'denied');
+            console.log('[Android HomeScreen] Contacts permission result:', granted);
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'CONTACTS_PERMISSION_RESPONSE', 
@@ -420,9 +483,12 @@ export default function HomeScreen() {
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
-                contacts: '${granted ? 'granted' : 'denied'}',
-                location: '${locationPermissionStatus}',
-                notifications: '${notificationPermissionStatus}'
+                permissions: {
+                  contacts: '${granted ? 'granted' : 'denied'}',
+                  location: '${locationPermissionStatus}',
+                  notifications: '${notificationPermissionStatus}',
+                  biometrics: 'undetermined'
+                }
               }, '*');
               true;
             `);
@@ -442,29 +508,40 @@ export default function HomeScreen() {
           break;
 
         case 'natively.notifications.requestPermission':
-          console.log('[Android HomeScreen] Request notification permission');
+          console.log('[Android HomeScreen] 📲 Request notification permission');
           try {
             const granted = await requestNotificationPermissions();
             console.log('[Android HomeScreen] Notification permission result:', granted);
             
-            // Update local state
             const newStatus = granted ? 'granted' : 'denied';
             
             webViewRef.current?.injectJavaScript(`
-              window.postMessage({ 
-                type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
-                granted: ${granted},
-                status: '${newStatus}'
-              }, '*');
+              (function() {
+                try {
+                  console.log('[ShopWell Native] 📤 Sending NOTIFICATIONS_PERMISSION_RESPONSE');
+                  console.log('[ShopWell Native] Granted:', ${granted}, 'Status:', '${newStatus}');
+                  window.postMessage({ 
+                    type: 'NOTIFICATIONS_PERMISSION_RESPONSE', 
+                    granted: ${granted},
+                    status: '${newStatus}'
+                  }, '*');
+                  console.log('[ShopWell Native] ⚠️ Web app must listen for NOTIFICATIONS_PERMISSION_RESPONSE message');
+                } catch (error) {
+                  console.error('[ShopWell Native] Error sending notification permission response:', error);
+                }
+              })();
               true;
             `);
             
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
-                contacts: '${contactsPermissionStatus}',
-                location: '${locationPermissionStatus}',
-                notifications: '${newStatus}'
+                permissions: {
+                  contacts: '${contactsPermissionStatus}',
+                  location: '${locationPermissionStatus}',
+                  notifications: '${newStatus}',
+                  biometrics: 'undetermined'
+                }
               }, '*');
               true;
             `);
@@ -483,7 +560,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.notifications.getStatus':
-          console.log('[Android HomeScreen] Get notification status');
+          console.log('[Android HomeScreen] 📊 Get notification status');
           try {
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
@@ -499,7 +576,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.enableNotifications':
-          console.log('[Android HomeScreen] Toggle location notifications:', data.enabled);
+          console.log('[Android HomeScreen] 📍 Toggle location notifications:', data.enabled);
           try {
             if (data.enabled) {
               const started = await startGeofencing();
@@ -564,10 +641,10 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.requestPermission':
-          console.log('[Android HomeScreen] Request location permission');
+          console.log('[Android HomeScreen] 🔐 Request location permission');
           try {
             const permissionGranted = await LocationHandler.requestLocationPermission();
-            console.log('[Android HomeScreen] Permission granted:', permissionGranted);
+            console.log('[Android HomeScreen] Location permission result:', permissionGranted);
             
             setLocationPermissionStatus(permissionGranted ? 'granted' : 'denied');
             
@@ -585,9 +662,12 @@ export default function HomeScreen() {
             webViewRef.current?.injectJavaScript(`
               window.postMessage({ 
                 type: 'PERMISSIONS_STATUS', 
-                contacts: '${contactsPermissionStatus}',
-                location: '${permissionGranted ? 'granted' : 'denied'}',
-                notifications: '${notificationPermissionStatus}'
+                permissions: {
+                  contacts: '${contactsPermissionStatus}',
+                  location: '${permissionGranted ? 'granted' : 'denied'}',
+                  notifications: '${notificationPermissionStatus}',
+                  biometrics: 'undetermined'
+                }
               }, '*');
               true;
             `);
@@ -609,7 +689,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.getStatus':
-          console.log('[Android HomeScreen] Get geofencing status');
+          console.log('[Android HomeScreen] 📊 Get geofencing status');
           const locations = await loadStoreLocations();
           webViewRef.current?.injectJavaScript(`
             window.postMessage({ 
@@ -625,7 +705,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.add':
-          console.log('[Android HomeScreen] Add geofence:', data.location);
+          console.log('[Android HomeScreen] ➕ Add geofence:', data.location);
           try {
             await addStoreLocation(data.location);
             webViewRef.current?.injectJavaScript(`
@@ -663,7 +743,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.remove':
-          console.log('[Android HomeScreen] Remove geofence:', data.locationId);
+          console.log('[Android HomeScreen] ➖ Remove geofence:', data.locationId);
           try {
             await removeStoreLocation(data.locationId);
             webViewRef.current?.injectJavaScript(`
@@ -701,7 +781,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.geofence.getAll':
-          console.log('[Android HomeScreen] Get all monitored locations');
+          console.log('[Android HomeScreen] 📋 Get all monitored locations');
           const allLocations = await loadStoreLocations();
           console.log(`[Android HomeScreen] Sending ${allLocations.length} locations to web`);
           webViewRef.current?.injectJavaScript(`
@@ -714,7 +794,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.clipboard.copy':
-          console.log('[Android HomeScreen] Copy to clipboard');
+          console.log('[Android HomeScreen] 📋 Copy to clipboard');
           try {
             await Clipboard.setStringAsync(data.text);
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -732,7 +812,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.share':
-          console.log('[Android HomeScreen] Share content');
+          console.log('[Android HomeScreen] 🔗 Share content');
           try {
             const shareOptions: any = {};
             if (data.url) shareOptions.url = data.url;
@@ -763,7 +843,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.camera.takePicture':
-          console.log('[Android HomeScreen] Take picture');
+          console.log('[Android HomeScreen] 📷 Take picture');
           try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (!permissionResult.granted) {
@@ -804,7 +884,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.imagePicker.pick':
-          console.log('[Android HomeScreen] Pick image');
+          console.log('[Android HomeScreen] 🖼️ Pick image');
           try {
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!permissionResult.granted) {
@@ -845,7 +925,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.audio.startRecording':
-          console.log('[Android HomeScreen] Start audio recording');
+          console.log('[Android HomeScreen] 🎤 Start audio recording');
           try {
             const recording = await AudioHandler.startRecording();
             setCurrentRecording(recording);
@@ -864,7 +944,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.audio.stopRecording':
-          console.log('[Android HomeScreen] Stop audio recording');
+          console.log('[Android HomeScreen] ⏹️ Stop audio recording');
           try {
             if (currentRecording) {
               const uri = await AudioHandler.stopRecording(currentRecording);
@@ -891,7 +971,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.haptics.impact':
-          console.log('[Android HomeScreen] Haptic feedback');
+          console.log('[Android HomeScreen] 📳 Haptic feedback');
           try {
             const style = data.style || 'medium';
             if (style === 'light') {
@@ -907,7 +987,7 @@ export default function HomeScreen() {
           break;
 
         case 'natively.offline.sync':
-          console.log('[Android HomeScreen] Manual sync requested');
+          console.log('[Android HomeScreen] 🔄 Manual sync requested');
           try {
             await manualSync();
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -925,16 +1005,18 @@ export default function HomeScreen() {
           break;
         
         default:
-          console.log('[Android HomeScreen] Unknown message type:', data.type);
+          console.log('[Android HomeScreen] ❓ Unknown message type:', data.type);
       }
     } catch (error) {
-      console.error('[Android HomeScreen] Error handling message:', error);
+      console.error('[Android HomeScreen] ❌ Error handling message:', error);
     }
   };
 
   const injectedJavaScript = `
     (function() {
-      console.log('[Native App] Initializing...');
+      console.log('[ShopWell Native] ═══════════════════════════════════════');
+      console.log('[ShopWell Native] Initializing native bridge...');
+      console.log('[ShopWell Native] ═══════════════════════════════════════');
       
       window.isNativeApp = true;
       window.nativeAppPlatform = 'android';
@@ -945,7 +1027,7 @@ export default function HomeScreen() {
       window.postMessage = function(message, targetOrigin) {
         if (typeof message === 'object' && message.type && message.type.startsWith('natively.')) {
           if (!window.nativeAppReady) {
-            console.log('[Native App] Queueing message:', message.type);
+            console.log('[ShopWell Native] ⏸️ Queueing message:', message.type);
             window.nativelyMessageQueue.push({ message, targetOrigin });
             return;
           }
@@ -955,15 +1037,17 @@ export default function HomeScreen() {
       
       window.addEventListener('message', function(event) {
         if (event.data && event.data.type === 'NATIVE_APP_READY') {
-          console.log('[Native App] Ready! Processing queue...');
+          console.log('[ShopWell Native] 🚀 Native app ready! Processing queue...');
           window.nativeAppReady = true;
           
           const queue = window.nativelyMessageQueue;
           window.nativelyMessageQueue = [];
+          console.log('[ShopWell Native] 📦 Processing', queue.length, 'queued messages');
           queue.forEach(function(item) {
-            console.log('[Native App] Processing queued:', item.message.type);
+            console.log('[ShopWell Native] ▶️ Processing queued:', item.message.type);
             originalPostMessage.call(window, item.message, item.targetOrigin);
           });
+          console.log('[ShopWell Native] ✅ Queue processed');
         }
       });
       
@@ -972,17 +1056,16 @@ export default function HomeScreen() {
           type: 'WEB_PAGE_READY',
           timestamp: Date.now()
         }, '*');
-        console.log('[Native App] Sent WEB_PAGE_READY');
+        console.log('[ShopWell Native] 📤 Sent WEB_PAGE_READY signal');
       }, 100);
       
-      console.log('[Native App] Initialized');
+      console.log('[ShopWell Native] ✅ Native bridge initialized');
+      console.log('[ShopWell Native] ⚠️ IMPORTANT: Web app must add event listener:');
+      console.log('[ShopWell Native] window.addEventListener("message", function(event) { ... });');
       
       // Hide "Download App" menu item from More Options menu
       function hideDownloadAppMenuItem() {
         try {
-          console.log('[Native App] Searching for Download App menu item...');
-          
-          // Try multiple selectors to find the Download App menu item
           const selectors = [
             'a[href*="download"]',
             'button:contains("Download App")',
@@ -997,9 +1080,7 @@ export default function HomeScreen() {
               elements.forEach(function(element) {
                 const text = element.textContent || element.innerText || '';
                 if (text.toLowerCase().includes('download') && text.toLowerCase().includes('app')) {
-                  console.log('[Native App] Found and hiding Download App menu item');
                   element.style.display = 'none';
-                  // Also hide parent list item if it exists
                   const parentLi = element.closest('li');
                   if (parentLi) {
                     parentLi.style.display = 'none';
@@ -1007,16 +1088,14 @@ export default function HomeScreen() {
                 }
               });
             } catch (e) {
-              console.log('[Native App] Error with selector:', selector, e);
+              // Ignore selector errors
             }
           });
           
-          // Also try to find by text content in all clickable elements
           const clickableElements = document.querySelectorAll('a, button, [role="button"], [role="menuitem"]');
           clickableElements.forEach(function(element) {
             const text = element.textContent || element.innerText || '';
             if (text.toLowerCase().includes('download') && text.toLowerCase().includes('app')) {
-              console.log('[Native App] Found and hiding Download App element by text');
               element.style.display = 'none';
               const parentLi = element.closest('li');
               if (parentLi) {
@@ -1025,24 +1104,20 @@ export default function HomeScreen() {
             }
           });
         } catch (error) {
-          console.error('[Native App] Error hiding Download App menu item:', error);
+          console.error('[ShopWell Native] Error hiding Download App menu item:', error);
         }
       }
       
-      // Run immediately
       hideDownloadAppMenuItem();
       
-      // Run after DOM is fully loaded
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideDownloadAppMenuItem);
       } else {
         setTimeout(hideDownloadAppMenuItem, 500);
       }
       
-      // Run periodically to catch dynamically added elements
       setInterval(hideDownloadAppMenuItem, 2000);
       
-      // Watch for DOM changes
       if (typeof MutationObserver !== 'undefined') {
         const observer = new MutationObserver(function(mutations) {
           hideDownloadAppMenuItem();
@@ -1070,25 +1145,27 @@ export default function HomeScreen() {
         cacheEnabled={false}
         incognito={false}
         onLoadStart={() => {
-          console.log('[Android HomeScreen] WebView loading...');
+          console.log('[Android HomeScreen] 🌐 WebView loading started...');
+          console.log('[Android HomeScreen] Loading URL:', SHOPWELL_URL);
           setWebViewLoaded(false);
         }}
         onLoadEnd={() => {
-          console.log('[Android HomeScreen] WebView loaded');
+          console.log('[Android HomeScreen] ✅ WebView loaded successfully');
           setWebViewLoaded(true);
           if (webViewRef.current) {
             setTimeout(() => {
               try {
+                console.log('[Android HomeScreen] 💉 Re-injecting JavaScript bridge...');
                 webViewRef.current?.injectJavaScript(injectedJavaScript);
               } catch (error) {
-                console.error('[Android HomeScreen] Error re-injecting JS:', error);
+                console.error('[Android HomeScreen] ❌ Error re-injecting JS:', error);
               }
             }, 300);
           }
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error('[Android HomeScreen] WebView error:', nativeEvent);
+          console.error('[Android HomeScreen] ❌ WebView error:', nativeEvent);
         }}
       />
     </View>
