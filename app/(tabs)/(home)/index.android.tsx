@@ -87,7 +87,7 @@ export default function HomeScreen() {
         } catch (error) {
           console.error('[Android HomeScreen] Error sending ready signal:', error);
         }
-      }, 800);
+      }, 500);
     }
   }, [isNativeReady, webViewLoaded]);
 
@@ -126,7 +126,7 @@ export default function HomeScreen() {
         } catch (error) {
           console.error('[Android HomeScreen] ❌ Error injecting shared content:', error);
         }
-      }, 1000); // Increased delay to ensure WebView is fully ready
+      }, 1500);
     } else if (params.sharedContent || params.sharedType) {
       console.log('[Android HomeScreen] ⏸️ Shared content present but conditions not met:');
       console.log('[Android HomeScreen] - sharedContent:', !!params.sharedContent);
@@ -1067,6 +1067,8 @@ export default function HomeScreen() {
         pullToRefreshEnabled={true}
         sharedCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
+        cacheEnabled={false}
+        incognito={false}
         onLoadStart={() => {
           console.log('[Android HomeScreen] WebView loading...');
           setWebViewLoaded(false);

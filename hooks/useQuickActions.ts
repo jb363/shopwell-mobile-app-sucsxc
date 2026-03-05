@@ -18,21 +18,21 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
     // Define quick actions for iOS and Android
     const quickActions: QuickActions.Action[] = [
       {
-        id: 'voice_planner',
+        id: 'VOICE_PLANNER',
         title: 'Voice Planner',
         subtitle: 'Start voice planning',
         icon: Platform.OS === 'ios' ? 'symbol:mic.fill' : 'mic',
         params: { action: 'VOICE_PLANNER' },
       },
       {
-        id: 'product_search',
+        id: 'PRODUCT_SEARCH',
         title: 'Product Search',
         subtitle: 'Search for products',
         icon: Platform.OS === 'ios' ? 'symbol:magnifyingglass' : 'search',
         params: { action: 'PRODUCT_SEARCH' },
       },
       {
-        id: 'photo_search',
+        id: 'PHOTO_SEARCH',
         title: 'Photo Search',
         subtitle: 'Search by photo',
         icon: Platform.OS === 'ios' ? 'symbol:camera.fill' : 'camera-alt',
@@ -63,18 +63,18 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       // Wait for WebView to be ready before sending action
       const sendActionToWebView = (retryCount = 0) => {
         if (!webViewRef.current) {
-          if (retryCount < 10) {
-            console.log(`[QuickActions] ⏳ WebView not ready, retrying (${retryCount + 1}/10)...`);
+          if (retryCount < 15) {
+            console.log(`[QuickActions] ⏳ WebView not ready, retrying (${retryCount + 1}/15)...`);
             setTimeout(() => sendActionToWebView(retryCount + 1), 500);
           } else {
-            console.error('[QuickActions] ❌ WebView not available after 10 retries');
+            console.error('[QuickActions] ❌ WebView not available after 15 retries');
           }
           return;
         }
 
         // Send QUICK_ACTION message to WebView
         try {
-          const normalizedAction = actionType.toUpperCase().replace('_', '_');
+          const normalizedAction = actionType.toUpperCase().replace(/-/g, '_');
           console.log('[QuickActions] 📤 Sending action to WebView:', normalizedAction);
           
           webViewRef.current.injectJavaScript(`
@@ -115,7 +115,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
               if (isMounted) {
                 handleQuickAction(action);
               }
-            }, 2000);
+            }, 2500);
           } else {
             console.log('[QuickActions] No initial quick action');
           }
