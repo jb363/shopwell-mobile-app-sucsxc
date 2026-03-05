@@ -24,20 +24,11 @@ function handleNotificationData(data: any) {
     console.log('[useNotifications] Geofence notification:', data.storeName);
     
     if (data.listId) {
-      // Navigate to list detail
       console.log('[useNotifications] Navigating to list:', data.listId);
-      // TODO: Backend Integration - Navigate to list detail screen when backend provides list endpoints
-      // router.push(`/lists/${data.listId}`);
     } else if (data.reservationNumber) {
-      // Navigate to reservation detail
       console.log('[useNotifications] Navigating to reservation:', data.reservationNumber);
-      // TODO: Backend Integration - Navigate to reservation detail screen when backend provides reservation endpoints
-      // router.push(`/reservations/${data.reservationNumber}`);
     }
   }
-  
-  // Handle other notification types
-  // Add more handlers as needed
 }
 
 export function useNotifications() {
@@ -57,14 +48,11 @@ export function useNotifications() {
     }
 
     // Check existing permissions and get token if already granted
-    console.log('[useNotifications] Checking existing notification permissions (not requesting)');
+    console.log('[useNotifications] Checking existing notification permissions');
     
-    // Wrap in try-catch to handle native module unavailability
-    // Add longer delay to ensure native modules are fully initialized on older devices
     const checkPermissions = async () => {
       try {
-        // Longer delay to ensure native modules are ready on older iOS devices
-        await new Promise(resolve => setTimeout(resolve, 900));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         if (!isMounted) return;
         
@@ -96,8 +84,7 @@ export function useNotifications() {
     // Check for notification that opened the app
     const checkLastNotification = async () => {
       try {
-        // Longer delay to ensure native modules are ready on older iOS devices
-        await new Promise(resolve => setTimeout(resolve, 1100));
+        await new Promise(resolve => setTimeout(resolve, 700));
         
         if (!isMounted) return;
         
@@ -114,8 +101,7 @@ export function useNotifications() {
 
     checkLastNotification();
 
-    // Set up notification listeners with error handling
-    // Add longer delay to ensure native modules are ready on older devices
+    // Set up notification listeners
     setTimeout(() => {
       if (!isMounted) return;
       
@@ -135,7 +121,7 @@ export function useNotifications() {
       } catch (error) {
         console.error('[useNotifications] Error setting up notification listeners:', error);
       }
-    }, 1200); // Increased delay for older iOS devices
+    }, 800);
 
     return () => {
       isMounted = false;
@@ -175,7 +161,7 @@ export function useNotifications() {
     }
 
     try {
-      console.log('[useNotifications] Requesting notification permissions from user');
+      console.log('[useNotifications] 🔔 Requesting notification permissions from user');
       
       // Check current status first
       const { status: currentStatus } = await Notifications.getPermissionsAsync();
@@ -183,76 +169,52 @@ export function useNotifications() {
       
       // If already granted, just get the token
       if (currentStatus === 'granted') {
-        console.log('[useNotifications] Permission already granted, getting token');
-        const tokenData = await Notifications.getExpoPushTokenAsync();
-        setExpoPushToken(tokenData.data);
-        console.log('[useNotifications] Push token:', tokenData.data);
+        console.log('[useNotifications] ✅ Permission already granted, getting token');
+        try {
+          const tokenData = await Notifications.getExpoPushTokenAsync();
+          setExpoPushToken(tokenData.data);
+          console.log('[useNotifications] 📲 Push token:', tokenData.data);
+        } catch (tokenError) {
+          console.error('[useNotifications] ❌ Error getting push token:', tokenError);
+        }
         return true;
       }
       
-      // On Android 13+, show explanation first
-      if (Platform.OS === 'android' && currentStatus === 'undetermined') {
-        // Show explanation before requesting
-        return new Promise((resolve) => {
-          Alert.alert(
-            'Enable Notifications',
-            'Get notified about product alerts, price drops, and shopping reminders.',
-            [
-              {
-                text: 'Not Now',
-                style: 'cancel',
-                onPress: () => {
-                  console.log('[useNotifications] User declined notification permission');
-                  setPermissionStatus('denied');
-                  resolve(false);
-                }
-              },
-              {
-                text: 'Enable',
-                onPress: async () => {
-                  try {
-                    const { status } = await Notifications.requestPermissionsAsync();
-                    const granted = status === 'granted';
-                    setPermissionStatus(granted ? 'granted' : 'denied');
-                    
-                    if (granted) {
-                      console.log('[useNotifications] Permission granted, getting token');
-                      const tokenData = await Notifications.getExpoPushTokenAsync();
-                      setExpoPushToken(tokenData.data);
-                      console.log('[useNotifications] Push token:', tokenData.data);
-                    } else {
-                      console.warn('[useNotifications] Notification permission denied');
-                    }
-                    
-                    resolve(granted);
-                  } catch (error) {
-                    console.error('[useNotifications] Error requesting permission:', error);
-                    setPermissionStatus('denied');
-                    resolve(false);
-                  }
-                }
-              }
-            ]
-          );
-        });
+      // If previously denied, inform user they need to enable in settings
+      if (currentStatus === 'denied') {
+        console.log('[useNotifications] ⚠️ Permission previously denied');
+        Alert.alert(
+          'Notifications Disabled',
+          'Notifications are currently disabled. Please enable them in your device settings to receive alerts.',
+          [{ text: 'OK' }]
+        );
+        return false;
       }
       
-      // Direct request for iOS or if already determined on Android
+      // Request permission
+      console.log('[useNotifications] 📱 Showing permission dialog...');
       const { status } = await Notifications.requestPermissionsAsync();
-      setPermissionStatus(status === 'granted' ? 'granted' : 'denied');
+      console.log('[useNotifications] Permission result:', status);
       
-      if (status === 'granted') {
-        console.log('[useNotifications] Permission granted, getting token');
-        const tokenData = await Notifications.getExpoPushTokenAsync();
-        setExpoPushToken(tokenData.data);
-        console.log('[useNotifications] Push token:', tokenData.data);
+      const granted = status === 'granted';
+      setPermissionStatus(granted ? 'granted' : 'denied');
+      
+      if (granted) {
+        console.log('[useNotifications] ✅ Permission granted, getting token');
+        try {
+          const tokenData = await Notifications.getExpoPushTokenAsync();
+          setExpoPushToken(tokenData.data);
+          console.log('[useNotifications] 📲 Push token:', tokenData.data);
+        } catch (tokenError) {
+          console.error('[useNotifications] ❌ Error getting push token:', tokenError);
+        }
         return true;
       } else {
-        console.warn('[useNotifications] Notification permission denied');
+        console.warn('[useNotifications] ❌ Notification permission denied');
         return false;
       }
     } catch (error) {
-      console.error('[useNotifications] Error requesting permissions:', error);
+      console.error('[useNotifications] ❌ Error requesting permissions:', error);
       return false;
     }
   };

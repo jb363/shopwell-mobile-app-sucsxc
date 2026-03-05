@@ -13,39 +13,50 @@ export interface Contact {
 }
 
 /**
- * Request permission to access contacts with proper Android handling
+ * Request permission to access contacts
  */
 export async function requestContactsPermission(): Promise<boolean> {
   try {
-    console.log('[ContactsHandler] Requesting contacts permission...');
+    console.log('[ContactsHandler] 🔐 Requesting contacts permission...');
     
     // Check current permission status first
     const { status: currentStatus } = await Contacts.getPermissionsAsync();
     console.log('[ContactsHandler] Current permission status:', currentStatus);
     
     if (currentStatus === 'granted') {
-      console.log('[ContactsHandler] Permission already granted');
+      console.log('[ContactsHandler] ✅ Permission already granted');
       return true;
     }
     
-    // Request permission - this will show the system dialog on both platforms
-    console.log('[ContactsHandler] Requesting permission from system...');
-    const { status } = await Contacts.requestPermissionsAsync();
-    console.log('[ContactsHandler] Permission result:', status);
-    
-    if (status !== 'granted') {
-      // Show user-friendly message if permission was denied
+    // If previously denied, inform user
+    if (currentStatus === 'denied') {
+      console.log('[ContactsHandler] ⚠️ Permission previously denied');
       Alert.alert(
-        'Permission Required',
-        'Please grant contacts permission in your device settings to import contacts.',
+        'Contacts Access Disabled',
+        'Contacts access is currently disabled. Please enable it in your device settings to import contacts.',
         [{ text: 'OK' }]
       );
       return false;
     }
     
+    // Request permission
+    console.log('[ContactsHandler] 📱 Requesting permission from system...');
+    const { status } = await Contacts.requestPermissionsAsync();
+    console.log('[ContactsHandler] Permission result:', status);
+    
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Required',
+        'Please grant contacts permission to import contacts.',
+        [{ text: 'OK' }]
+      );
+      return false;
+    }
+    
+    console.log('[ContactsHandler] ✅ Permission granted');
     return true;
   } catch (error) {
-    console.error('[ContactsHandler] Error requesting contacts permission:', error);
+    console.error('[ContactsHandler] ❌ Error requesting contacts permission:', error);
     Alert.alert(
       'Error',
       'Failed to request contacts permission. Please try again.',
@@ -132,22 +143,22 @@ export async function searchContacts(query: string): Promise<Contact[]> {
  */
 export async function pickContact(): Promise<Contact | null> {
   try {
-    console.log('[ContactsHandler] Opening contact picker...');
+    console.log('[ContactsHandler] 📱 Opening contact picker...');
     
     // Request permission first
     const { status } = await Contacts.getPermissionsAsync();
     if (status !== 'granted') {
-      console.log('[ContactsHandler] Contacts permission not granted, requesting...');
+      console.log('[ContactsHandler] 🔐 Contacts permission not granted, requesting...');
       const granted = await requestContactsPermission();
       if (!granted) {
-        console.log('[ContactsHandler] Contacts permission denied');
+        console.log('[ContactsHandler] ❌ Contacts permission denied');
         return null;
       }
     }
 
     // Use presentContactPickerAsync for both iOS and Android
     if (Contacts.presentContactPickerAsync) {
-      console.log('[ContactsHandler] Using native contact picker...');
+      console.log('[ContactsHandler] 🎯 Using native contact picker...');
       const result = await Contacts.presentContactPickerAsync();
       
       if (result && result.id) {
@@ -162,14 +173,14 @@ export async function pickContact(): Promise<Contact | null> {
           imageAvailable: result.imageAvailable,
         };
         
-        console.log('[ContactsHandler] Contact picked:', contact.name);
+        console.log('[ContactsHandler] ✅ Contact picked:', contact.name);
         return contact;
       } else {
-        console.log('[ContactsHandler] Contact picker cancelled or no contact selected');
+        console.log('[ContactsHandler] ⏸️ Contact picker cancelled or no contact selected');
         return null;
       }
     } else {
-      console.error('[ContactsHandler] presentContactPickerAsync not available');
+      console.error('[ContactsHandler] ❌ presentContactPickerAsync not available');
       Alert.alert(
         'Not Supported',
         'Contact picker is not available on this device.',
@@ -178,10 +189,10 @@ export async function pickContact(): Promise<Contact | null> {
       return null;
     }
   } catch (error) {
-    console.error('[ContactsHandler] Error picking contact:', error);
+    console.error('[ContactsHandler] ❌ Error picking contact:', error);
     Alert.alert(
       'Error',
-      'Failed to access contacts. Please check your permissions.',
+      'Failed to access contacts. Please check your permissions in device settings.',
       [{ text: 'OK' }]
     );
     return null;

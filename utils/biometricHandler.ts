@@ -14,7 +14,7 @@ export interface BiometricCapabilities {
  */
 export async function checkBiometricCapabilities(): Promise<BiometricCapabilities> {
   try {
-    console.log('[BiometricHandler] Checking biometric capabilities...');
+    console.log('[BiometricHandler] 🔍 Checking biometric capabilities...');
     
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     console.log('[BiometricHandler] Has hardware:', hasHardware);
@@ -26,6 +26,7 @@ export async function checkBiometricCapabilities(): Promise<BiometricCapabilitie
     console.log('[BiometricHandler] Supported types:', supportedTypes);
     
     const isAvailable = hasHardware && isEnrolled;
+    console.log('[BiometricHandler] ✅ Is available:', isAvailable);
     
     return {
       isAvailable,
@@ -34,7 +35,7 @@ export async function checkBiometricCapabilities(): Promise<BiometricCapabilitie
       supportedTypes,
     };
   } catch (error) {
-    console.error('[BiometricHandler] Error checking capabilities:', error);
+    console.error('[BiometricHandler] ❌ Error checking capabilities:', error);
     return {
       isAvailable: false,
       hasHardware: false,
@@ -49,13 +50,18 @@ export async function checkBiometricCapabilities(): Promise<BiometricCapabilitie
  */
 export async function authenticateWithBiometrics(reason?: string): Promise<boolean> {
   try {
-    console.log('[BiometricHandler] Starting biometric authentication...');
+    console.log('[BiometricHandler] 🔐 Starting biometric authentication...');
     
     // Check if biometrics are available
     const capabilities = await checkBiometricCapabilities();
     
     if (!capabilities.isAvailable) {
-      console.warn('[BiometricHandler] Biometrics not available');
+      console.warn('[BiometricHandler] ⚠️ Biometrics not available');
+      if (!capabilities.hasHardware) {
+        console.log('[BiometricHandler] No biometric hardware detected');
+      } else if (!capabilities.isEnrolled) {
+        console.log('[BiometricHandler] No biometrics enrolled');
+      }
       return false;
     }
     
@@ -72,6 +78,8 @@ export async function authenticateWithBiometrics(reason?: string): Promise<boole
       promptMessage = reason || 'Use biometrics to authenticate';
     }
     
+    console.log('[BiometricHandler] 📱 Showing biometric prompt:', promptMessage);
+    
     // Perform authentication
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage,
@@ -82,9 +90,15 @@ export async function authenticateWithBiometrics(reason?: string): Promise<boole
     
     console.log('[BiometricHandler] Authentication result:', result.success);
     
+    if (result.success) {
+      console.log('[BiometricHandler] ✅ Authentication successful');
+    } else {
+      console.log('[BiometricHandler] ❌ Authentication failed or cancelled');
+    }
+    
     return result.success;
   } catch (error) {
-    console.error('[BiometricHandler] Error during authentication:', error);
+    console.error('[BiometricHandler] ❌ Error during authentication:', error);
     return false;
   }
 }

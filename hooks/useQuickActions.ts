@@ -13,7 +13,7 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       return;
     }
 
-    console.log('[QuickActions] Setting up quick actions...');
+    console.log('[QuickActions] 🚀 Setting up quick actions...');
 
     // Define quick actions for iOS and Android
     const quickActions: QuickActions.Action[] = [
@@ -40,108 +40,67 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       },
     ];
 
-    // Set the quick actions with error handling
-    // Add delay to ensure native modules are ready
+    // Set the quick actions
     setTimeout(() => {
       if (!isMounted) return;
       
       try {
         QuickActions.setItems(quickActions);
-        console.log('[QuickActions] Quick actions set successfully:', quickActions.length);
+        console.log('[QuickActions] ✅ Quick actions set successfully:', quickActions.length);
       } catch (error) {
-        console.error('[QuickActions] Error setting quick actions:', error);
+        console.error('[QuickActions] ❌ Error setting quick actions:', error);
       }
-    }, 600);
+    }, 400);
 
     // Handle quick action selection
     const handleQuickAction = (action: QuickActions.Action) => {
-      console.log('[QuickActions] Quick action triggered:', action.id, 'params:', action.params);
-
-      if (!webViewRef.current) {
-        console.warn('[QuickActions] WebView ref not available, deferring action');
-        // Retry after a short delay
-        setTimeout(() => {
-          if (webViewRef.current) {
-            handleQuickAction(action);
-          }
-        }, 500);
-        return;
-      }
+      console.log('[QuickActions] 🎯 Quick action triggered:', action.id, 'params:', action.params);
 
       // Get the action from params (Android) or id (iOS)
       const actionType = (action.params as any)?.action || action.id;
       console.log('[QuickActions] Action type:', actionType);
 
-      // Send QUICK_ACTION message to WebView
-      try {
-        switch (actionType) {
-          case 'VOICE_PLANNER':
-          case 'voice_planner':
-            console.log('[QuickActions] Sending VOICE_PLANNER action to WebView');
-            webViewRef.current.injectJavaScript(`
-              (function() {
-                try {
-                  console.log('[QuickActions] Received VOICE_PLANNER action');
-                  window.postMessage({ 
-                    type: 'QUICK_ACTION', 
-                    action: 'VOICE_PLANNER' 
-                  }, '*');
-                } catch (error) {
-                  console.error('[QuickActions] Error processing VOICE_PLANNER action:', error);
-                }
-              })();
-              true;
-            `);
-            break;
-
-          case 'PRODUCT_SEARCH':
-          case 'product_search':
-            console.log('[QuickActions] Sending PRODUCT_SEARCH action to WebView');
-            webViewRef.current.injectJavaScript(`
-              (function() {
-                try {
-                  console.log('[QuickActions] Received PRODUCT_SEARCH action');
-                  window.postMessage({ 
-                    type: 'QUICK_ACTION', 
-                    action: 'PRODUCT_SEARCH' 
-                  }, '*');
-                } catch (error) {
-                  console.error('[QuickActions] Error processing PRODUCT_SEARCH action:', error);
-                }
-              })();
-              true;
-            `);
-            break;
-
-          case 'PHOTO_SEARCH':
-          case 'photo_search':
-            console.log('[QuickActions] Sending PHOTO_SEARCH action to WebView');
-            webViewRef.current.injectJavaScript(`
-              (function() {
-                try {
-                  console.log('[QuickActions] Received PHOTO_SEARCH action');
-                  window.postMessage({ 
-                    type: 'QUICK_ACTION', 
-                    action: 'PHOTO_SEARCH' 
-                  }, '*');
-                } catch (error) {
-                  console.error('[QuickActions] Error processing PHOTO_SEARCH action:', error);
-                }
-              })();
-              true;
-            `);
-            break;
-
-          default:
-            console.log('[QuickActions] Unknown quick action:', actionType);
+      // Wait for WebView to be ready before sending action
+      const sendActionToWebView = (retryCount = 0) => {
+        if (!webViewRef.current) {
+          if (retryCount < 10) {
+            console.log(`[QuickActions] ⏳ WebView not ready, retrying (${retryCount + 1}/10)...`);
+            setTimeout(() => sendActionToWebView(retryCount + 1), 500);
+          } else {
+            console.error('[QuickActions] ❌ WebView not available after 10 retries');
+          }
+          return;
         }
-      } catch (error) {
-        console.error('[QuickActions] Error injecting JavaScript for quick action:', error);
-      }
+
+        // Send QUICK_ACTION message to WebView
+        try {
+          const normalizedAction = actionType.toUpperCase().replace('_', '_');
+          console.log('[QuickActions] 📤 Sending action to WebView:', normalizedAction);
+          
+          webViewRef.current.injectJavaScript(`
+            (function() {
+              try {
+                console.log('[QuickActions] 📨 Received ${normalizedAction} action');
+                window.postMessage({ 
+                  type: 'QUICK_ACTION', 
+                  action: '${normalizedAction}' 
+                }, '*');
+                console.log('[QuickActions] ✅ Action sent successfully');
+              } catch (error) {
+                console.error('[QuickActions] ❌ Error processing action:', error);
+              }
+            })();
+            true;
+          `);
+        } catch (error) {
+          console.error('[QuickActions] ❌ Error injecting JavaScript for quick action:', error);
+        }
+      };
+
+      sendActionToWebView();
     };
 
     // Listen for initial quick action (app launched via quick action)
-    // Add delay to ensure native modules are ready
     setTimeout(() => {
       if (!isMounted) return;
       
@@ -150,19 +109,21 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
           if (!isMounted) return;
           
           if (action) {
-            console.log('[QuickActions] Initial quick action detected:', action.id, 'params:', action.params);
-            // Wait a bit for WebView to be ready
+            console.log('[QuickActions] 🎬 Initial quick action detected:', action.id, 'params:', action.params);
+            // Wait for WebView to be ready
             setTimeout(() => {
               if (isMounted) {
                 handleQuickAction(action);
               }
-            }, 1500);
+            }, 2000);
+          } else {
+            console.log('[QuickActions] No initial quick action');
           }
         })
         .catch((error) => {
-          console.error('[QuickActions] Error getting initial quick action:', error);
+          console.error('[QuickActions] ❌ Error getting initial quick action:', error);
         });
-    }, 800);
+    }, 600);
 
     // Listen for subsequent quick actions (app already running)
     let listener: any;
@@ -171,21 +132,21 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       
       try {
         listener = QuickActions.addListener(handleQuickAction);
-        console.log('[QuickActions] Quick action listener added');
+        console.log('[QuickActions] ✅ Quick action listener added');
       } catch (error) {
-        console.error('[QuickActions] Error adding quick action listener:', error);
+        console.error('[QuickActions] ❌ Error adding quick action listener:', error);
       }
-    }, 900);
+    }, 700);
 
     return () => {
       isMounted = false;
-      console.log('[QuickActions] Cleaning up quick actions...');
+      console.log('[QuickActions] 🧹 Cleaning up quick actions...');
       try {
         if (listener) {
           listener.remove();
         }
       } catch (error) {
-        console.error('[QuickActions] Error removing quick action listener:', error);
+        console.error('[QuickActions] ❌ Error removing quick action listener:', error);
       }
     };
   }, [webViewRef]);
