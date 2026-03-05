@@ -44,7 +44,7 @@ export async function startRecording(): Promise<Audio.Recording | null> {
       playsInSilentModeIOS: true,
     });
 
-    const recording = Audio.createRecordingAsync(
+    const recording = await Audio.createRecordingAsync(
       Audio.RecordingPresets.HIGH_QUALITY
     );
     

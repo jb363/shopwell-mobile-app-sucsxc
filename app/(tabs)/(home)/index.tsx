@@ -1,16 +1,29 @@
 
 import React from 'react';
 import { Platform } from 'react-native';
-import HomeScreenIOS from './index.ios';
-import HomeScreenAndroid from './index.android';
-import HomeScreenWeb from './index.web';
+
+// Platform-specific implementations
+let HomeScreenIOS: any;
+let HomeScreenAndroid: any;
+let HomeScreenWeb: any;
+
+if (Platform.OS === 'ios') {
+  HomeScreenIOS = require('./index.ios').default;
+} else if (Platform.OS === 'android') {
+  HomeScreenAndroid = require('./index.android').default;
+} else {
+  HomeScreenWeb = require('./index.web').default;
+}
 
 export default function HomeScreen() {
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === 'ios' && HomeScreenIOS) {
     return <HomeScreenIOS />;
-  } else if (Platform.OS === 'android') {
+  } else if (Platform.OS === 'android' && HomeScreenAndroid) {
     return <HomeScreenAndroid />;
-  } else {
+  } else if (HomeScreenWeb) {
     return <HomeScreenWeb />;
   }
+  
+  // Fallback - should never reach here
+  return null;
 }
