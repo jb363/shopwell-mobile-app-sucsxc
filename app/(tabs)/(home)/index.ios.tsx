@@ -128,7 +128,7 @@ export default function HomeScreen() {
         } catch (error) {
           console.error('[iOS HomeScreen] ❌ Error injecting shared content:', error);
         }
-      }, 1000); // Increased delay to ensure WebView is fully ready
+      }, 1000);
     } else if (params.sharedContent || params.sharedType) {
       console.log('[iOS HomeScreen] ⏸️ Shared content present but conditions not met:');
       console.log('[iOS HomeScreen] - sharedContent:', !!params.sharedContent);
@@ -901,7 +901,6 @@ export default function HomeScreen() {
             const granted = await notificationsHook.requestPermissions();
             console.log('[iOS HomeScreen] Notification permission result:', granted);
             
-            // Update local state
             const newStatus = granted ? 'granted' : 'denied';
             
             webViewRef.current?.injectJavaScript(`
@@ -1032,7 +1031,6 @@ export default function HomeScreen() {
         try {
           console.log('[ShopWell Native] 🔍 Searching for Download App menu item...');
           
-          // Try multiple selectors to find the Download App menu item
           const selectors = [
             'a[href*="download"]',
             'button:contains("Download App")',
@@ -1049,7 +1047,6 @@ export default function HomeScreen() {
                 if (text.toLowerCase().includes('download') && text.toLowerCase().includes('app')) {
                   console.log('[ShopWell Native] ✅ Found and hiding Download App menu item');
                   element.style.display = 'none';
-                  // Also hide parent list item if it exists
                   const parentLi = element.closest('li');
                   if (parentLi) {
                     parentLi.style.display = 'none';
@@ -1061,7 +1058,6 @@ export default function HomeScreen() {
             }
           });
           
-          // Also try to find by text content in all clickable elements
           const clickableElements = document.querySelectorAll('a, button, [role="button"], [role="menuitem"]');
           clickableElements.forEach(function(element) {
             const text = element.textContent || element.innerText || '';
@@ -1079,20 +1075,16 @@ export default function HomeScreen() {
         }
       }
       
-      // Run immediately
       hideDownloadAppMenuItem();
       
-      // Run after DOM is fully loaded
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideDownloadAppMenuItem);
       } else {
         setTimeout(hideDownloadAppMenuItem, 500);
       }
       
-      // Run periodically to catch dynamically added elements
       setInterval(hideDownloadAppMenuItem, 2000);
       
-      // Watch for DOM changes
       if (typeof MutationObserver !== 'undefined') {
         const observer = new MutationObserver(function(mutations) {
           hideDownloadAppMenuItem();
