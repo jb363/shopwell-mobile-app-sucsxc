@@ -10,7 +10,9 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.23</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.19</string>
+	<string>1.0.20</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
@@ -23,6 +25,8 @@
 				<true/>
 				<key>NSExtensionActivationSupportsImageWithMaxCount</key>
 				<integer>5</integer>
+				<key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
+				<integer>1</integer>
 			</dict>
 		</dict>
 		<key>NSExtensionPointIdentifier</key>

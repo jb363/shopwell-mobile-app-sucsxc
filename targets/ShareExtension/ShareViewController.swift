@@ -4,6 +4,7 @@ import Social
 import MobileCoreServices
 import UniformTypeIdentifiers
 
+@objc(ShareViewController)
 class ShareViewController: UIViewController {
     
     private let appGroupIdentifier = "group.ai.shopwell.app"
@@ -11,6 +12,23 @@ class ShareViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Set up the view
+        view.backgroundColor = .systemBackground
+        
+        // Add a simple UI to show processing
+        let label = UILabel()
+        label.text = "Opening ShopWell.ai..."
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+        
+        // Handle the shared content
         handleSharedContent()
     }
     

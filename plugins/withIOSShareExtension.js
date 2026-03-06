@@ -58,6 +58,16 @@ const withIOSShareExtension = (config) => {
       });
     }
     
+    // Ensure LSApplicationQueriesSchemes is set to allow opening the main app
+    if (!config.modResults.LSApplicationQueriesSchemes) {
+      config.modResults.LSApplicationQueriesSchemes = [];
+    }
+    
+    const queriesSchemes = config.modResults.LSApplicationQueriesSchemes;
+    if (!queriesSchemes.includes('shopwellaimobile')) {
+      queriesSchemes.push('shopwellaimobile');
+    }
+    
     return config;
   });
 
