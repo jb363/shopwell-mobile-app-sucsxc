@@ -6,7 +6,6 @@ import { WebView } from 'react-native-webview';
 import * as Notifications from 'expo-notifications';
 import * as Contacts from 'expo-contacts';
 import { Audio } from 'expo-audio';
-import * as FileSystem from 'expo-file-system/legacy';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
 
@@ -227,23 +226,39 @@ export default function HomeScreen() {
             throw new Error('No recording URI');
           }
           
-          // Read audio file as base64
+          // Read audio file as base64 using fetch and FileReader approach
           console.log('[Android HomeScreen] 📖 Reading audio file...');
-          const base64Audio = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
           
-          console.log('[Android HomeScreen] 📤 Sending audio for transcription...');
-          
-          // Send to WebView for backend transcription
-          webViewRef.current?.injectJavaScript(`
-            window.postMessage(${JSON.stringify({
-              type: 'VOICE_RECORDING_COMPLETE',
-              audioData: base64Audio,
-              mimeType: 'audio/m4a'
-            })}, '*');
-            true;
-          `);
+          try {
+            // Use fetch to read the local file
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            
+            // Convert blob to base64
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64Audio = (reader.result as string).split(',')[1];
+              
+              console.log('[Android HomeScreen] 📤 Sending audio for transcription...');
+              
+              // Send to WebView for backend transcription
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(${JSON.stringify({
+                  type: 'VOICE_RECORDING_COMPLETE',
+                  audioData: base64Audio,
+                  mimeType: 'audio/m4a'
+                })}, '*');
+                true;
+              `);
+            };
+            reader.onerror = () => {
+              throw new Error('Failed to read audio file');
+            };
+            reader.readAsDataURL(blob);
+          } catch (readError) {
+            console.error('[Android HomeScreen] ❌ Error reading audio file:', readError);
+            throw readError;
+          }
           
         } catch (error) {
           console.error('[Android HomeScreen] ❌ Error stopping recording:', error);
