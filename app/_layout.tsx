@@ -246,8 +246,8 @@ export default function RootLayout() {
         const url = Linking.parse(event.url);
         console.log('[RootLayout] Parsed URL:', JSON.stringify(url, null, 2));
 
-        // Handle share target deep links (from Android share intents)
-        if (url.path === 'share-target' || url.hostname === 'share-target') {
+        // Handle share deep links (from website "Open in App" buttons or Android share intents)
+        if (url.path === 'share-target' || url.hostname === 'share-target' || url.hostname === 'share' || url.path === 'share') {
           console.log('[RootLayout] Share intent detected, navigating to share-target');
           console.log('[RootLayout] Query params:', url.queryParams);
           
