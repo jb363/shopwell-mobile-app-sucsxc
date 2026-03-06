@@ -6,6 +6,8 @@ import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Contacts from 'expo-contacts';
+import { Audio } from 'expo-audio';
+import * as FileSystem from 'expo-file-system';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -18,6 +20,7 @@ export default function HomeScreen() {
   
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
+  const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
 
   // Handle shared content from params
   useEffect(() => {
@@ -61,8 +64,125 @@ export default function HomeScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       console.log('[iOS HomeScreen] 📩 Message received from WebView:', data.type);
       
+      // Handle voice recording start
+      if (data.type === 'natively.voice.startRecording') {
+        console.log('[iOS HomeScreen] 🎤 Voice recording start requested');
+        
+        try {
+          // Request permission
+          const { status } = await Audio.getPermissionsAsync();
+          
+          if (status !== 'granted') {
+            console.log('[iOS HomeScreen] 🔐 Requesting microphone permission...');
+            const { status: newStatus } = await Audio.requestPermissionsAsync();
+            
+            if (newStatus !== 'granted') {
+              console.log('[iOS HomeScreen] ❌ Microphone permission denied');
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(${JSON.stringify({
+                  type: 'VOICE_RECORDING_ERROR',
+                  error: 'Microphone permission denied'
+                })}, '*');
+                true;
+              `);
+              return;
+            }
+          }
+          
+          // Set audio mode for recording
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+          });
+
+          // Start recording
+          console.log('[iOS HomeScreen] 🎙️ Starting recording...');
+          const recording = await Audio.createRecordingAsync(
+            Audio.RecordingPresets.HIGH_QUALITY
+          );
+          
+          setCurrentRecording(recording);
+          console.log('[iOS HomeScreen] ✅ Recording started');
+          
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'VOICE_RECORDING_STARTED'
+            })}, '*');
+            true;
+          `);
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error starting recording:', error);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'VOICE_RECORDING_ERROR',
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
+      
+      // Handle voice recording stop
+      else if (data.type === 'natively.voice.stopRecording') {
+        console.log('[iOS HomeScreen] 🛑 Voice recording stop requested');
+        
+        if (!currentRecording) {
+          console.log('[iOS HomeScreen] ⚠️ No active recording');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'VOICE_RECORDING_ERROR',
+              error: 'No active recording'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
+        
+        try {
+          console.log('[iOS HomeScreen] 📼 Stopping recording...');
+          await currentRecording.stopAndUnloadAsync();
+          const uri = currentRecording.getURI();
+          setCurrentRecording(null);
+          
+          console.log('[iOS HomeScreen] ✅ Recording stopped, URI:', uri);
+          
+          if (!uri) {
+            throw new Error('No recording URI');
+          }
+          
+          // Read audio file as base64
+          console.log('[iOS HomeScreen] 📖 Reading audio file...');
+          const base64Audio = await FileSystem.readAsStringAsync(uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          
+          console.log('[iOS HomeScreen] 📤 Sending audio for transcription...');
+          
+          // Send to WebView for backend transcription
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'VOICE_RECORDING_COMPLETE',
+              audioData: base64Audio,
+              mimeType: 'audio/m4a'
+            })}, '*');
+            true;
+          `);
+          
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error stopping recording:', error);
+          setCurrentRecording(null);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'VOICE_RECORDING_ERROR',
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
+      
       // Handle contact picker request
-      if (data.type === 'natively.contacts.pick') {
+      else if (data.type === 'natively.contacts.pick') {
         console.log('[iOS HomeScreen] 📱 Contact picker requested');
         
         try {
@@ -213,7 +333,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('[iOS HomeScreen] ❌ Error handling message:', error);
     }
-  }, []);
+  }, [currentRecording]);
 
   const injectedJavaScript = `
     (function() {
@@ -228,7 +348,8 @@ export default function HomeScreen() {
         contacts: true,
         notifications: true,
         sharing: true,
-        biometrics: true
+        biometrics: true,
+        voiceRecording: true
       };
       
       // Signal that we're ready
