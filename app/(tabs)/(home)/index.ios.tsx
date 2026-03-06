@@ -1,14 +1,28 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, Platform } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
-import * as Contacts from 'expo-contacts';
 import { Audio } from 'expo-audio';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
+
+// Conditional imports for native modules
+let Notifications: any;
+let Contacts: any;
+
+try {
+  Notifications = require('expo-notifications');
+} catch (error) {
+  console.warn('[iOS HomeScreen] expo-notifications not available:', error);
+}
+
+try {
+  Contacts = require('expo-contacts');
+} catch (error) {
+  console.warn('[iOS HomeScreen] expo-contacts not available:', error);
+}
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -279,6 +293,19 @@ export default function HomeScreen() {
       else if (data.type === 'natively.contacts.pick') {
         console.log('[iOS HomeScreen] 📱 Contact picker requested');
         
+        if (!Contacts) {
+          console.error('[iOS HomeScreen] ❌ Contacts module not available');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'CONTACT_PICKER_RESPONSE',
+              success: false,
+              error: 'Contacts module not available'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
+        
         try {
           // Check permission
           const { status } = await Contacts.getPermissionsAsync();
@@ -310,8 +337,8 @@ export default function HomeScreen() {
             if (result && result.id) {
               const contact = {
                 name: result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || 'Unknown',
-                phoneNumbers: result.phoneNumbers?.map(p => ({ number: p.number || '' })) || [],
-                emails: result.emails?.map(e => ({ email: e.email || '' })) || []
+                phoneNumbers: result.phoneNumbers?.map((p: any) => ({ number: p.number || '' })) || [],
+                emails: result.emails?.map((e: any) => ({ email: e.email || '' })) || []
               };
               
               console.log('[iOS HomeScreen] ✅ Contact selected:', contact.name);
@@ -362,6 +389,20 @@ export default function HomeScreen() {
       // Handle notification permission request
       else if (data.type === 'natively.notifications.requestPermission') {
         console.log('[iOS HomeScreen] 🔔 Notification permission requested');
+        
+        if (!Notifications) {
+          console.error('[iOS HomeScreen] ❌ Notifications module not available');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_PERMISSION_RESPONSE',
+              granted: false,
+              status: 'unavailable',
+              error: 'Notifications module not available'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
         
         try {
           // Check current status
@@ -428,6 +469,19 @@ export default function HomeScreen() {
       else if (data.type === 'natively.notifications.getStatus') {
         console.log('[iOS HomeScreen] 🔔 Notification status check requested');
         
+        if (!Notifications) {
+          console.error('[iOS HomeScreen] ❌ Notifications module not available');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_STATUS_RESPONSE',
+              status: 'unavailable',
+              error: 'Notifications module not available'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
+        
         try {
           const { status } = await Notifications.getPermissionsAsync();
           console.log('[iOS HomeScreen] ✅ Notification status:', status);
@@ -467,8 +521,8 @@ export default function HomeScreen() {
       
       // Feature flags
       window.nativeFeatures = {
-        contacts: true,
-        notifications: true,
+        contacts: ${!!Contacts},
+        notifications: ${!!Notifications},
         sharing: true,
         biometrics: true,
         voiceRecording: true,
@@ -599,370 +653,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-</write file>
-
-<write file="hooks/useNotifications.ts">
-import * as Notifications from 'expo-notifications';
-import { Platform, Alert } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
-
-// Configure notification handler for ALL notification scenarios
-// This MUST be set at module level (outside component) for iOS to work properly
-// CRITICAL: This ensures notifications appear in the iOS system tray even when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => {
-    console.log('[NotificationHandler] Handling notification:', notification.request.identifier);
-    console.log('[NotificationHandler] Content:', notification.request.content);
-    
-    return {
-      shouldShowAlert: true,      // Show banner/alert in system tray
-      shouldPlaySound: true,       // Play notification sound
-      shouldSetBadge: true,        // Update app badge count
-    };
-  },
-});
-
-// Handle notification data and deep linking
-function handleNotificationData(data: any) {
-  console.log('[useNotifications] Handling notification data:', data);
-  
-  if (!data) return;
-
-  // Handle geofence notifications
-  if (data.type === 'geofence') {
-    console.log('[useNotifications] Geofence notification:', data.storeName);
-    
-    if (data.listId) {
-      console.log('[useNotifications] Navigating to list:', data.listId);
-    } else if (data.reservationNumber) {
-      console.log('[useNotifications] Navigating to reservation:', data.reservationNumber);
-    }
-  }
-  
-  // Handle other notification types
-  if (data.url) {
-    console.log('[useNotifications] Opening URL from notification:', data.url);
-    // You can navigate to specific screens based on notification data
-  }
-}
-
-export function useNotifications() {
-  const [expoPushToken, setExpoPushToken] = useState<string>();
-  const [notification, setNotification] = useState<Notifications.Notification>();
-  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Only run on native platforms
-    if (Platform.OS === 'web') {
-      console.log('[useNotifications] Notifications are not supported on web');
-      return;
-    }
-
-    console.log('[useNotifications] 🔔 Initializing notification system...');
-    
-    // Check existing permissions and get token if already granted
-    const checkPermissions = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        if (!isMounted) return;
-        
-        const { status } = await Notifications.getPermissionsAsync();
-        console.log('[useNotifications] Current permission status:', status);
-        setPermissionStatus(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined');
-        
-        if (status === 'granted') {
-          console.log('[useNotifications] ✅ Already have notification permission, getting token');
-          try {
-            const tokenData = await Notifications.getExpoPushTokenAsync({
-              projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-            });
-            if (isMounted) {
-              setExpoPushToken(tokenData.data);
-              console.log('[useNotifications] 📲 Push token:', tokenData.data);
-            }
-          } catch (tokenError) {
-            console.error('[useNotifications] ❌ Error getting push token:', tokenError);
-          }
-        } else {
-          console.log('[useNotifications] ⏳ No notification permission yet - will request when user enables notifications');
-        }
-      } catch (error) {
-        console.error('[useNotifications] ❌ Error checking notification permissions:', error);
-      }
-    };
-
-    checkPermissions();
-
-    // Check for notification that opened the app
-    const checkLastNotification = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 700));
-        
-        if (!isMounted) return;
-        
-        const response = await Notifications.getLastNotificationResponseAsync();
-        if (response) {
-          console.log('[useNotifications] 🚀 App opened from notification:', response);
-          const data = response.notification.request.content.data;
-          handleNotificationData(data);
-        }
-      } catch (error) {
-        console.error('[useNotifications] ❌ Error checking last notification:', error);
-      }
-    };
-
-    checkLastNotification();
-
-    // Set up notification listeners
-    setTimeout(() => {
-      if (!isMounted) return;
-      
-      try {
-        // Listen for notifications received while app is in foreground
-        // CRITICAL: This ensures notifications appear in system tray even when app is open
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          console.log('[useNotifications] 📬 Notification received in foreground:', notification);
-          console.log('[useNotifications] ✅ Notification will appear in system tray due to handler configuration');
-          if (isMounted) {
-            setNotification(notification);
-          }
-        });
-
-        // Listen for user tapping on notifications
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          console.log('[useNotifications] 👆 User tapped notification:', response);
-          const data = response.notification.request.content.data;
-          handleNotificationData(data);
-        });
-        
-        console.log('[useNotifications] ✅ Notification listeners registered');
-      } catch (error) {
-        console.error('[useNotifications] ❌ Error setting up notification listeners:', error);
-      }
-    }, 800);
-
-    return () => {
-      isMounted = false;
-      try {
-        notificationListener.current?.remove();
-        responseListener.current?.remove();
-        console.log('[useNotifications] 🧹 Notification listeners cleaned up');
-      } catch (error) {
-        console.error('[useNotifications] ❌ Error removing notification listeners:', error);
-      }
-    };
-  }, []);
-
-  const schedulePushNotification = async () => {
-    if (Platform.OS === 'web') {
-      console.warn('[useNotifications] Push notifications not supported on web');
-      return;
-    }
-
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "ShopWell.ai Notification! 📬",
-          body: 'Here is the notification body',
-          data: { data: 'goes here' },
-        },
-        trigger: { seconds: 1 },
-      });
-      console.log('[useNotifications] ✅ Notification scheduled');
-    } catch (error) {
-      console.error('[useNotifications] ❌ Error scheduling notification:', error);
-    }
-  };
-
-  const requestPermissions = async (): Promise<boolean> => {
-    if (Platform.OS === 'web') {
-      console.log('[useNotifications] Push notifications not available on web');
-      return false;
-    }
-
-    try {
-      console.log('[useNotifications] 🔔 Requesting notification permissions from user');
-      
-      // Check current status first
-      const { status: currentStatus } = await Notifications.getPermissionsAsync();
-      console.log('[useNotifications] Current status before request:', currentStatus);
-      
-      // If already granted, just get the token
-      if (currentStatus === 'granted') {
-        console.log('[useNotifications] ✅ Permission already granted, getting token');
-        try {
-          const tokenData = await Notifications.getExpoPushTokenAsync({
-            projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-          });
-          setExpoPushToken(tokenData.data);
-          console.log('[useNotifications] 📲 Push token:', tokenData.data);
-        } catch (tokenError) {
-          console.error('[useNotifications] ❌ Error getting push token:', tokenError);
-        }
-        return true;
-      }
-      
-      // If previously denied, inform user they need to enable in settings
-      if (currentStatus === 'denied') {
-        console.log('[useNotifications] ⚠️ Permission previously denied');
-        Alert.alert(
-          'Notifications Disabled',
-          'Notifications are currently disabled. Please enable them in your device settings to receive alerts.',
-          [{ text: 'OK' }]
-        );
-        return false;
-      }
-      
-      // Request permission
-      console.log('[useNotifications] 📱 Showing permission dialog...');
-      const { status } = await Notifications.requestPermissionsAsync();
-      console.log('[useNotifications] Permission result:', status);
-      
-      const granted = status === 'granted';
-      setPermissionStatus(granted ? 'granted' : 'denied');
-      
-      if (granted) {
-        console.log('[useNotifications] ✅ Permission granted, getting token');
-        try {
-          const tokenData = await Notifications.getExpoPushTokenAsync({
-            projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-          });
-          setExpoPushToken(tokenData.data);
-          console.log('[useNotifications] 📲 Push token:', tokenData.data);
-        } catch (tokenError) {
-          console.error('[useNotifications] ❌ Error getting push token:', tokenError);
-        }
-        return true;
-      } else {
-        console.warn('[useNotifications] ❌ Notification permission denied');
-        return false;
-      }
-    } catch (error) {
-      console.error('[useNotifications] ❌ Error requesting permissions:', error);
-      return false;
-    }
-  };
-
-  return { 
-    schedulePushNotification, 
-    expoPushToken, 
-    notification,
-    permissionStatus,
-    requestPermissions
-  };
-}
-
-export async function registerForPushNotificationsAsync() {
-  if (Platform.OS === 'web') {
-    console.log('[registerForPushNotifications] Push notifications not available on web');
-    return undefined;
-  }
-
-  try {
-    let token;
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      console.log('[registerForPushNotifications] Requesting notification permissions from user');
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') {
-      console.warn('[registerForPushNotifications] Failed to get push token for push notification!');
-      return;
-    }
-    
-    token = (await Notifications.getExpoPushTokenAsync({
-      projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-    })).data;
-    console.log('[registerForPushNotifications] Expo push token:', token);
-    
-    return token;
-  } catch (error) {
-    console.error('[registerForPushNotifications] Error:', error);
-    return undefined;
-  }
-}
-
-// Android notification channel setup
-if (Platform.OS === 'android') {
-  try {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-      showBadge: true,
-      enableVibrate: true,
-      enableLights: true,
-    });
-    
-    // Create a channel for location-based notifications
-    Notifications.setNotificationChannelAsync('location', {
-      name: 'Location Notifications',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#007aff',
-      description: 'Notifications when you are near stores with active lists',
-      showBadge: true,
-      enableVibrate: true,
-      enableLights: true,
-    });
-    
-    console.log('[useNotifications] ✅ Android notification channels configured');
-  } catch (error) {
-    console.error('[useNotifications] ❌ Error setting up Android notification channels:', error);
-  }
-}
-</write file>
-
-<write file="targets/ShareExtension/Info.plist">
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleDisplayName</key>
-	<string>ShopWell.ai</string>
-	<key>CFBundleName</key>
-	<string>ShareExtension</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0.23</string>
-	<key>CFBundleVersion</key>
-	<string>1.0.20</string>
-	<key>CFBundlePackageType</key>
-	<string>XPC!</string>
-	<key>NSExtension</key>
-	<dict>
-		<key>NSExtensionAttributes</key>
-		<dict>
-			<key>NSExtensionActivationRule</key>
-			<dict>
-				<key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
-				<integer>10</integer>
-				<key>NSExtensionActivationSupportsText</key>
-				<true/>
-				<key>NSExtensionActivationSupportsImageWithMaxCount</key>
-				<integer>10</integer>
-				<key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
-				<integer>10</integer>
-				<key>NSExtensionActivationSupportsFileWithMaxCount</key>
-				<integer>10</integer>
-			</dict>
-		</dict>
-		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.share-services</string>
-		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
-		<key>NSExtensionMainStoryboard</key>
-		<string>MainInterface</string>
-	</dict>
-</dict>
-</plist>

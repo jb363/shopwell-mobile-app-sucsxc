@@ -2,10 +2,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as TaskManager from 'expo-task-manager';
-import * as Notifications from 'expo-notifications';
 import * as LocationHandler from '@/utils/locationHandler';
 import { StoreLocation } from '@/utils/locationHandler';
 import * as OfflineStorage from '@/utils/offlineStorage';
+
+// Conditional import for expo-notifications
+let Notifications: any;
+try {
+  Notifications = require('expo-notifications');
+} catch (error) {
+  console.warn('[useGeofencing] expo-notifications not available:', error);
+}
 
 const GEOFENCING_TASK = 'SHOPWELL_GEOFENCING_TASK';
 const STORE_LOCATIONS_KEY = '@shopwell/store_locations';
@@ -13,7 +20,7 @@ const STORE_LOCATIONS_KEY = '@shopwell/store_locations';
 // Define the geofencing task (only on native platforms)
 // This is defined at module level, not inside a hook or component
 // Wrapped in try-catch to prevent crashes if native modules aren't ready
-if (Platform.OS !== 'web') {
+if (Platform.OS !== 'web' && Notifications) {
   try {
     // Add a delay to ensure TaskManager is fully initialized
     // Increased delay for older iOS devices
@@ -39,7 +46,7 @@ if (Platform.OS !== 'web') {
                   const storeLocations = storeLocationsData || [];
                   const store = storeLocations.find(s => s.id === region.identifier);
 
-                  if (store) {
+                  if (store && Notifications) {
                     console.log('[Geofencing Task] Triggering notification for store:', store.name);
                     
                     // Schedule notification

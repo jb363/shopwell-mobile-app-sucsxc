@@ -1,13 +1,27 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, Platform } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
-import * as Notifications from 'expo-notifications';
-import * as Contacts from 'expo-contacts';
 import { Audio } from 'expo-audio';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
+
+// Conditional imports for native modules
+let Notifications: any;
+let Contacts: any;
+
+try {
+  Notifications = require('expo-notifications');
+} catch (error) {
+  console.warn('[Android HomeScreen] expo-notifications not available:', error);
+}
+
+try {
+  Contacts = require('expo-contacts');
+} catch (error) {
+  console.warn('[Android HomeScreen] expo-contacts not available:', error);
+}
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -277,6 +291,19 @@ export default function HomeScreen() {
       else if (data.type === 'natively.contacts.pick') {
         console.log('[Android HomeScreen] 📱 Contact picker requested');
         
+        if (!Contacts) {
+          console.error('[Android HomeScreen] ❌ Contacts module not available');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'CONTACT_PICKER_RESPONSE',
+              success: false,
+              error: 'Contacts module not available'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
+        
         try {
           // Check permission
           const { status } = await Contacts.getPermissionsAsync();
@@ -308,8 +335,8 @@ export default function HomeScreen() {
             if (result && result.id) {
               const contact = {
                 name: result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || 'Unknown',
-                phoneNumbers: result.phoneNumbers?.map(p => ({ number: p.number || '' })) || [],
-                emails: result.emails?.map(e => ({ email: e.email || '' })) || []
+                phoneNumbers: result.phoneNumbers?.map((p: any) => ({ number: p.number || '' })) || [],
+                emails: result.emails?.map((e: any) => ({ email: e.email || '' })) || []
               };
               
               console.log('[Android HomeScreen] ✅ Contact selected:', contact.name);
@@ -360,6 +387,20 @@ export default function HomeScreen() {
       // Handle notification permission request
       else if (data.type === 'natively.notifications.requestPermission') {
         console.log('[Android HomeScreen] 🔔 Notification permission requested');
+        
+        if (!Notifications) {
+          console.error('[Android HomeScreen] ❌ Notifications module not available');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_PERMISSION_RESPONSE',
+              granted: false,
+              status: 'unavailable',
+              error: 'Notifications module not available'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
         
         try {
           // Check current status
@@ -426,6 +467,19 @@ export default function HomeScreen() {
       else if (data.type === 'natively.notifications.getStatus') {
         console.log('[Android HomeScreen] 🔔 Notification status check requested');
         
+        if (!Notifications) {
+          console.error('[Android HomeScreen] ❌ Notifications module not available');
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_STATUS_RESPONSE',
+              status: 'unavailable',
+              error: 'Notifications module not available'
+            })}, '*');
+            true;
+          `);
+          return;
+        }
+        
         try {
           const { status } = await Notifications.getPermissionsAsync();
           console.log('[Android HomeScreen] ✅ Notification status:', status);
@@ -465,8 +519,8 @@ export default function HomeScreen() {
       
       // Feature flags
       window.nativeFeatures = {
-        contacts: true,
-        notifications: true,
+        contacts: ${!!Contacts},
+        notifications: ${!!Notifications},
         sharing: true,
         biometrics: true,
         voiceRecording: true,

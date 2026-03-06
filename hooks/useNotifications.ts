@@ -1,18 +1,33 @@
 
-import * as Notifications from 'expo-notifications';
 import { Platform, Alert } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 
-// Configure notification handler for FOREGROUND notifications
-// This MUST be set at module level (outside component) for iOS to work properly
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Conditional import for expo-notifications
+let Notifications: any;
+try {
+  Notifications = require('expo-notifications');
+  
+  // Configure notification handler for ALL notification scenarios
+  // This MUST be set at module level (outside component) for iOS to work properly
+  // CRITICAL: This ensures notifications appear in the iOS system tray even when app is in foreground
+  if (Notifications && Notifications.setNotificationHandler) {
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification: any) => {
+        console.log('[NotificationHandler] Handling notification:', notification.request.identifier);
+        console.log('[NotificationHandler] Content:', notification.request.content);
+        
+        return {
+          shouldShowAlert: true,      // Show banner/alert in system tray
+          shouldPlaySound: true,       // Play notification sound
+          shouldSetBadge: true,        // Update app badge count
+        };
+      },
+    });
+  }
+} catch (error) {
+  console.warn('[useNotifications] expo-notifications not available:', error);
+}
 
 // Handle notification data and deep linking
 function handleNotificationData(data: any) {
@@ -40,10 +55,10 @@ function handleNotificationData(data: any) {
 
 export function useNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string>();
-  const [notification, setNotification] = useState<Notifications.Notification>();
+  const [notification, setNotification] = useState<any>();
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<any>();
+  const responseListener = useRef<any>();
 
   useEffect(() => {
     let isMounted = true;
@@ -51,6 +66,12 @@ export function useNotifications() {
     // Only run on native platforms
     if (Platform.OS === 'web') {
       console.log('[useNotifications] Notifications are not supported on web');
+      return;
+    }
+
+    // Check if Notifications module is available
+    if (!Notifications) {
+      console.warn('[useNotifications] Notifications module not available');
       return;
     }
 
@@ -116,15 +137,17 @@ export function useNotifications() {
       
       try {
         // Listen for notifications received while app is in foreground
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+        // CRITICAL: This ensures notifications appear in system tray even when app is open
+        notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
           console.log('[useNotifications] 📬 Notification received in foreground:', notification);
+          console.log('[useNotifications] ✅ Notification will appear in system tray due to handler configuration');
           if (isMounted) {
             setNotification(notification);
           }
         });
 
         // Listen for user tapping on notifications
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+        responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
           console.log('[useNotifications] 👆 User tapped notification:', response);
           const data = response.notification.request.content.data;
           handleNotificationData(data);
@@ -149,8 +172,8 @@ export function useNotifications() {
   }, []);
 
   const schedulePushNotification = async () => {
-    if (Platform.OS === 'web') {
-      console.warn('[useNotifications] Push notifications not supported on web');
+    if (Platform.OS === 'web' || !Notifications) {
+      console.warn('[useNotifications] Push notifications not supported');
       return;
     }
 
@@ -170,8 +193,8 @@ export function useNotifications() {
   };
 
   const requestPermissions = async (): Promise<boolean> => {
-    if (Platform.OS === 'web') {
-      console.log('[useNotifications] Push notifications not available on web');
+    if (Platform.OS === 'web' || !Notifications) {
+      console.log('[useNotifications] Push notifications not available');
       return false;
     }
 
@@ -248,8 +271,8 @@ export function useNotifications() {
 }
 
 export async function registerForPushNotificationsAsync() {
-  if (Platform.OS === 'web') {
-    console.log('[registerForPushNotifications] Push notifications not available on web');
+  if (Platform.OS === 'web' || !Notifications) {
+    console.log('[registerForPushNotifications] Push notifications not available');
     return undefined;
   }
 
@@ -282,7 +305,7 @@ export async function registerForPushNotificationsAsync() {
 }
 
 // Android notification channel setup
-if (Platform.OS === 'android') {
+if (Platform.OS === 'android' && Notifications) {
   try {
     Notifications.setNotificationChannelAsync('default', {
       name: 'default',
