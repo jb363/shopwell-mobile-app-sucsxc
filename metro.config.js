@@ -1,5 +1,5 @@
+
 const { getDefaultConfig } = require('expo/metro-config');
-const { FileStore } = require('metro-cache');
 const path = require('path');
 const fs = require('fs');
 
@@ -7,10 +7,9 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.unstable_enablePackageExports = true;
 
-// Use turborepo to restore the cache when possible
-config.cacheStores = [
-    new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
-  ];
+// ❌ REMOVED: metro-cache import and cacheStores configuration
+// This was causing AAB build failures because metro-cache is an internal module
+// and not available during the build process
 
 // Custom server middleware to receive console.log messages from the app
 const LOG_FILE_PATH = path.join(__dirname, '.natively', 'app_console.log');
