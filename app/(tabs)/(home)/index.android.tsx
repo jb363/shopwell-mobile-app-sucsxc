@@ -151,7 +151,7 @@ export default function HomeScreen() {
           // Read audio file as base64
           console.log('[Android HomeScreen] 📖 Reading audio file...');
           const base64Audio = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
+            encoding: 'base64',
           });
           
           console.log('[Android HomeScreen] 📤 Sending audio for transcription...');
