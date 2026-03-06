@@ -6,7 +6,7 @@ import { WebView } from 'react-native-webview';
 import * as Notifications from 'expo-notifications';
 import * as Contacts from 'expo-contacts';
 import { Audio } from 'expo-audio';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
 
@@ -230,7 +230,7 @@ export default function HomeScreen() {
           // Read audio file as base64
           console.log('[Android HomeScreen] 📖 Reading audio file...');
           const base64Audio = await FileSystem.readAsStringAsync(uri, {
-            encoding: 'base64',
+            encoding: FileSystem.EncodingType.Base64,
           });
           
           console.log('[Android HomeScreen] 📤 Sending audio for transcription...');
