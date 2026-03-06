@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -145,15 +146,31 @@
       [
         "@bacons/apple-targets",
         {
-          "targets": [
-            {
-              "type": "share-extension",
-              "name": "ShareExtension",
-              "bundleIdentifier": "ai.shopwell.app.ShareExtension",
-              "deploymentTarget": "13.0",
-              "icon": "./assets/images/shopwell-ai-app-icon.png"
+          "ShareExtension": {
+            "type": "share-extension",
+            "bundleIdentifier": "ai.shopwell.app.ShareExtension",
+            "deploymentTarget": "13.0",
+            "icon": "./assets/images/shopwell-ai-app-icon.png",
+            "entitlements": {
+              "com.apple.security.application-groups": [
+                "group.ai.shopwell.app"
+              ]
+            },
+            "infoPlist": {
+              "CFBundleDisplayName": "ShopWell.ai",
+              "NSExtension": {
+                "NSExtensionAttributes": {
+                  "NSExtensionActivationRule": {
+                    "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+                    "NSExtensionActivationSupportsText": true,
+                    "NSExtensionActivationSupportsImageWithMaxCount": 5
+                  }
+                },
+                "NSExtensionPointIdentifier": "com.apple.share-services",
+                "NSExtensionPrincipalClass": "ShareViewController"
+              }
             }
-          ]
+          }
         }
       ],
       "./plugins/withIOSShareExtension"
