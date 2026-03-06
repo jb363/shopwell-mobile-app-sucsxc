@@ -513,9 +513,15 @@ export default function HomeScreen() {
         startInLoadingState={true}
         pullToRefreshEnabled={true}
         sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
         injectedJavaScript={injectedJavaScript}
-        cacheEnabled={false}
+        cacheEnabled={true}
+        cacheMode="LOAD_DEFAULT"
         incognito={false}
+        setSupportMultipleWindows={false}
+        allowsBackForwardNavigationGestures={true}
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
         onLoadStart={() => {
           console.log('[Android HomeScreen] 🔄 Loading started');
           setWebViewLoaded(false);
