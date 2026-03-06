@@ -4,7 +4,8 @@ import { Platform, Alert } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 
-// Configure notification handler
+// Configure notification handler for FOREGROUND notifications
+// This MUST be set at module level (outside component) for iOS to work properly
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -29,6 +30,12 @@ function handleNotificationData(data: any) {
       console.log('[useNotifications] Navigating to reservation:', data.reservationNumber);
     }
   }
+  
+  // Handle other notification types
+  if (data.url) {
+    console.log('[useNotifications] Opening URL from notification:', data.url);
+    // You can navigate to specific screens based on notification data
+  }
 }
 
 export function useNotifications() {
@@ -47,9 +54,9 @@ export function useNotifications() {
       return;
     }
 
-    // Check existing permissions and get token if already granted
-    console.log('[useNotifications] Checking existing notification permissions');
+    console.log('[useNotifications] 🔔 Initializing notification system...');
     
+    // Check existing permissions and get token if already granted
     const checkPermissions = async () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -61,21 +68,23 @@ export function useNotifications() {
         setPermissionStatus(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined');
         
         if (status === 'granted') {
-          console.log('[useNotifications] Already have notification permission, getting token');
+          console.log('[useNotifications] ✅ Already have notification permission, getting token');
           try {
-            const tokenData = await Notifications.getExpoPushTokenAsync();
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+              projectId: 'e7626989-42f0-4892-8690-78e62394d076',
+            });
             if (isMounted) {
               setExpoPushToken(tokenData.data);
-              console.log('[useNotifications] Push token:', tokenData.data);
+              console.log('[useNotifications] 📲 Push token:', tokenData.data);
             }
           } catch (tokenError) {
-            console.error('[useNotifications] Error getting push token:', tokenError);
+            console.error('[useNotifications] ❌ Error getting push token:', tokenError);
           }
         } else {
-          console.log('[useNotifications] No notification permission yet - will request when user enables notifications');
+          console.log('[useNotifications] ⏳ No notification permission yet - will request when user enables notifications');
         }
       } catch (error) {
-        console.error('[useNotifications] Error checking notification permissions:', error);
+        console.error('[useNotifications] ❌ Error checking notification permissions:', error);
       }
     };
 
@@ -90,12 +99,12 @@ export function useNotifications() {
         
         const response = await Notifications.getLastNotificationResponseAsync();
         if (response) {
-          console.log('[useNotifications] App opened from notification:', response);
+          console.log('[useNotifications] 🚀 App opened from notification:', response);
           const data = response.notification.request.content.data;
           handleNotificationData(data);
         }
       } catch (error) {
-        console.error('[useNotifications] Error checking last notification:', error);
+        console.error('[useNotifications] ❌ Error checking last notification:', error);
       }
     };
 
@@ -106,20 +115,24 @@ export function useNotifications() {
       if (!isMounted) return;
       
       try {
+        // Listen for notifications received while app is in foreground
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          console.log('[useNotifications] Notification received:', notification);
+          console.log('[useNotifications] 📬 Notification received in foreground:', notification);
           if (isMounted) {
             setNotification(notification);
           }
         });
 
+        // Listen for user tapping on notifications
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          console.log('[useNotifications] Notification response:', response);
+          console.log('[useNotifications] 👆 User tapped notification:', response);
           const data = response.notification.request.content.data;
           handleNotificationData(data);
         });
+        
+        console.log('[useNotifications] ✅ Notification listeners registered');
       } catch (error) {
-        console.error('[useNotifications] Error setting up notification listeners:', error);
+        console.error('[useNotifications] ❌ Error setting up notification listeners:', error);
       }
     }, 800);
 
@@ -128,8 +141,9 @@ export function useNotifications() {
       try {
         notificationListener.current?.remove();
         responseListener.current?.remove();
+        console.log('[useNotifications] 🧹 Notification listeners cleaned up');
       } catch (error) {
-        console.error('[useNotifications] Error removing notification listeners:', error);
+        console.error('[useNotifications] ❌ Error removing notification listeners:', error);
       }
     };
   }, []);
@@ -149,8 +163,9 @@ export function useNotifications() {
         },
         trigger: { seconds: 1 },
       });
+      console.log('[useNotifications] ✅ Notification scheduled');
     } catch (error) {
-      console.error('[useNotifications] Error scheduling notification:', error);
+      console.error('[useNotifications] ❌ Error scheduling notification:', error);
     }
   };
 
@@ -171,7 +186,9 @@ export function useNotifications() {
       if (currentStatus === 'granted') {
         console.log('[useNotifications] ✅ Permission already granted, getting token');
         try {
-          const tokenData = await Notifications.getExpoPushTokenAsync();
+          const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId: 'e7626989-42f0-4892-8690-78e62394d076',
+          });
           setExpoPushToken(tokenData.data);
           console.log('[useNotifications] 📲 Push token:', tokenData.data);
         } catch (tokenError) {
@@ -202,7 +219,9 @@ export function useNotifications() {
       if (granted) {
         console.log('[useNotifications] ✅ Permission granted, getting token');
         try {
-          const tokenData = await Notifications.getExpoPushTokenAsync();
+          const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId: 'e7626989-42f0-4892-8690-78e62394d076',
+          });
           setExpoPushToken(tokenData.data);
           console.log('[useNotifications] 📲 Push token:', tokenData.data);
         } catch (tokenError) {
@@ -250,7 +269,9 @@ export async function registerForPushNotificationsAsync() {
       return;
     }
     
-    token = (await Notifications.getExpoPushTokenAsync()).data;
+    token = (await Notifications.getExpoPushTokenAsync({
+      projectId: 'e7626989-42f0-4892-8690-78e62394d076',
+    })).data;
     console.log('[registerForPushNotifications] Expo push token:', token);
     
     return token;
@@ -268,6 +289,9 @@ if (Platform.OS === 'android') {
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+      showBadge: true,
+      enableVibrate: true,
+      enableLights: true,
     });
     
     // Create a channel for location-based notifications
@@ -277,8 +301,13 @@ if (Platform.OS === 'android') {
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#007aff',
       description: 'Notifications when you are near stores with active lists',
+      showBadge: true,
+      enableVibrate: true,
+      enableLights: true,
     });
+    
+    console.log('[useNotifications] ✅ Android notification channels configured');
   } catch (error) {
-    console.error('[useNotifications] Error setting up Android notification channels:', error);
+    console.error('[useNotifications] ❌ Error setting up Android notification channels:', error);
   }
 }

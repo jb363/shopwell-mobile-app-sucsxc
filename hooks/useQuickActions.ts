@@ -63,11 +63,11 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
       // Wait for WebView to be ready before sending action
       const sendActionToWebView = (retryCount = 0) => {
         if (!webViewRef.current) {
-          if (retryCount < 15) {
-            console.log(`[QuickActions] ⏳ WebView not ready, retrying (${retryCount + 1}/15)...`);
+          if (retryCount < 20) {
+            console.log(`[QuickActions] ⏳ WebView not ready, retrying (${retryCount + 1}/20)...`);
             setTimeout(() => sendActionToWebView(retryCount + 1), 500);
           } else {
-            console.error('[QuickActions] ❌ WebView not available after 15 retries');
+            console.error('[QuickActions] ❌ WebView not available after 20 retries');
           }
           return;
         }
@@ -77,21 +77,43 @@ export function useQuickActions(webViewRef: React.RefObject<any>) {
           const normalizedAction = actionType.toUpperCase().replace(/-/g, '_');
           console.log('[QuickActions] 📤 Sending action to WebView:', normalizedAction);
           
+          // Use both postMessage and injectJavaScript for maximum compatibility
           webViewRef.current.injectJavaScript(`
             (function() {
               try {
-                console.log('[QuickActions] 📨 Received ${normalizedAction} action');
+                console.log('[Native Bridge] 📨 Received ${normalizedAction} quick action');
+                
+                // Dispatch custom event that the web app can listen for
+                const event = new CustomEvent('nativeQuickAction', {
+                  detail: {
+                    type: 'QUICK_ACTION',
+                    action: '${normalizedAction}',
+                    timestamp: Date.now()
+                  }
+                });
+                window.dispatchEvent(event);
+                
+                // Also use postMessage for compatibility
                 window.postMessage({ 
                   type: 'QUICK_ACTION', 
-                  action: '${normalizedAction}' 
+                  action: '${normalizedAction}',
+                  timestamp: Date.now()
                 }, '*');
-                console.log('[QuickActions] ✅ Action sent successfully');
+                
+                console.log('[Native Bridge] ✅ Quick action dispatched successfully');
+                
+                // Visual feedback - show a toast or modal
+                if (window.showQuickActionFeedback) {
+                  window.showQuickActionFeedback('${normalizedAction}');
+                }
               } catch (error) {
-                console.error('[QuickActions] ❌ Error processing action:', error);
+                console.error('[Native Bridge] ❌ Error processing quick action:', error);
               }
             })();
             true;
           `);
+          
+          console.log('[QuickActions] ✅ Action sent to WebView successfully');
         } catch (error) {
           console.error('[QuickActions] ❌ Error injecting JavaScript for quick action:', error);
         }
