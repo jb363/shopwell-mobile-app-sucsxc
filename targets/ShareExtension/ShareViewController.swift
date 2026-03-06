@@ -39,7 +39,9 @@ class ShareViewController: UIViewController {
         if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
             itemProvider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { [weak self] (item, error) in
                 if let text = item as? String {
-                    self?.openMainApp(with: text, type: "text")
+                    // Check if text is a URL
+                    let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
+                    self?.openMainApp(with: text, type: isUrl ? "url" : "text")
                 } else {
                     self?.closeExtension()
                 }
@@ -92,7 +94,8 @@ class ShareViewController: UIViewController {
             return
         }
         
-        // Create deep link URL
+        // Create deep link URL pointing to share-target route
+        // Format: shopwellaimobile://share-target?type=url&content=https://example.com
         let deepLinkURL = "\(urlScheme)://share-target?type=\(type)&content=\(encodedContent)"
         
         // Store in app group for backup

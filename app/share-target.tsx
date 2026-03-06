@@ -1,25 +1,32 @@
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { Stack, router, useLocalSearchParams, Redirect } from 'expo-router';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
 
 export default function ShareTargetScreen() {
   const params = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     console.log('[ShareTarget] 📤 Screen opened with params:', JSON.stringify(params));
     
-    // Immediately redirect to home with shared data
-    const redirectToHome = () => {
-      // Extract shared data from URL parameters
+    // Extract shared data from URL parameters
+    const extractSharedData = () => {
       let sharedContent = '';
       let sharedType = 'text';
       
+      // Handle content from deep link (iOS Share Extension or Android Intent)
+      if (params.content) {
+        const contentValue = Array.isArray(params.content) ? params.content[0] : params.content;
+        const typeValue = Array.isArray(params.type) ? params.type[0] : params.type;
+        
+        console.log('[ShareTarget] ✅ Extracted from deep link - Type:', typeValue, 'Content:', contentValue);
+        
+        sharedContent = contentValue;
+        sharedType = typeValue || 'text';
+      }
       // Handle text sharing (from Android SEND intent with text/plain)
-      if (params.text) {
+      else if (params.text) {
         const textContent = Array.isArray(params.text) ? params.text[0] : params.text;
         console.log('[ShareTarget] ✅ Extracted text:', textContent);
         
@@ -50,22 +57,22 @@ export default function ShareTargetScreen() {
         sharedType = 'data';
       }
       
-      console.log('[ShareTarget] 🚀 Redirecting to home with:', { sharedContent, sharedType });
-      
-      // Navigate to home and pass the shared data
-      router.replace({
-        pathname: '/(tabs)/(home)/',
-        params: {
-          sharedContent: sharedContent || '',
-          sharedType: sharedType,
-        },
-      });
+      return { sharedContent, sharedType };
     };
 
-    // Small delay to ensure params are fully loaded
-    setTimeout(() => {
-      redirectToHome();
-    }, 100);
+    const { sharedContent, sharedType } = extractSharedData();
+    
+    console.log('[ShareTarget] 🚀 Redirecting to home with:', { sharedContent, sharedType });
+    
+    // Navigate to home and pass the shared data
+    // The home screen will inject this into the WebView which will navigate to https://shopwell.ai/share-target
+    router.replace({
+      pathname: '/(tabs)/(home)/',
+      params: {
+        sharedContent: sharedContent || '',
+        sharedType: sharedType,
+      },
+    });
   }, [params]);
 
   // Show loading while redirecting

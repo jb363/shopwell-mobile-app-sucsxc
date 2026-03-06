@@ -40,12 +40,19 @@ export default function HomeScreen() {
           
           console.log('[iOS HomeScreen] 📨 Sending shared content to WebView:', message);
           
+          // Inject the shared content and navigate to share-target page
           webViewRef.current?.injectJavaScript(`
             (function() {
               try {
-                console.log('[Native Bridge] Sending SHARED_CONTENT message');
+                console.log('[Native Bridge] Sending SHARED_CONTENT message and navigating to share-target');
+                
+                // Store the shared content
                 window.postMessage(${JSON.stringify(message)}, '*');
-                console.log('[Native Bridge] SHARED_CONTENT message sent');
+                
+                // Navigate to the share-target page on shopwell.ai
+                window.location.href = 'https://shopwell.ai/share-target';
+                
+                console.log('[Native Bridge] SHARED_CONTENT message sent and navigation initiated');
               } catch (error) {
                 console.error('[Native Bridge] Error sending shared content:', error);
               }
