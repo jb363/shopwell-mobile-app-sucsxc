@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import * as Contacts from 'expo-contacts';
 import { Audio } from 'expo-audio';
 import * as FileSystem from 'expo-file-system';
+import { useQuickActions } from '@/hooks/useQuickActions';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -19,6 +20,9 @@ export default function HomeScreen() {
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
+
+  // Initialize quick actions (app shortcuts)
+  useQuickActions(webViewRef);
 
   // Handle shared content from params
   useEffect(() => {
@@ -354,7 +358,8 @@ export default function HomeScreen() {
         notifications: true,
         sharing: true,
         biometrics: true,
-        voiceRecording: true
+        voiceRecording: true,
+        quickActions: true
       };
       
       // Signal that we're ready
