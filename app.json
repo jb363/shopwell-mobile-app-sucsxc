@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -24,8 +25,7 @@
         "NSLocationWhenInUseUsageDescription": "ShopWell needs your location to show nearby stores and provide location-based features.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
         "NSLocationAlwaysUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
-        "NSUserTrackingUsageDescription": "ShopWell would like to track your activity to provide personalized shopping recommendations and improve your experience.",
-        "NSUserNotificationsUsageDescription": "Allow ShopWell.ai to send you notifications about product alerts and updates.",
+        "NSUserTrackingUsageDescription": "Your data will be used to deliver personalized ads and improve your experience.",
         "NSAppTrackingTransparencyUsageDescription": "Your data will be used to deliver personalized ads and improve your experience.",
         "NSFaceIDUsageDescription": "ShopWell uses Face ID to securely authenticate and protect your account.",
         "UIBackgroundModes": [
@@ -36,7 +36,11 @@
       },
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": [
+        "applinks:shopwell.ai",
+        "applinks:*.shopwell.ai"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -138,7 +142,22 @@
       ],
       "expo-secure-store",
       "expo-local-authentication",
-      "react-native-edge-to-edge"
+      "react-native-edge-to-edge",
+      [
+        "@bacons/apple-targets",
+        {
+          "targets": [
+            {
+              "type": "share-extension",
+              "name": "ShareExtension",
+              "bundleIdentifier": "ai.shopwell.app.ShareExtension",
+              "deploymentTarget": "13.0",
+              "icon": "./assets/images/shopwell-ai-app-icon.png"
+            }
+          ]
+        }
+      ],
+      "./plugins/withIOSShareExtension"
     ],
     "experiments": {
       "typedRoutes": true
