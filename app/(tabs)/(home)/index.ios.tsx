@@ -9,6 +9,7 @@ import * as Contacts from 'expo-contacts';
 import { Audio } from 'expo-audio';
 import * as FileSystem from 'expo-file-system';
 import { useQuickActions } from '@/hooks/useQuickActions';
+import * as BiometricHandler from '@/utils/biometricHandler';
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
@@ -75,8 +76,75 @@ export default function HomeScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       console.log('[iOS HomeScreen] 📩 Message received from WebView:', data.type);
       
+      // Handle biometric support check
+      if (data.type === 'natively.biometric.isSupported') {
+        console.log('[iOS HomeScreen] 🔐 Biometric support check requested');
+        
+        try {
+          const capabilities = await BiometricHandler.checkBiometricCapabilities();
+          const biometricType = BiometricHandler.getBiometricTypeName(capabilities);
+          
+          console.log('[iOS HomeScreen] ✅ Biometric capabilities:', {
+            isSupported: capabilities.isAvailable,
+            biometricType
+          });
+          
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'BIOMETRIC_SUPPORT_RESPONSE',
+              isSupported: capabilities.isAvailable,
+              biometricType: biometricType,
+              hasHardware: capabilities.hasHardware,
+              isEnrolled: capabilities.isEnrolled
+            })}, '*');
+            true;
+          `);
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error checking biometric support:', error);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'BIOMETRIC_SUPPORT_RESPONSE',
+              isSupported: false,
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
+      
+      // Handle biometric authentication
+      else if (data.type === 'natively.biometric.authenticate') {
+        console.log('[iOS HomeScreen] 🔐 Biometric authentication requested');
+        
+        const reason = data.reason || 'Authenticate to log in to ShopWell.ai';
+        
+        try {
+          const success = await BiometricHandler.authenticateWithBiometrics(reason);
+          
+          console.log('[iOS HomeScreen] Authentication result:', success ? '✅ Success' : '❌ Failed');
+          
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'BIOMETRIC_AUTH_RESPONSE',
+              success: success
+            })}, '*');
+            true;
+          `);
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error during biometric authentication:', error);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'BIOMETRIC_AUTH_RESPONSE',
+              success: false,
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
+      
       // Handle voice recording start
-      if (data.type === 'natively.voice.startRecording') {
+      else if (data.type === 'natively.voice.startRecording') {
         console.log('[iOS HomeScreen] 🎤 Voice recording start requested');
         
         try {
@@ -334,6 +402,34 @@ export default function HomeScreen() {
               type: 'NOTIFICATIONS_PERMISSION_RESPONSE',
               granted: false,
               status: 'denied',
+              error: String(error)
+            })}, '*');
+            true;
+          `);
+        }
+      }
+      
+      // Handle notification status check
+      else if (data.type === 'natively.notifications.getStatus') {
+        console.log('[iOS HomeScreen] 🔔 Notification status check requested');
+        
+        try {
+          const { status } = await Notifications.getPermissionsAsync();
+          console.log('[iOS HomeScreen] ✅ Notification status:', status);
+          
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_STATUS_RESPONSE',
+              status: status
+            })}, '*');
+            true;
+          `);
+        } catch (error) {
+          console.error('[iOS HomeScreen] ❌ Error getting notification status:', error);
+          webViewRef.current?.injectJavaScript(`
+            window.postMessage(${JSON.stringify({
+              type: 'NOTIFICATIONS_STATUS_RESPONSE',
+              status: 'undetermined',
               error: String(error)
             })}, '*');
             true;
