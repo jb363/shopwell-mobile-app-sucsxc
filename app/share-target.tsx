@@ -15,8 +15,15 @@ export default function ShareTargetScreen() {
       let sharedContent = '';
       let sharedType = 'text';
       
+      // Handle productUrl from iOS Share Extension
+      if (params.productUrl) {
+        const urlValue = Array.isArray(params.productUrl) ? params.productUrl[0] : params.productUrl;
+        console.log('[ShareTarget] ✅ Extracted productUrl from iOS Share Extension:', urlValue);
+        sharedContent = urlValue;
+        sharedType = 'url';
+      }
       // Handle content from deep link (iOS Share Extension or Android Intent)
-      if (params.content) {
+      else if (params.content) {
         const contentValue = Array.isArray(params.content) ? params.content[0] : params.content;
         const typeValue = Array.isArray(params.type) ? params.type[0] : params.type;
         

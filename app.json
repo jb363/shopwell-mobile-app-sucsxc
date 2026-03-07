@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
@@ -15,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.shopwell.app",
-      "buildNumber": "1.0.20",
+      "buildNumber": "1.0.21",
       "infoPlist": {
         "NSCameraUsageDescription": "ShopWell needs access to your camera to scan product barcodes and QR codes.",
         "NSPhotoLibraryUsageDescription": "ShopWell needs access to your photo library to let you select images for your shopping lists.",
@@ -40,6 +41,9 @@
               "shopwellaimobile"
             ]
           }
+        ],
+        "LSApplicationQueriesSchemes": [
+          "shopwellaimobile"
         ]
       },
       "config": {
@@ -131,7 +135,8 @@
         "expo-share-intent",
         {
           "iosActivationRules": {
-            "NSExtensionActivationSupportsWebURLWithMaxCount": 1
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebPageWithMaxCount": 1
           }
         }
       ],
@@ -183,7 +188,8 @@
               "NSExtension": {
                 "NSExtensionAttributes": {
                   "NSExtensionActivationRule": {
-                    "NSExtensionActivationSupportsWebURLWithMaxCount": 1
+                    "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+                    "NSExtensionActivationSupportsWebPageWithMaxCount": 1
                   }
                 },
                 "NSExtensionPointIdentifier": "com.apple.share-services",

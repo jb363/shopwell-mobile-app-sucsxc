@@ -39,13 +39,13 @@ class ShareViewController: UIViewController {
             return
         }
         
-        // Check for URL (most common - web pages from Safari)
+        // Check for URL (web pages from Safari and other browsers)
         if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
             itemProvider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] (item, error) in
                 if let url = item as? URL {
-                    self?.openMainApp(with: url.absoluteString, type: "url")
+                    self?.openMainApp(with: url.absoluteString)
                 } else if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                    self?.openMainApp(with: url.absoluteString, type: "url")
+                    self?.openMainApp(with: url.absoluteString)
                 } else {
                     self?.closeExtension()
                 }
@@ -53,47 +53,16 @@ class ShareViewController: UIViewController {
             return
         }
         
-        // Check for plain text
+        // Check for plain text that might be a URL
         if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
             itemProvider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { [weak self] (item, error) in
                 if let text = item as? String {
-                    // Check if text is a URL
-                    let isUrl = text.hasPrefix("http://") || text.hasPrefix("https://")
-                    self?.openMainApp(with: text, type: isUrl ? "url" : "text")
-                } else {
-                    self?.closeExtension()
-                }
-            }
-            return
-        }
-        
-        // Check for image
-        if itemProvider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-            itemProvider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] (item, error) in
-                var imageURL: URL?
-                
-                if let url = item as? URL {
-                    imageURL = url
-                } else if let data = item as? Data {
-                    // Save image data to shared container
-                    if let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: self?.appGroupIdentifier ?? "") {
-                        let fileName = "shared-image-\(Date().timeIntervalSince1970).jpg"
-                        let fileURL = sharedContainer.appendingPathComponent(fileName)
-                        try? data.write(to: fileURL)
-                        imageURL = fileURL
+                    // Only process if it's a valid URL
+                    if text.hasPrefix("http://") || text.hasPrefix("https://") {
+                        self?.openMainApp(with: text)
+                    } else {
+                        self?.closeExtension()
                     }
-                } else if let image = item as? UIImage, let data = image.jpegData(compressionQuality: 0.8) {
-                    // Save UIImage to shared container
-                    if let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: self?.appGroupIdentifier ?? "") {
-                        let fileName = "shared-image-\(Date().timeIntervalSince1970).jpg"
-                        let fileURL = sharedContainer.appendingPathComponent(fileName)
-                        try? data.write(to: fileURL)
-                        imageURL = fileURL
-                    }
-                }
-                
-                if let imageURL = imageURL {
-                    self?.openMainApp(with: imageURL.absoluteString, type: "image")
                 } else {
                     self?.closeExtension()
                 }
@@ -105,21 +74,21 @@ class ShareViewController: UIViewController {
         closeExtension()
     }
     
-    private func openMainApp(with content: String, type: String) {
+    private func openMainApp(with urlString: String) {
         // URL encode the content
-        guard let encodedContent = content.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+        guard let encodedURL = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             closeExtension()
             return
         }
         
         // Create deep link URL pointing to share-target route
-        // Format: shopwellaimobile://share-target?type=url&content=https://example.com
-        let deepLinkURL = "\(urlScheme)://share-target?type=\(type)&content=\(encodedContent)"
+        // Format: shopwellaimobile://share-target?productUrl=https://example.com
+        let deepLinkURL = "\(urlScheme)://share-target?productUrl=\(encodedURL)"
         
         // Store in app group for backup
         if let sharedContainer = UserDefaults(suiteName: appGroupIdentifier) {
-            sharedContainer.set(content, forKey: "sharedContent")
-            sharedContainer.set(type, forKey: "sharedContentType")
+            sharedContainer.set(urlString, forKey: "sharedContent")
+            sharedContainer.set("url", forKey: "sharedContentType")
             sharedContainer.set(Date().timeIntervalSince1970, forKey: "sharedContentTimestamp")
             sharedContainer.synchronize()
         }
