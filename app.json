@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "ShopWell.ai Mobile",
-    "slug": "shopwell-ai-mobile",
-    "version": "1.0.26",
+    "slug": "shopwell-mobile-app-sucsxc",
+    "version": "1.0.27",
     "orientation": "portrait",
     "icon": "./assets/images/shopwell-ai-app-icon.png",
     "scheme": "shopwellaimobile",
@@ -61,7 +61,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.axiomstrategies.shopwellai",
-      "versionCode": 30,
+      "versionCode": 31,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
@@ -128,6 +128,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/shopwell-ai-app-icon.png",
@@ -175,10 +183,7 @@
               "NSExtension": {
                 "NSExtensionAttributes": {
                   "NSExtensionActivationRule": {
-                    "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
-                    "NSExtensionActivationSupportsText": true,
-                    "NSExtensionActivationSupportsImageWithMaxCount": 5,
-                    "NSExtensionActivationSupportsWebPageWithMaxCount": 1
+                    "NSExtensionActivationSupportsWebURLWithMaxCount": 1
                   }
                 },
                 "NSExtensionPointIdentifier": "com.apple.share-services",

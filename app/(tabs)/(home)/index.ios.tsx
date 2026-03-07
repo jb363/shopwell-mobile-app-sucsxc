@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-audio';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
+import { useShareIntent } from 'expo-share-intent';
 
 // Conditional imports for native modules
 let Notifications: any;
@@ -39,6 +40,69 @@ export default function HomeScreen() {
 
   // Initialize quick actions (app shortcuts)
   useQuickActions(webViewRef);
+
+  // Handle share intents (URLs shared from Safari or other apps)
+  const { hasShareIntent, shareIntent, resetShareIntent, error: shareIntentError } = useShareIntent({
+    debug: true,
+    resetOnBackground: false,
+  });
+
+  // Process incoming shared URLs
+  useEffect(() => {
+    if (hasShareIntent && shareIntent && webViewRef.current && webViewLoaded) {
+      console.log('[iOS HomeScreen] 🔗 Share intent detected:', shareIntent);
+      
+      // Extract the URL from the share intent
+      const sharedUrl = shareIntent.webUrl || shareIntent.text;
+      
+      if (sharedUrl && typeof sharedUrl === 'string') {
+        console.log('[iOS HomeScreen] 📎 Processing shared URL:', sharedUrl);
+        
+        // Validate that it's a URL
+        try {
+          new URL(sharedUrl);
+          
+          // Send the URL to the WebView to add to shopping list
+          setTimeout(() => {
+            webViewRef.current?.injectJavaScript(`
+              (function() {
+                try {
+                  console.log('[Native Bridge] Sending shared URL to add to shopping list:', '${sharedUrl}');
+                  
+                  // Post message to WebView with the shared URL
+                  window.postMessage({
+                    type: 'SHARED_URL',
+                    url: '${sharedUrl}',
+                    timestamp: Date.now()
+                  }, '*');
+                  
+                  console.log('[Native Bridge] ✅ Shared URL message sent');
+                } catch (error) {
+                  console.error('[Native Bridge] ❌ Error sending shared URL:', error);
+                }
+              })();
+              true;
+            `);
+            
+            // Clear the share intent after processing
+            console.log('[iOS HomeScreen] 🧹 Clearing share intent');
+            resetShareIntent();
+          }, 1000);
+          
+        } catch (urlError) {
+          console.error('[iOS HomeScreen] ❌ Invalid URL in share intent:', urlError);
+          resetShareIntent();
+        }
+      } else {
+        console.log('[iOS HomeScreen] ⚠️ Share intent does not contain a valid URL');
+        resetShareIntent();
+      }
+    }
+    
+    if (shareIntentError) {
+      console.error('[iOS HomeScreen] ❌ Share intent error:', shareIntentError);
+    }
+  }, [hasShareIntent, shareIntent, webViewLoaded, resetShareIntent, shareIntentError]);
 
   // Handle shared content from params
   useEffect(() => {
