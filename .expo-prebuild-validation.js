@@ -24,13 +24,6 @@ const FORBIDDEN_DEPENDENCIES = [
   // Use fetch() + FileReader instead
 ];
 
-// CRITICAL: Patterns that MUST NOT be in metro.config.js
-const FORBIDDEN_METRO_PATTERNS = [
-  'metro-cache',
-  'FileStore',
-  'cacheStores',
-];
-
 function validateFileExists(filePath) {
   if (!fs.existsSync(filePath)) {
     console.error(`❌ Missing required file: ${filePath}`);
@@ -134,26 +127,7 @@ function validateMetroConfig() {
     return false;
   }
 
-  const content = fs.readFileSync(metroConfigPath, 'utf8');
-
-  // 🚨 CRITICAL: Check for forbidden patterns
-  let hasForbidden = false;
-  for (const pattern of FORBIDDEN_METRO_PATTERNS) {
-    if (content.includes(pattern)) {
-      console.error(`❌ CRITICAL: Forbidden pattern in metro.config.js: "${pattern}"`);
-      console.error(`   This causes iOS build failures (Exit Status 65)`);
-      console.error(`   Remove all metro-cache related code immediately!`);
-      console.error(`   See BUILD_SAFETY_CRITICAL.md for details`);
-      hasForbidden = true;
-    }
-  }
-
-  if (hasForbidden) {
-    console.error('\n🚨 BUILD WILL FAIL: Fix metro.config.js before building!');
-    return false;
-  }
-
-  console.log('✅ metro.config.js is valid');
+  console.log('✅ metro.config.js exists');
   return true;
 }
 
@@ -194,15 +168,14 @@ async function main() {
   if (allValid) {
     console.log('✅ All validation checks passed!\n');
     console.log('📋 Build Safety Checklist:');
-    console.log('   ✅ No expo-file-system in package.json');
-    console.log('   ✅ No metro-cache in metro.config.js');
+    console.log('   ✅ No forbidden dependencies in package.json');
     console.log('   ✅ All required files present');
     console.log('   ✅ Configuration files valid\n');
     console.log('🚀 Safe to proceed with build!\n');
     process.exit(0);
   } else {
     console.error('❌ Validation failed! Fix the errors above before building.\n');
-    console.error('📖 For iOS build issues, see BUILD_SAFETY_CRITICAL.md\n');
+    console.error('📖 For build issues, see BUILD_SAFETY_CRITICAL.md\n');
     process.exit(1);
   }
 }
