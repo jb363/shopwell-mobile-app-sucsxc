@@ -62,23 +62,21 @@ export default function HomeScreen() {
         try {
           new URL(sharedUrl);
           
-          // Send the URL to the WebView to add to shopping list
+          // Navigate to share-target page with the URL as a query parameter
+          const encodedUrl = encodeURIComponent(sharedUrl);
+          const targetUrl = `https://shopwell.ai/share-target?productUrl=${encodedUrl}`;
+          
+          console.log('[iOS HomeScreen] 🌐 Navigating to share-target with product URL:', targetUrl);
+          
           setTimeout(() => {
             webViewRef.current?.injectJavaScript(`
               (function() {
                 try {
-                  console.log('[Native Bridge] Sending shared URL to add to shopping list:', '${sharedUrl}');
-                  
-                  // Post message to WebView with the shared URL
-                  window.postMessage({
-                    type: 'SHARED_URL',
-                    url: '${sharedUrl}',
-                    timestamp: Date.now()
-                  }, '*');
-                  
-                  console.log('[Native Bridge] ✅ Shared URL message sent');
+                  console.log('[Native Bridge] Navigating to share-target with product URL');
+                  window.location.href = '${targetUrl}';
+                  console.log('[Native Bridge] ✅ Navigation initiated');
                 } catch (error) {
-                  console.error('[Native Bridge] ❌ Error sending shared URL:', error);
+                  console.error('[Native Bridge] ❌ Error navigating:', error);
                 }
               })();
               true;
@@ -114,33 +112,57 @@ export default function HomeScreen() {
       
       setTimeout(() => {
         try {
-          const message = {
-            type: 'SHARED_CONTENT',
-            contentType: sharedTypeStr,
-            content: sharedContentStr
-          };
+          // Check if the shared content is a URL
+          const isUrl = sharedTypeStr === 'url' || sharedContentStr.startsWith('http://') || sharedContentStr.startsWith('https://');
           
-          console.log('[iOS HomeScreen] 📨 Sending shared content to WebView:', message);
-          
-          // Inject the shared content and navigate to share-target page
-          webViewRef.current?.injectJavaScript(`
-            (function() {
-              try {
-                console.log('[Native Bridge] Sending SHARED_CONTENT message and navigating to share-target');
-                
-                // Store the shared content
-                window.postMessage(${JSON.stringify(message)}, '*');
-                
-                // Navigate to the share-target page on shopwell.ai
-                window.location.href = 'https://shopwell.ai/share-target';
-                
-                console.log('[Native Bridge] SHARED_CONTENT message sent and navigation initiated');
-              } catch (error) {
-                console.error('[Native Bridge] Error sending shared content:', error);
-              }
-            })();
-            true;
-          `);
+          if (isUrl) {
+            // Navigate to share-target page with the URL as productUrl query parameter
+            const encodedUrl = encodeURIComponent(sharedContentStr);
+            const targetUrl = `https://shopwell.ai/share-target?productUrl=${encodedUrl}`;
+            
+            console.log('[iOS HomeScreen] 🌐 Navigating to share-target with product URL:', targetUrl);
+            
+            webViewRef.current?.injectJavaScript(`
+              (function() {
+                try {
+                  console.log('[Native Bridge] Navigating to share-target with product URL');
+                  window.location.href = '${targetUrl}';
+                  console.log('[Native Bridge] ✅ Navigation initiated');
+                } catch (error) {
+                  console.error('[Native Bridge] ❌ Error navigating:', error);
+                }
+              })();
+              true;
+            `);
+          } else {
+            // For non-URL content, send as a message and navigate to share-target
+            const message = {
+              type: 'SHARED_CONTENT',
+              contentType: sharedTypeStr,
+              content: sharedContentStr
+            };
+            
+            console.log('[iOS HomeScreen] 📨 Sending shared content to WebView:', message);
+            
+            webViewRef.current?.injectJavaScript(`
+              (function() {
+                try {
+                  console.log('[Native Bridge] Sending SHARED_CONTENT message and navigating to share-target');
+                  
+                  // Store the shared content
+                  window.postMessage(${JSON.stringify(message)}, '*');
+                  
+                  // Navigate to the share-target page on shopwell.ai
+                  window.location.href = 'https://shopwell.ai/share-target';
+                  
+                  console.log('[Native Bridge] SHARED_CONTENT message sent and navigation initiated');
+                } catch (error) {
+                  console.error('[Native Bridge] Error sending shared content:', error);
+                }
+              })();
+              true;
+            `);
+          }
         } catch (error) {
           console.error('[iOS HomeScreen] ❌ Error injecting shared content:', error);
         }
