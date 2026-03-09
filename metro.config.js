@@ -7,9 +7,6 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.unstable_enablePackageExports = true;
 
-// Metro will use its default caching mechanism
-// DO NOT import metro-cache or FileStore - this causes AAB build failures
-
 // Custom server middleware to receive console.log messages from the app
 const LOG_FILE_PATH = path.join(__dirname, '.natively', 'app_console.log');
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
