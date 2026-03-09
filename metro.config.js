@@ -7,9 +7,8 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.unstable_enablePackageExports = true;
 
-// Remove the problematic metro-cache configuration that causes build failures.
-// Metro has its own default caching mechanism that works correctly.
-// DO NOT add config.cacheStores - it breaks AAB builds
+// Metro will use its default caching mechanism
+// DO NOT import metro-cache or FileStore - this causes AAB build failures
 
 // Custom server middleware to receive console.log messages from the app
 const LOG_FILE_PATH = path.join(__dirname, '.natively', 'app_console.log');
