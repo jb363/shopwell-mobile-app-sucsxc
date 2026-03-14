@@ -24,8 +24,8 @@
         "NSLocationWhenInUseUsageDescription": "ShopWell needs your location to show nearby stores and provide location-based features.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
         "NSLocationAlwaysUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
-        "NSUserTrackingUsageDescription": "Your data will be used to deliver personalized ads and improve your experience.",
-        "NSAppTrackingTransparencyUsageDescription": "Your data will be used to deliver personalized ads and improve your experience.",
+        "NSUserTrackingUsageDescription": "We use tracking to personalize product recommendations and improve your shopping experience.",
+        "NSAppTrackingTransparencyUsageDescription": "We use tracking to personalize product recommendations and improve your shopping experience.",
         "NSFaceIDUsageDescription": "ShopWell uses Face ID to securely authenticate and protect your account.",
         "UIBackgroundModes": [
           "location",

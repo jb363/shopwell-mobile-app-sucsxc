@@ -1,25 +1,20 @@
+// Web does not require App Tracking Transparency — always return granted.
 
-import { useEffect, useState } from 'react';
+export type TrackingStatus = 'granted';
 
-// Web doesn't require App Tracking Transparency
-// This is a no-op implementation for Web
-export function useTrackingPermission() {
-  const [trackingStatus, setTrackingStatus] = useState<string>('not-applicable');
-  const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
+export interface TrackingPermissionResult {
+  status: TrackingStatus;
+  isGranted: boolean;
+}
 
-  useEffect(() => {
-    console.log('Tracking permission not needed on Web');
-    setTrackingStatus('not-applicable');
-  }, []);
+export function useTrackingPermission(): TrackingPermissionResult {
+  return { status: 'granted', isGranted: true };
+}
 
-  const requestTrackingPermission = async () => {
-    console.log('Tracking permission not applicable on Web');
-    setTrackingStatus('not-applicable');
-  };
+export async function getTrackingStatus(): Promise<TrackingStatus> {
+  return 'granted';
+}
 
-  return {
-    trackingStatus,
-    hasRequestedPermission,
-    requestTrackingPermission,
-  };
+export async function requestTrackingPermission(): Promise<boolean> {
+  return true;
 }

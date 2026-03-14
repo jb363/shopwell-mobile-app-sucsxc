@@ -1,32 +1,21 @@
+// Cross-platform fallback — Android and Web do not require ATT.
+// iOS uses hooks/useTrackingPermission.ios.ts instead.
 
-import { useState } from 'react';
+export type TrackingStatus = 'granted' | 'unavailable';
 
-// Base tracking permission hook for non-iOS platforms
-// iOS uses useTrackingPermission.ios.ts
-export function useTrackingPermission() {
-  const [trackingStatus] = useState<string>('not-available');
-  const [hasRequestedPermission] = useState(false);
-
-  const checkTrackingPermission = async () => {
-    console.log('Tracking permission not available on this platform');
-    return 'not-available';
-  };
-
-  const requestTrackingPermission = async () => {
-    console.log('Tracking permission not available on this platform');
-    return false;
-  };
-
-  return {
-    trackingStatus,
-    hasRequestedPermission,
-    checkTrackingPermission,
-    requestTrackingPermission,
-  };
+export interface TrackingPermissionResult {
+  status: TrackingStatus;
+  isGranted: boolean;
 }
 
-// Export standalone function for consistency
-export async function requestTrackingPermission() {
-  console.log('Tracking permission not available on this platform');
-  return false;
+export function useTrackingPermission(): TrackingPermissionResult {
+  return { status: 'granted', isGranted: true };
+}
+
+export async function getTrackingStatus(): Promise<TrackingStatus> {
+  return 'granted';
+}
+
+export async function requestTrackingPermission(): Promise<boolean> {
+  return true;
 }
