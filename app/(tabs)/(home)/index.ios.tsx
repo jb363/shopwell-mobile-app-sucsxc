@@ -27,6 +27,8 @@ try {
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
+const PROJECT_ID = 'e7626989-42f0-4892-8690-78e62394d076';
+
 export default function HomeScreen() {
   console.log('[iOS HomeScreen] Initializing...');
   
@@ -37,9 +39,53 @@ export default function HomeScreen() {
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
+  const webViewReady = useRef(false);
 
   // Initialize quick actions (app shortcuts)
   useQuickActions(webViewRef);
+
+  // Handle notification taps (foreground + background)
+  useEffect(() => {
+    if (!Notifications) return;
+
+    console.log('[iOS HomeScreen] 🔔 Setting up notification tap listener');
+
+    const subscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
+      console.log('[iOS HomeScreen] 👆 Notification tapped:', response.notification.request.identifier);
+      const data = response.notification.request.content.data;
+      const url = data?.url || data?.productUrl;
+      if (url) {
+        console.log('[iOS HomeScreen] 🔗 Notification tap URL:', url);
+        webViewRef.current?.postMessage(JSON.stringify({ type: 'NOTIFICATION_TAP', url }));
+      }
+    });
+
+    // Cold-start: app was launched by tapping a notification
+    Notifications.getLastNotificationResponseAsync().then((response: any) => {
+      if (!response) return;
+      console.log('[iOS HomeScreen] 🚀 Cold-start notification tap detected');
+      const data = response.notification.request.content.data;
+      const url = data?.url || data?.productUrl;
+      if (!url) return;
+      console.log('[iOS HomeScreen] 🔗 Cold-start notification URL:', url);
+      // Post once WebView is ready; poll until ready
+      const tryPost = () => {
+        if (webViewReady.current) {
+          console.log('[iOS HomeScreen] 📨 Posting cold-start NOTIFICATION_TAP to WebView');
+          webViewRef.current?.postMessage(JSON.stringify({ type: 'NOTIFICATION_TAP', url }));
+        } else {
+          setTimeout(tryPost, 300);
+        }
+      };
+      tryPost();
+    }).catch((err: any) => {
+      console.error('[iOS HomeScreen] ❌ Error checking last notification response:', err);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // Handle share intents (URLs shared from Safari or other apps)
   const { hasShareIntent, shareIntent, resetShareIntent, error: shareIntentError } = useShareIntent({
@@ -520,17 +566,18 @@ export default function HomeScreen() {
           // Get push token if granted
           if (granted) {
             try {
-              console.log('[iOS HomeScreen] 📲 Getting push token...');
-              const tokenData = await Notifications.getExpoPushTokenAsync();
-              console.log('[iOS HomeScreen] ✅ Push token obtained:', tokenData.data);
+              console.log('[iOS HomeScreen] 📲 Getting Expo push token...');
+              const tokenData = await Notifications.getExpoPushTokenAsync({
+                projectId: PROJECT_ID,
+              });
+              const expoPushToken = tokenData.data;
+              console.log('[iOS HomeScreen] ✅ Expo push token obtained:', expoPushToken);
               
-              webViewRef.current?.injectJavaScript(`
-                window.postMessage(${JSON.stringify({
-                  type: 'PUSH_TOKEN',
-                  token: tokenData.data
-                })}, '*');
-                true;
-              `);
+              webViewRef.current?.postMessage(JSON.stringify({
+                type: 'PUSH_TOKEN',
+                token: expoPushToken,
+                platform: 'expo',
+              }));
             } catch (tokenError) {
               console.error('[iOS HomeScreen] ❌ Error getting push token:', tokenError);
             }
@@ -672,6 +719,7 @@ export default function HomeScreen() {
         onLoadEnd={() => {
           console.log('[iOS HomeScreen] ✅ Loading complete');
           setWebViewLoaded(true);
+          webViewReady.current = true;
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;

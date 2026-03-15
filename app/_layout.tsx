@@ -18,6 +18,7 @@ import { StatusBar } from "expo-status-bar";
 import { shopWellColors } from "@/constants/Colors";
 import { crashReporter } from "@/utils/crashReporter";
 import { useTrackingPermission } from "@/hooks/useTrackingPermission";
+import { useNotifications } from "@/hooks/useNotifications";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -151,6 +152,8 @@ export default function RootLayout() {
   // Trigger ATT prompt early, before any web content loads (iOS only)
   const { status: trackingStatus } = useTrackingPermission();
   console.log('[RootLayout] ATT tracking status:', trackingStatus);
+  // Initialize notification handler and Android channels on every app start
+  useNotifications();
 
   useEffect(() => {
     let isMounted = true;
