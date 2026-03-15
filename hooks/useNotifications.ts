@@ -1,55 +1,94 @@
 
 import { Platform, Alert } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import Constants from 'expo-constants';
 
 // Conditional import for expo-notifications
 let Notifications: any;
 try {
   Notifications = require('expo-notifications');
   
-  // Configure notification handler for ALL notification scenarios
-  // This MUST be set at module level (outside component) for iOS to work properly
-  // CRITICAL: This ensures notifications appear in the iOS system tray even when app is in foreground
+  // CRITICAL: setNotificationHandler MUST be called at module level (outside any component).
+  // Without this, iOS will not show alerts for foreground notifications.
   if (Notifications && Notifications.setNotificationHandler) {
     Notifications.setNotificationHandler({
       handleNotification: async (notification: any) => {
         console.log('[NotificationHandler] Handling notification:', notification.request.identifier);
         console.log('[NotificationHandler] Content:', notification.request.content);
-        
         return {
-          shouldShowAlert: true,      // Show banner/alert in system tray
-          shouldPlaySound: true,       // Play notification sound
-          shouldSetBadge: true,        // Update app badge count
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
         };
       },
     });
+    console.log('[useNotifications] ✅ Notification handler set at module level');
   }
 } catch (error) {
   console.warn('[useNotifications] expo-notifications not available:', error);
 }
 
+// Derive projectId and experienceId from app config (required for iOS push tokens)
+const PROJECT_ID: string =
+  Constants.expoConfig?.extra?.eas?.projectId ?? 'e7626989-42f0-4892-8690-78e62394d076';
+const EXPERIENCE_ID: string =
+  `@${Constants.expoConfig?.owner ?? 'natively'}/${Constants.expoConfig?.slug ?? 'shopwell-mobile-app-sucsxc'}`;
+
 // Handle notification data and deep linking
 function handleNotificationData(data: any) {
   console.log('[useNotifications] Handling notification data:', data);
-  
   if (!data) return;
 
-  // Handle geofence notifications
   if (data.type === 'geofence') {
     console.log('[useNotifications] Geofence notification:', data.storeName);
-    
     if (data.listId) {
       console.log('[useNotifications] Navigating to list:', data.listId);
     } else if (data.reservationNumber) {
       console.log('[useNotifications] Navigating to reservation:', data.reservationNumber);
     }
   }
-  
-  // Handle other notification types
+
   if (data.url) {
     console.log('[useNotifications] Opening URL from notification:', data.url);
-    // You can navigate to specific screens based on notification data
+  }
+}
+
+// Helper: request permission then get push token
+async function getTokenAfterPermission(
+  setExpoPushToken: (t: string) => void,
+  setPermissionStatus: (s: 'granted' | 'denied' | 'undetermined') => void,
+): Promise<void> {
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('[useNotifications] Existing permission status:', existingStatus);
+
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      console.log('[useNotifications] 📱 Requesting notification permissions...');
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+      console.log('[useNotifications] Permission result:', finalStatus);
+    }
+
+    const mapped: 'granted' | 'denied' | 'undetermined' =
+      finalStatus === 'granted' ? 'granted' : finalStatus === 'denied' ? 'denied' : 'undetermined';
+    setPermissionStatus(mapped);
+
+    if (finalStatus !== 'granted') {
+      console.warn('[useNotifications] ⚠️ Notification permission not granted:', finalStatus);
+      return;
+    }
+
+    console.log('[useNotifications] ✅ Permission granted — fetching push token...');
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: PROJECT_ID,
+      experienceId: EXPERIENCE_ID,
+    });
+    console.log('[useNotifications] 📲 Push token:', tokenData.data);
+    setExpoPushToken(tokenData.data);
+  } catch (error) {
+    console.error('[useNotifications] ❌ Error in getTokenAfterPermission:', error);
   }
 }
 
@@ -62,102 +101,52 @@ export function useNotifications() {
 
   useEffect(() => {
     let isMounted = true;
-    
-    // Only run on native platforms
+
     if (Platform.OS === 'web') {
       console.log('[useNotifications] Notifications are not supported on web');
       return;
     }
 
-    // Check if Notifications module is available
     if (!Notifications) {
       console.warn('[useNotifications] Notifications module not available');
       return;
     }
 
     console.log('[useNotifications] 🔔 Initializing notification system...');
-    
-    // Check existing permissions and get token if already granted
-    const checkPermissions = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        if (!isMounted) return;
-        
-        const { status } = await Notifications.getPermissionsAsync();
-        console.log('[useNotifications] Current permission status:', status);
-        setPermissionStatus(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined');
-        
-        if (status === 'granted') {
-          console.log('[useNotifications] ✅ Already have notification permission, getting token');
-          try {
-            const tokenData = await Notifications.getExpoPushTokenAsync({
-              projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-            });
-            if (isMounted) {
-              setExpoPushToken(tokenData.data);
-              console.log('[useNotifications] 📲 Push token:', tokenData.data);
-            }
-          } catch (tokenError) {
-            console.error('[useNotifications] ❌ Error getting push token:', tokenError);
-          }
-        } else {
-          console.log('[useNotifications] ⏳ No notification permission yet - will request when user enables notifications');
-        }
-      } catch (error) {
-        console.error('[useNotifications] ❌ Error checking notification permissions:', error);
-      }
-    };
 
-    checkPermissions();
+    // Request permissions and get token immediately (no artificial delay)
+    getTokenAfterPermission(
+      (token) => { if (isMounted) setExpoPushToken(token); },
+      (status) => { if (isMounted) setPermissionStatus(status); },
+    ).catch((err) => console.error('[useNotifications] ❌ Unhandled error in init:', err));
 
-    // Check for notification that opened the app
-    const checkLastNotification = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 700));
-        
-        if (!isMounted) return;
-        
-        const response = await Notifications.getLastNotificationResponseAsync();
-        if (response) {
-          console.log('[useNotifications] 🚀 App opened from notification:', response);
-          const data = response.notification.request.content.data;
-          handleNotificationData(data);
-        }
-      } catch (error) {
+    // Check for cold-start notification tap
+    Notifications.getLastNotificationResponseAsync()
+      .then((response: any) => {
+        if (!isMounted || !response) return;
+        console.log('[useNotifications] 🚀 App opened from notification:', response);
+        handleNotificationData(response.notification.request.content.data);
+      })
+      .catch((error: any) => {
         console.error('[useNotifications] ❌ Error checking last notification:', error);
-      }
-    };
+      });
 
-    checkLastNotification();
+    // Register listeners immediately — no setTimeout
+    try {
+      notificationListener.current = Notifications.addNotificationReceivedListener((notif: any) => {
+        console.log('[useNotifications] 📬 Notification received in foreground:', notif.request.identifier);
+        if (isMounted) setNotification(notif);
+      });
 
-    // Set up notification listeners
-    setTimeout(() => {
-      if (!isMounted) return;
-      
-      try {
-        // Listen for notifications received while app is in foreground
-        // CRITICAL: This ensures notifications appear in system tray even when app is open
-        notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
-          console.log('[useNotifications] 📬 Notification received in foreground:', notification);
-          console.log('[useNotifications] ✅ Notification will appear in system tray due to handler configuration');
-          if (isMounted) {
-            setNotification(notification);
-          }
-        });
+      responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
+        console.log('[useNotifications] 👆 User tapped notification:', response.notification.request.identifier);
+        handleNotificationData(response.notification.request.content.data);
+      });
 
-        // Listen for user tapping on notifications
-        responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
-          console.log('[useNotifications] 👆 User tapped notification:', response);
-          const data = response.notification.request.content.data;
-          handleNotificationData(data);
-        });
-        
-        console.log('[useNotifications] ✅ Notification listeners registered');
-      } catch (error) {
-        console.error('[useNotifications] ❌ Error setting up notification listeners:', error);
-      }
-    }, 800);
+      console.log('[useNotifications] ✅ Notification listeners registered');
+    } catch (error) {
+      console.error('[useNotifications] ❌ Error setting up notification listeners:', error);
+    }
 
     return () => {
       isMounted = false;
@@ -200,27 +189,10 @@ export function useNotifications() {
 
     try {
       console.log('[useNotifications] 🔔 Requesting notification permissions from user');
-      
-      // Check current status first
+
       const { status: currentStatus } = await Notifications.getPermissionsAsync();
       console.log('[useNotifications] Current status before request:', currentStatus);
-      
-      // If already granted, just get the token
-      if (currentStatus === 'granted') {
-        console.log('[useNotifications] ✅ Permission already granted, getting token');
-        try {
-          const tokenData = await Notifications.getExpoPushTokenAsync({
-            projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-          });
-          setExpoPushToken(tokenData.data);
-          console.log('[useNotifications] 📲 Push token:', tokenData.data);
-        } catch (tokenError) {
-          console.error('[useNotifications] ❌ Error getting push token:', tokenError);
-        }
-        return true;
-      }
-      
-      // If previously denied, inform user they need to enable in settings
+
       if (currentStatus === 'denied') {
         console.log('[useNotifications] ⚠️ Permission previously denied');
         Alert.alert(
@@ -230,20 +202,24 @@ export function useNotifications() {
         );
         return false;
       }
-      
-      // Request permission
-      console.log('[useNotifications] 📱 Showing permission dialog...');
-      const { status } = await Notifications.requestPermissionsAsync();
-      console.log('[useNotifications] Permission result:', status);
-      
-      const granted = status === 'granted';
+
+      let finalStatus = currentStatus;
+      if (currentStatus !== 'granted') {
+        console.log('[useNotifications] 📱 Showing permission dialog...');
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+        console.log('[useNotifications] Permission result:', finalStatus);
+      }
+
+      const granted = finalStatus === 'granted';
       setPermissionStatus(granted ? 'granted' : 'denied');
-      
+
       if (granted) {
         console.log('[useNotifications] ✅ Permission granted, getting token');
         try {
           const tokenData = await Notifications.getExpoPushTokenAsync({
-            projectId: 'e7626989-42f0-4892-8690-78e62394d076',
+            projectId: PROJECT_ID,
+            experienceId: EXPERIENCE_ID,
           });
           setExpoPushToken(tokenData.data);
           console.log('[useNotifications] 📲 Push token:', tokenData.data);
@@ -270,34 +246,33 @@ export function useNotifications() {
   };
 }
 
-export async function registerForPushNotificationsAsync() {
+export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
   if (Platform.OS === 'web' || !Notifications) {
     console.log('[registerForPushNotifications] Push notifications not available');
     return undefined;
   }
 
   try {
-    let token;
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    
+
     if (existingStatus !== 'granted') {
       console.log('[registerForPushNotifications] Requesting notification permissions from user');
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
-      console.warn('[registerForPushNotifications] Failed to get push token for push notification!');
-      return;
+      console.warn('[registerForPushNotifications] Failed to get push token — permission not granted');
+      return undefined;
     }
-    
-    token = (await Notifications.getExpoPushTokenAsync({
-      projectId: 'e7626989-42f0-4892-8690-78e62394d076',
-    })).data;
-    console.log('[registerForPushNotifications] Expo push token:', token);
-    
-    return token;
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: PROJECT_ID,
+      experienceId: EXPERIENCE_ID,
+    });
+    console.log('[registerForPushNotifications] Expo push token:', tokenData.data);
+    return tokenData.data;
   } catch (error) {
     console.error('[registerForPushNotifications] Error:', error);
     return undefined;
