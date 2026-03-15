@@ -4,9 +4,13 @@ import { StyleSheet, View, ActivityIndicator, Text, Platform } from 'react-nativ
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { Audio } from 'expo-audio';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
 import { useShareIntent } from 'expo-share-intent';
+
+const NOTIF_PREFS_KEY = '@shopwell/notification_preferences';
+const LOCATION_PREFS_KEY = '@shopwell/location_preferences';
 
 // Conditional imports for native modules
 let Notifications: any;
@@ -562,14 +566,15 @@ export default function HomeScreen() {
           // Get push token if granted
           if (granted) {
             // Send raw FCM device token — backend uses FCM v1 HTTP API directly
+            let fcmToken: string | null = null;
             try {
               console.log('[Android HomeScreen] 📲 Getting FCM device token...');
               const deviceToken = await Notifications.getDevicePushTokenAsync();
-              console.log('[Android HomeScreen] ✅ FCM device token obtained:', deviceToken.data);
-
+              fcmToken = deviceToken.data;
+              console.log('[Android HomeScreen] ✅ FCM device token obtained:', fcmToken);
               webViewRef.current?.postMessage(JSON.stringify({
                 type: 'PUSH_TOKEN',
-                token: deviceToken.data,
+                token: fcmToken,
                 platform: 'fcm',
               }));
             } catch (fcmError) {
@@ -580,19 +585,33 @@ export default function HomeScreen() {
                 const tokenData = await Notifications.getExpoPushTokenAsync({
                   projectId: PROJECT_ID,
                 });
-                console.log('[Android HomeScreen] ✅ Expo push token obtained:', tokenData.data);
-
+                fcmToken = tokenData.data;
+                console.log('[Android HomeScreen] ✅ Expo push token obtained:', fcmToken);
                 webViewRef.current?.postMessage(JSON.stringify({
                   type: 'PUSH_TOKEN',
-                  token: tokenData.data,
+                  token: fcmToken,
                   platform: 'fcm',
                 }));
               } catch (tokenError) {
                 console.error('[Android HomeScreen] ❌ Error getting Expo push token:', tokenError);
               }
             }
+            // Fix 1: Persist notification enabled + token
+            try {
+              await AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify({ notificationsEnabled: true, pushToken: fcmToken }));
+              console.log('[Android HomeScreen] 💾 Notification preferences saved (enabled)');
+            } catch (storageErr) {
+              console.warn('[Android HomeScreen] ⚠️ Failed to save notification preferences:', storageErr);
+            }
           } else {
             console.log('[Android HomeScreen] ⚠️ Notification permission not granted');
+            // Fix 1: Persist notification disabled
+            try {
+              await AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify({ notificationsEnabled: false }));
+              console.log('[Android HomeScreen] 💾 Notification preferences saved (disabled)');
+            } catch (storageErr) {
+              console.warn('[Android HomeScreen] ⚠️ Failed to save notification preferences:', storageErr);
+            }
           }
         } catch (error) {
           console.error('[Android HomeScreen] ❌ Error requesting notification permission:', error);
@@ -607,8 +626,30 @@ export default function HomeScreen() {
           `);
         }
       }
+
+      // Fix 2: Handle location/geofencing enable
+      else if (data.type === 'natively.location.enable' || data.type === 'natively.geofencing.start') {
+        console.log('[Android HomeScreen] 📍 Location/geofencing enable received:', data.type);
+        try {
+          await AsyncStorage.setItem(LOCATION_PREFS_KEY, JSON.stringify({ locationEnabled: true }));
+          console.log('[Android HomeScreen] 💾 Location preferences saved (enabled)');
+        } catch (storageErr) {
+          console.warn('[Android HomeScreen] ⚠️ Failed to save location preferences:', storageErr);
+        }
+      }
+
+      // Fix 2: Handle location/geofencing disable
+      else if (data.type === 'natively.location.disable' || data.type === 'natively.geofencing.stop') {
+        console.log('[Android HomeScreen] 📍 Location/geofencing disable received:', data.type);
+        try {
+          await AsyncStorage.setItem(LOCATION_PREFS_KEY, JSON.stringify({ locationEnabled: false }));
+          console.log('[Android HomeScreen] 💾 Location preferences saved (disabled)');
+        } catch (storageErr) {
+          console.warn('[Android HomeScreen] ⚠️ Failed to save location preferences:', storageErr);
+        }
+      }
       
-      // Handle notification status check
+      // Fix 4: Handle notification status check — include AsyncStorage preference
       else if (data.type === 'natively.notifications.getStatus') {
         console.log('[Android HomeScreen] 🔔 Notification status check requested');
         
@@ -628,11 +669,30 @@ export default function HomeScreen() {
         try {
           const { status } = await Notifications.getPermissionsAsync();
           console.log('[Android HomeScreen] ✅ Notification status:', status);
-          
+
+          // Read saved preference and token from AsyncStorage
+          let savedEnabled: boolean | null = null;
+          let savedToken: string | null = null;
+          try {
+            const raw = await AsyncStorage.getItem(NOTIF_PREFS_KEY);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              savedEnabled = parsed.notificationsEnabled ?? null;
+              savedToken = parsed.pushToken ?? null;
+            }
+          } catch (storageErr) {
+            console.warn('[Android HomeScreen] ⚠️ Failed to read notification preferences:', storageErr);
+          }
+
+          const enabled = savedEnabled !== null ? savedEnabled : status === 'granted';
+          const token = savedToken ?? null;
+
           webViewRef.current?.injectJavaScript(`
             window.postMessage(${JSON.stringify({
               type: 'NOTIFICATIONS_STATUS_RESPONSE',
-              status: status
+              status: status,
+              enabled: enabled,
+              token: token
             })}, '*');
             true;
           `);
@@ -730,6 +790,28 @@ export default function HomeScreen() {
           console.log('[Android HomeScreen] ✅ Loading complete');
           setWebViewLoaded(true);
           webViewReady.current = true;
+          // Fix 3: Inject saved preferences so web app can restore toggle states
+          (async () => {
+            try {
+              const [notifRaw, locationRaw] = await Promise.all([
+                AsyncStorage.getItem(NOTIF_PREFS_KEY),
+                AsyncStorage.getItem(LOCATION_PREFS_KEY),
+              ]);
+              const savedPrefs = {
+                notifications: notifRaw ? JSON.parse(notifRaw) : null,
+                location: locationRaw ? JSON.parse(locationRaw) : null,
+              };
+              console.log('[Android HomeScreen] 💾 Injecting saved preferences into WebView:', savedPrefs);
+              webViewRef.current?.injectJavaScript(`
+                window.dispatchEvent(new CustomEvent('nativePreferencesRestored', {
+                  detail: ${JSON.stringify(savedPrefs)}
+                }));
+                true;
+              `);
+            } catch (err) {
+              console.warn('[Android HomeScreen] ⚠️ Failed to inject saved preferences:', err);
+            }
+          })();
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;

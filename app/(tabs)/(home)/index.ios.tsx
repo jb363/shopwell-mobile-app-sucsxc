@@ -6,10 +6,14 @@ import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-audio';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
 import { useShareIntent } from 'expo-share-intent';
 import { useTrackingPermission } from '@/hooks/useTrackingPermission';
+
+const NOTIF_PREFS_KEY = '@shopwell/notification_preferences';
+const LOCATION_PREFS_KEY = '@shopwell/location_preferences';
 
 // Conditional imports for native modules
 let Notifications: any;
@@ -615,11 +619,31 @@ export default function HomeScreen() {
               console.log('[iOS HomeScreen] ✅ Expo push token obtained:', expoPushToken);
               pendingPushToken.current = expoPushToken;
               sendPushTokenToWebView(expoPushToken);
+              // Fix 1: Persist notification enabled + token
+              try {
+                await AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify({ notificationsEnabled: true, pushToken: expoPushToken }));
+                console.log('[iOS HomeScreen] 💾 Notification preferences saved (enabled)');
+              } catch (storageErr) {
+                console.warn('[iOS HomeScreen] ⚠️ Failed to save notification preferences:', storageErr);
+              }
             } catch (tokenError) {
               console.error('[iOS HomeScreen] ❌ Error getting push token:', tokenError);
+              // Still persist enabled=true even if token fetch failed
+              try {
+                await AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify({ notificationsEnabled: true }));
+              } catch (storageErr) {
+                console.warn('[iOS HomeScreen] ⚠️ Failed to save notification preferences:', storageErr);
+              }
             }
           } else {
             console.log('[iOS HomeScreen] ⚠️ Notification permission not granted');
+            // Fix 1: Persist notification disabled
+            try {
+              await AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify({ notificationsEnabled: false }));
+              console.log('[iOS HomeScreen] 💾 Notification preferences saved (disabled)');
+            } catch (storageErr) {
+              console.warn('[iOS HomeScreen] ⚠️ Failed to save notification preferences:', storageErr);
+            }
           }
         } catch (error) {
           console.error('[iOS HomeScreen] ❌ Error requesting notification permission:', error);
@@ -634,8 +658,30 @@ export default function HomeScreen() {
           `);
         }
       }
+
+      // Fix 2: Handle location/geofencing enable
+      else if (data.type === 'natively.location.enable' || data.type === 'natively.geofencing.start') {
+        console.log('[iOS HomeScreen] 📍 Location/geofencing enable received:', data.type);
+        try {
+          await AsyncStorage.setItem(LOCATION_PREFS_KEY, JSON.stringify({ locationEnabled: true }));
+          console.log('[iOS HomeScreen] 💾 Location preferences saved (enabled)');
+        } catch (storageErr) {
+          console.warn('[iOS HomeScreen] ⚠️ Failed to save location preferences:', storageErr);
+        }
+      }
+
+      // Fix 2: Handle location/geofencing disable
+      else if (data.type === 'natively.location.disable' || data.type === 'natively.geofencing.stop') {
+        console.log('[iOS HomeScreen] 📍 Location/geofencing disable received:', data.type);
+        try {
+          await AsyncStorage.setItem(LOCATION_PREFS_KEY, JSON.stringify({ locationEnabled: false }));
+          console.log('[iOS HomeScreen] 💾 Location preferences saved (disabled)');
+        } catch (storageErr) {
+          console.warn('[iOS HomeScreen] ⚠️ Failed to save location preferences:', storageErr);
+        }
+      }
       
-      // Handle notification status check
+      // Fix 4: Handle notification status check — include AsyncStorage preference
       else if (data.type === 'natively.notifications.getStatus') {
         console.log('[iOS HomeScreen] 🔔 Notification status check requested');
         
@@ -655,11 +701,30 @@ export default function HomeScreen() {
         try {
           const { status } = await Notifications.getPermissionsAsync();
           console.log('[iOS HomeScreen] ✅ Notification status:', status);
-          
+
+          // Read saved preference and token from AsyncStorage
+          let savedEnabled: boolean | null = null;
+          let savedToken: string | null = null;
+          try {
+            const raw = await AsyncStorage.getItem(NOTIF_PREFS_KEY);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              savedEnabled = parsed.notificationsEnabled ?? null;
+              savedToken = parsed.pushToken ?? null;
+            }
+          } catch (storageErr) {
+            console.warn('[iOS HomeScreen] ⚠️ Failed to read notification preferences:', storageErr);
+          }
+
+          const enabled = savedEnabled !== null ? savedEnabled : status === 'granted';
+          const token = savedToken ?? pendingPushToken.current ?? null;
+
           webViewRef.current?.injectJavaScript(`
             window.postMessage(${JSON.stringify({
               type: 'NOTIFICATIONS_STATUS_RESPONSE',
-              status: status
+              status: status,
+              enabled: enabled,
+              token: token
             })}, '*');
             true;
           `);
@@ -800,6 +865,28 @@ export default function HomeScreen() {
                 console.warn('[iOS HomeScreen] ⚠️ Could not fetch push token on load:', err);
               });
           }
+          // Fix 3: Inject saved preferences so web app can restore toggle states
+          (async () => {
+            try {
+              const [notifRaw, locationRaw] = await Promise.all([
+                AsyncStorage.getItem(NOTIF_PREFS_KEY),
+                AsyncStorage.getItem(LOCATION_PREFS_KEY),
+              ]);
+              const savedPrefs = {
+                notifications: notifRaw ? JSON.parse(notifRaw) : null,
+                location: locationRaw ? JSON.parse(locationRaw) : null,
+              };
+              console.log('[iOS HomeScreen] 💾 Injecting saved preferences into WebView:', savedPrefs);
+              webViewRef.current?.injectJavaScript(`
+                window.dispatchEvent(new CustomEvent('nativePreferencesRestored', {
+                  detail: ${JSON.stringify(savedPrefs)}
+                }));
+                true;
+              `);
+            } catch (err) {
+              console.warn('[iOS HomeScreen] ⚠️ Failed to inject saved preferences:', err);
+            }
+          })();
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
