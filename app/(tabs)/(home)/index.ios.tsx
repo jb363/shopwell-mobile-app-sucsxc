@@ -8,6 +8,7 @@ import { Audio } from 'expo-audio';
 import { useQuickActions } from '@/hooks/useQuickActions';
 import * as BiometricHandler from '@/utils/biometricHandler';
 import { useShareIntent } from 'expo-share-intent';
+import { useTrackingPermission } from '@/hooks/useTrackingPermission';
 
 // Conditional imports for native modules
 let Notifications: any;
@@ -40,6 +41,8 @@ export default function HomeScreen() {
   const [webViewError, setWebViewError] = useState<string | null>(null);
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const webViewReady = useRef(false);
+
+  const { status: trackingStatus } = useTrackingPermission();
 
   // Initialize quick actions (app shortcuts)
   useQuickActions(webViewRef);
@@ -644,6 +647,8 @@ export default function HomeScreen() {
     }
   }, [currentRecording]);
 
+  const trackingAllowed = trackingStatus === 'granted';
+
   const injectedJavaScript = `
     (function() {
       console.log('[Native Bridge] Initializing iOS bridge...');
@@ -659,7 +664,8 @@ export default function HomeScreen() {
         sharing: true,
         biometrics: true,
         voiceRecording: true,
-        quickActions: true
+        quickActions: true,
+        trackingAllowed: ${trackingAllowed}
       };
       
       // Signal that we're ready
@@ -689,6 +695,15 @@ export default function HomeScreen() {
     );
   }
 
+  // Block WebView from loading until ATT permission has been determined.
+  // This prevents tracking cookies from being set before the user responds.
+  if (trackingStatus === 'undetermined') {
+    console.log('[iOS HomeScreen] ATT status undetermined — holding WebView render');
+    return <View style={{ flex: 1, backgroundColor: '#ffffff' }} />;
+  }
+
+  const thirdPartyCookiesAllowed = trackingStatus !== 'denied' && trackingStatus !== 'restricted';
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -702,7 +717,7 @@ export default function HomeScreen() {
         startInLoadingState={true}
         pullToRefreshEnabled={true}
         sharedCookiesEnabled={true}
-        thirdPartyCookiesEnabled={true}
+        thirdPartyCookiesEnabled={thirdPartyCookiesAllowed}
         injectedJavaScript={injectedJavaScript}
         cacheEnabled={true}
         cacheMode="LOAD_DEFAULT"
@@ -718,8 +733,15 @@ export default function HomeScreen() {
         }}
         onLoadEnd={() => {
           console.log('[iOS HomeScreen] ✅ Loading complete');
+          console.log('[iOS HomeScreen] ATT status dispatched to web app:', trackingStatus);
           setWebViewLoaded(true);
           webViewReady.current = true;
+          webViewRef.current?.injectJavaScript(`
+            window.dispatchEvent(new CustomEvent('nativeTrackingStatus', {
+              detail: { status: '${trackingStatus}', allowed: ${trackingAllowed} }
+            }));
+            true;
+          `);
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
