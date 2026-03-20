@@ -17,12 +17,14 @@ let Notifications: any;
 let Contacts: any;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
 } catch (error) {
   console.warn('[Android HomeScreen] expo-notifications not available:', error);
 }
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Contacts = require('expo-contacts');
 } catch (error) {
   console.warn('[Android HomeScreen] expo-contacts not available:', error);

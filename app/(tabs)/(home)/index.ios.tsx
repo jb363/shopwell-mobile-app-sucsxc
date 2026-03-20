@@ -20,12 +20,14 @@ let Notifications: any;
 let Contacts: any;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
 } catch (error) {
   console.warn('[iOS HomeScreen] expo-notifications not available:', error);
 }
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Contacts = require('expo-contacts');
 } catch (error) {
   console.warn('[iOS HomeScreen] expo-contacts not available:', error);
@@ -46,10 +48,26 @@ export default function HomeScreen() {
   const [webViewError, setWebViewError] = useState<string | null>(null);
   const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
   const webViewReady = useRef(false);
+  // ATT gate: allow rendering after status resolves OR after a 3s timeout (prevents permanent blank screen)
+  const [attReady, setAttReady] = useState(false);
   // Cached push token — injected into WebView once it loads
   const pendingPushToken = useRef<string | null>(null);
 
   const { status: trackingStatus } = useTrackingPermission();
+
+  // Unblock WebView once ATT status is determined, or after 3s max (prevents permanent blank screen on iPad/simulator)
+  useEffect(() => {
+    if (trackingStatus !== 'undetermined') {
+      console.log('[iOS HomeScreen] ATT status resolved:', trackingStatus, '— unblocking WebView');
+      setAttReady(true);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      console.log('[iOS HomeScreen] ATT timeout reached — unblocking WebView with undetermined status');
+      setAttReady(true);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [trackingStatus]);
 
   // Initialize quick actions (app shortcuts)
   useQuickActions(webViewRef);
@@ -744,7 +762,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('[iOS HomeScreen] ❌ Error handling message:', error);
     }
-  }, [currentRecording]);
+  }, [currentRecording, sendPushTokenToWebView]);
 
   const trackingAllowed = trackingStatus === 'granted';
 
@@ -794,9 +812,9 @@ export default function HomeScreen() {
     );
   }
 
-  // Block WebView from loading until ATT permission has been determined.
+  // Block WebView from loading until ATT permission has been determined (or 3s timeout).
   // This prevents tracking cookies from being set before the user responds.
-  if (trackingStatus === 'undetermined') {
+  if (!attReady) {
     console.log('[iOS HomeScreen] ATT status undetermined — holding WebView render');
     return <View style={{ flex: 1, backgroundColor: '#ffffff' }} />;
   }

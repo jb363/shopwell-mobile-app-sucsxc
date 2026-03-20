@@ -39,6 +39,7 @@ export default function PushDiagnosticsScreen() {
       // Check notification permission status
       let Notifications: any;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         Notifications = require('expo-notifications');
         const { status } = await Notifications.getPermissionsAsync();
         setPermissionStatus(status);
@@ -89,6 +90,7 @@ export default function PushDiagnosticsScreen() {
     try {
       let Notifications: any;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         Notifications = require('expo-notifications');
       } catch (err) {
         setError('Notifications module not available');
@@ -123,6 +125,7 @@ export default function PushDiagnosticsScreen() {
     try {
       let Notifications: any;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         Notifications = require('expo-notifications');
       } catch (err) {
         setError('Notifications module not available');

@@ -6,6 +6,7 @@ import Constants from 'expo-constants';
 // Conditional import for expo-notifications
 let Notifications: any;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
   
   // CRITICAL: setNotificationHandler MUST be called at module level (outside any component).

@@ -9,6 +9,7 @@ import * as OfflineStorage from '@/utils/offlineStorage';
 // Conditional import for expo-notifications
 let Notifications: any;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
 } catch (error) {
   console.warn('[useGeofencing] expo-notifications not available:', error);

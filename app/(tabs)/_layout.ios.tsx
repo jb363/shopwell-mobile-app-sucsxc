@@ -9,7 +9,8 @@ export default function TabLayout() {
         animation: 'none',
       }}
     >
-      <Stack.Screen key="home" name="(home)" />
+      <Stack.Screen name="(home)" options={{ headerShown: false }} />
+      <Stack.Screen name="(home)/index" options={{ headerShown: false }} />
     </Stack>
   );
 }
