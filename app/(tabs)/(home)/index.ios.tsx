@@ -55,18 +55,12 @@ export default function HomeScreen() {
 
   const { status: trackingStatus } = useTrackingPermission();
 
-  // Unblock WebView once ATT status is determined, or after 3s max (prevents permanent blank screen on iPad/simulator)
+  // Unblock WebView only once ATT status is fully resolved (never on 'undetermined')
   useEffect(() => {
     if (trackingStatus !== 'undetermined') {
       console.log('[iOS HomeScreen] ATT status resolved:', trackingStatus, '— unblocking WebView');
       setAttReady(true);
-      return;
     }
-    const timeout = setTimeout(() => {
-      console.log('[iOS HomeScreen] ATT timeout reached — unblocking WebView with undetermined status');
-      setAttReady(true);
-    }, 3000);
-    return () => clearTimeout(timeout);
   }, [trackingStatus]);
 
   // Initialize quick actions (app shortcuts)
