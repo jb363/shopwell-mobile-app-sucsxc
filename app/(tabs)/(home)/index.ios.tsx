@@ -1,10 +1,10 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, Platform } from 'react-native';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Audio } from 'expo-audio';
+import { AudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuickActions } from '@/hooks/useQuickActions';
@@ -46,7 +46,7 @@ export default function HomeScreen() {
   
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
-  const [currentRecording, setCurrentRecording] = useState<Audio.Recording | null>(null);
+  const [currentRecording, setCurrentRecording] = useState<AudioRecorder | null>(null);
   const webViewReady = useRef(false);
   // ATT gate: allow rendering after status resolves OR after a 3s timeout (prevents permanent blank screen)
   const [attReady, setAttReady] = useState(false);
@@ -350,38 +350,26 @@ export default function HomeScreen() {
         
         try {
           // Request permission
-          const { status } = await Audio.getPermissionsAsync();
+          const { granted } = await requestRecordingPermissionsAsync();
           
-          if (status !== 'granted') {
-            console.log('[iOS HomeScreen] 🔐 Requesting microphone permission...');
-            const { status: newStatus } = await Audio.requestPermissionsAsync();
-            
-            if (newStatus !== 'granted') {
-              console.log('[iOS HomeScreen] ❌ Microphone permission denied');
-              webViewRef.current?.injectJavaScript(`
-                window.postMessage(${JSON.stringify({
-                  type: 'VOICE_RECORDING_ERROR',
-                  error: 'Microphone permission denied'
-                })}, '*');
-                true;
-              `);
-              return;
-            }
+          if (!granted) {
+            console.log('[iOS HomeScreen] ❌ Microphone permission denied');
+            webViewRef.current?.injectJavaScript(`
+              window.postMessage(${JSON.stringify({
+                type: 'VOICE_RECORDING_ERROR',
+                error: 'Microphone permission denied'
+              })}, '*');
+              true;
+            `);
+            return;
           }
-          
-          // Set audio mode for recording
-          await Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-          });
 
           // Start recording
           console.log('[iOS HomeScreen] 🎙️ Starting recording...');
-          const recording = await Audio.createRecordingAsync(
-            Audio.RecordingPresets.HIGH_QUALITY
-          );
-          
-          setCurrentRecording(recording);
+          const recorder = new AudioRecorder(RecordingPresets.HIGH_QUALITY);
+          await recorder.prepareToRecordAsync();
+          recorder.record();
+          setCurrentRecording(recorder);
           console.log('[iOS HomeScreen] ✅ Recording started');
           
           webViewRef.current?.injectJavaScript(`
@@ -420,8 +408,8 @@ export default function HomeScreen() {
         
         try {
           console.log('[iOS HomeScreen] 📼 Stopping recording...');
-          await currentRecording.stopAndUnloadAsync();
-          const uri = currentRecording.getURI();
+          await currentRecording.stop();
+          const uri = currentRecording.uri;
           setCurrentRecording(null);
           
           console.log('[iOS HomeScreen] ✅ Recording stopped, URI:', uri);
