@@ -810,7 +810,12 @@ export default function HomeScreen() {
   // This prevents tracking cookies from being set before the user responds.
   if (!attReady) {
     console.log('[iOS HomeScreen] ATT status undetermined — holding WebView render');
-    return <View style={{ flex: 1, backgroundColor: '#ffffff' }} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
   }
 
   const thirdPartyCookiesAllowed = trackingStatus !== 'denied' && trackingStatus !== 'restricted';

@@ -1,2 +1,111 @@
  ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND  No package.json (or package.yaml, or package.json5) was found in "/expo-project".
  ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND  No package.json (or package.yaml, or package.json5) was found in "/expo-project".
+2026-03-25T16:44:32.558Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T16:44:32.558Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T16:44:32.558Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T16:44:32.558Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+Could not find plugin "expo-share-intent"
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T16:45:35.140Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T16:45:35.140Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T16:45:35.140Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T16:45:35.141Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+Could not find plugin "expo-share-intent"
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T16:47:47.686Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T16:47:47.687Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T16:47:47.687Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T16:47:47.687Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+Could not find plugin "expo-share-intent"
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T16:50:00.157Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T16:50:00.158Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T16:50:00.158Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T16:50:00.158Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+Could not find plugin "expo-share-intent"
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T16:52:12.859Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T16:52:12.860Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T16:52:12.860Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T16:52:12.860Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+Could not find plugin "expo-share-intent"
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-share-intent" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T16:54:25.209Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T16:54:25.209Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T16:54:25.209Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T16:54:25.209Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+» android: expo-share-intent: your Expo SDK version does not match requirements! v6.0.0 needs ^55, found 54.0.0. Please refer to the compatibility table. https://github.com/achorein/expo-share-intent/#versioning
+Could not find plugin "expo-notifications"
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
