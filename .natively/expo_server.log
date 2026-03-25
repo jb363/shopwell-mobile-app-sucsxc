@@ -581,3 +581,1384 @@ PluginError: Failed to resolve plugin for module "expo-notifications" relative t
     at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
     at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
     at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T22:08:21.749Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T22:08:21.750Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T22:08:21.750Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T22:08:21.750Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+[bacons/apple-targets] Expo config is missing required ios.appleTeamId property. Find this in Xcode and add to the Expo Config to correct. iOS builds may fail until this is corrected.
+2026-03-25T22:08:22.314Z expo:utils:fileNotifier Observing /expo-project/babel.config.js
+2026-03-25T22:08:22.505Z expo:start:server:devServer Stopping dev server (bundler: metro)
+2026-03-25T22:08:22.507Z expo:start:server:devServer Stopped dev server (bundler: metro)
+2026-03-25T22:08:22.550Z expo:start:server:metro:router Using app as the root directory for Expo Router.
+2026-03-25T22:08:22.940Z expo:metro:config react-native-reanimated package.json: /expo-project/node_modules/react-native-reanimated/package.json
+2026-03-25T22:08:22.942Z expo:metro:config react-native-worklets package.json: /expo-project/node_modules/react-native-worklets/package.json
+
+2026-03-25T22:08:22.947Z expo:metro:config react-native-reanimated package.json: /expo-project/node_modules/react-native-reanimated/package.json
+2026-03-25T22:08:22.948Z expo:metro:config react-native-worklets package.json: /expo-project/node_modules/react-native-worklets/package.json
+Expo Metro config:
+- Version: 54.0.14
+- Extensions: ts, tsx, mjs, js, jsx, json, cjs, scss, sass, css
+- React Native: /expo-project/node_modules/react-native
+- Watch Folders: 
+- Node Module Paths: 
+- Sass: null
+- Reanimated: 4.1.7
+- Worklets: 0.5.1
+- Babel Runtime: null
+
+
+Expo Metro config:
+- Version: 54.0.14
+- Extensions: ts, tsx, mjs, js, jsx, json, cjs, scss, sass, css
+- React Native: /expo-project/node_modules/react-native
+- Watch Folders: 
+- Node Module Paths: 
+- Sass: null
+- Reanimated: 4.1.7
+- Worklets: 0.5.1
+- Babel Runtime: null
+
+2026-03-25T22:08:23.197Z expo:metro:withMetroResolvers Appending 8 custom resolvers to Metro config. (has custom resolver: false)
+2026-03-25T22:08:23.217Z expo:start:server:urlCreator URL: https://e7626989-42f0-4892-8690-78e62394d076.newly.dev
+Starting Metro Bundler
+2026-03-25T22:08:23.423Z expo:start:server:middleware:serveStatic Serving static files from: /expo-project/public
+2026-03-25T22:08:23.437Z expo:start:server:urlCreator URL: exp://e7626989-42f0-4892-8690-78e62394d076.newly.dev
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+2026-03-25T22:08:23.513Z expo:start:server:developmentSession Development session will not ping because the user is not authenticated and there are no devices.
+2026-03-25T22:08:23.513Z expo:utils:fileNotifier Observing /expo-project/metro.config.js
+2026-03-25T22:08:23.514Z expo:start:server:metro:waitForTypescript Watching file changes: [
+  '/expo-project/.env.development.local',
+  '/expo-project/.env.local',
+  '/expo-project/.env.development',
+  '/expo-project/.env'
+]
+2026-03-25T22:08:23.515Z expo:doctor:typescriptSupport Ensuring TypeScript support is setup
+2026-03-25T22:08:23.528Z expo:doctor:dependencies:getMissingPackages Required package "typescript" found (no version constraint specified).
+2026-03-25T22:08:23.529Z expo:doctor:dependencies:getMissingPackages Required package "@types/react" found (no version constraint specified).
+2026-03-25T22:08:23.541Z expo:typed-routes Ensuring typed routes side-effects are setup (experiments.typedRoutes: true, typesDirectory: /expo-project/.expo/types)
+2026-03-25T22:08:23.544Z expo:start:server:metro:router Using app as the root directory for Expo Router.
+2026-03-25T22:08:23.550Z expo:start:server:metro:metroWatchTypeScriptFiles Waiting for TypeScript files to be added to the project...
+2026-03-25T22:08:23.552Z expo:doctor:dependencies:bundledNativeModules Fetching bundled native modules from the server...
+2026-03-25T22:08:23.759Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:23.810Z expo:doctor:dependencies:validate Checking dependencies for 54.0.0: {
+  '@babel/plugin-proposal-export-namespace-from': '^7.18.9',
+  '@babel/runtime': '^7.26.9',
+  '@bacons/apple-targets': '^3.0.2',
+  '@better-auth/expo': '^1.3.34',
+  '@expo/metro-runtime': '~6.1.1',
+  '@expo/vector-icons': '^15.0.2',
+  '@react-native-async-storage/async-storage': '2.2.0',
+  '@react-native-community/datetimepicker': '^8.3.0',
+  '@react-navigation/drawer': '^7.1.1',
+  '@react-navigation/native': '^7.0.14',
+  '@react-navigation/native-stack': '^7.2.0',
+  '@types/difflib': '^0.2.7',
+  'better-auth': '^1.3.34',
+  difflib: '^0.2.4',
+  eas: '^0.1.0',
+  expo: '~54.0.1',
+  'expo-audio': '~1.1.1',
+  'expo-blur': '^15.0.6',
+  'expo-constants': '~18.0.8',
+  'expo-contacts': '~15.0.11',
+  'expo-device': '~8.0.10',
+  'expo-font': '^14.0.7',
+  'expo-glass-effect': '^0.1.1',
+  'expo-haptics': '^15.0.6',
+  'expo-image-picker': '^17.0.7',
+  'expo-linear-gradient': '^15.0.6',
+  'expo-linking': '^8.0.7',
+  'expo-local-authentication': '~17.0.8',
+  'expo-location': '~19.0.8',
+  'expo-network': '^8.0.7',
+  'expo-notifications': '~0.29.14',
+  'expo-quick-actions': '^6.0.1',
+  'expo-router': '~6.0.23',
+  'expo-secure-store': '^15.0.7',
+  'expo-share-intent': '^5.1.1',
+  'expo-sharing': '~14.0.8',
+  'expo-splash-screen': '^31.0.8',
+  'expo-status-bar': '~3.0.7',
+  'expo-symbols': '^1.0.6',
+  'expo-system-ui': '^6.0.7',
+  'expo-task-manager': '~14.0.9',
+  'expo-tracking-transparency': '~6.0.8',
+  'expo-web-browser': '^15.0.6',
+  leaflet: '^1.9.4',
+  'lucide-react-native': '^0.511.0',
+  react: '19.1.0',
+  'react-dom': '19.1.0',
+  'react-leaflet': '^4.2.1',
+  'react-native': '0.81.4',
+  'react-native-css-interop': '^0.1.22',
+  'react-native-edge-to-edge': '^1.8.1',
+  'react-native-gesture-handler': '^2.24.0',
+  'react-native-reanimated': '~4.1.0',
+  'react-native-safe-area-context': '^5.4.0',
+  'react-native-screens': '~4.16.0',
+  'react-native-svg': '^15.11.2',
+  'react-native-url-polyfill': '^2.0.0',
+  'react-native-web': '~0.21.1',
+  'react-native-webview': '^13.15.0',
+  'react-native-worklets': '0.5.1',
+  'react-router-dom': '^7.1.3',
+  'workbox-cli': '^7.3.0',
+  'workbox-precaching': '^7.3.0',
+  'workbox-webpack-plugin': '^7.3.0',
+  '@babel/core': '^7.20.0',
+  '@eslint/js': '^9.19.0',
+  '@types/leaflet': '^1.9.0',
+  '@types/react': '~19.1.12',
+  '@typescript-eslint/eslint-plugin': '^6.21.0',
+  '@typescript-eslint/parser': '^6.21.0',
+  'babel-plugin-module-resolver': '^5.0.2',
+  eslint: '^8.57.0',
+  'eslint-config-expo': '~10.0.0',
+  'eslint-plugin-import': '^2.31.0',
+  'eslint-plugin-react': '^7.37.4',
+  globals: '^15.14.0',
+  typescript: '^5.9.3',
+  'webpack-cli': '^6.0.1'
+}
+2026-03-25T22:08:23.810Z expo:doctor:dependencies:validate Comparing known versions: [
+  '@expo/metro-runtime',
+  '@expo/vector-icons',
+  '@react-native-async-storage/async-storage',
+  '@react-native-community/datetimepicker',
+  'expo',
+  'expo-audio',
+  'expo-blur',
+  'expo-constants',
+  'expo-contacts',
+  'expo-device',
+  'expo-font',
+  'expo-glass-effect',
+  'expo-haptics',
+  'expo-image-picker',
+  'expo-linear-gradient',
+  'expo-linking',
+  'expo-local-authentication',
+  'expo-location',
+  'expo-network',
+  'expo-notifications',
+  'expo-router',
+  'expo-secure-store',
+  'expo-sharing',
+  'expo-splash-screen',
+  'expo-status-bar',
+  'expo-symbols',
+  'expo-system-ui',
+  'expo-task-manager',
+  'expo-tracking-transparency',
+  'expo-web-browser',
+  'react',
+  'react-dom',
+  'react-native',
+  'react-native-gesture-handler',
+  'react-native-reanimated',
+  'react-native-safe-area-context',
+  'react-native-screens',
+  'react-native-svg',
+  'react-native-web',
+  'react-native-webview',
+  'react-native-worklets',
+  '@babel/core',
+  '@types/react',
+  'eslint-config-expo',
+  'typescript'
+]
+2026-03-25T22:08:23.811Z expo:doctor:dependencies:validate Skipping packages that cannot be versioned automatically: [
+  '@babel/plugin-proposal-export-namespace-from',
+  '@babel/runtime',
+  '@bacons/apple-targets',
+  '@better-auth/expo',
+  '@react-navigation/drawer',
+  '@react-navigation/native',
+  '@react-navigation/native-stack',
+  '@types/difflib',
+  'better-auth',
+  'difflib',
+  'eas',
+  'expo-quick-actions',
+  'expo-share-intent',
+  'leaflet',
+  'lucide-react-native',
+  'react-leaflet',
+  'react-native-css-interop',
+  'react-native-edge-to-edge',
+  'react-native-url-polyfill',
+  'react-router-dom',
+  'workbox-cli',
+  'workbox-precaching',
+  'workbox-webpack-plugin',
+  '@eslint/js',
+  '@types/leaflet',
+  '@typescript-eslint/eslint-plugin',
+  '@typescript-eslint/parser',
+  'babel-plugin-module-resolver',
+  'eslint',
+  'eslint-plugin-import',
+  'eslint-plugin-react',
+  'globals',
+  'webpack-cli'
+]
+2026-03-25T22:08:23.826Z expo:doctor:dependencies:validate Package versions: {
+  '@expo/metro-runtime': '6.1.2',
+  '@expo/vector-icons': '15.1.1',
+  '@react-native-async-storage/async-storage': '2.2.0',
+  '@react-native-community/datetimepicker': '8.6.0',
+  expo: '54.0.33',
+  'expo-audio': '1.1.1',
+  'expo-blur': '15.0.8',
+  'expo-constants': '18.0.13',
+  'expo-contacts': '15.0.11',
+  'expo-device': '8.0.10',
+  'expo-font': '14.0.11',
+  'expo-glass-effect': '0.1.9',
+  'expo-haptics': '15.0.8',
+  'expo-image-picker': '17.0.10',
+  'expo-linear-gradient': '15.0.8',
+  'expo-linking': '8.0.11',
+  'expo-local-authentication': '17.0.8',
+  'expo-location': '19.0.8',
+  'expo-network': '8.0.8',
+  'expo-notifications': '0.29.14',
+  'expo-router': '6.0.23',
+  'expo-secure-store': '15.0.8',
+  'expo-sharing': '14.0.8',
+  'expo-splash-screen': '31.0.13',
+  'expo-status-bar': '3.0.9',
+  'expo-symbols': '1.0.8',
+  'expo-system-ui': '6.0.9',
+  'expo-task-manager': '14.0.9',
+  'expo-tracking-transparency': '6.0.8',
+  'expo-web-browser': '15.0.10',
+  react: '19.1.0',
+  'react-dom': '19.1.0',
+  'react-native': '0.81.4',
+  'react-native-gesture-handler': '2.30.0',
+  'react-native-reanimated': '4.1.7',
+  'react-native-safe-area-context': '5.7.0',
+  'react-native-screens': '4.16.0',
+  'react-native-svg': '15.15.4',
+  'react-native-web': '0.21.2',
+  'react-native-webview': '13.16.1',
+  'react-native-worklets': '0.5.1',
+  '@babel/core': '7.29.0',
+  '@types/react': '19.1.17',
+  'eslint-config-expo': '10.0.0',
+  typescript: '5.9.3'
+}
+2026-03-25T22:08:23.831Z expo:doctor:dependencies:validate Incorrect dependencies: [
+  {
+    packageName: '@react-native-community/datetimepicker',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '8.4.4',
+    actualVersion: '8.6.0'
+  },
+  {
+    packageName: 'expo-notifications',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '~0.32.16',
+    actualVersion: '0.29.14'
+  },
+  {
+    packageName: 'react-native',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '0.81.5',
+    actualVersion: '0.81.4'
+  },
+  {
+    packageName: 'react-native-gesture-handler',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '~2.28.0',
+    actualVersion: '2.30.0'
+  },
+  {
+    packageName: 'react-native-safe-area-context',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '~5.6.0',
+    actualVersion: '5.7.0'
+  },
+  {
+    packageName: 'react-native-svg',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '15.12.1',
+    actualVersion: '15.15.4'
+  },
+  {
+    packageName: 'react-native-webview',
+    packageType: 'dependencies',
+    expectedVersionOrRange: '13.15.0',
+    actualVersion: '13.16.1'
+  }
+]
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-community/datetimepicker@8.6.0 - expected version: 8.4.4
+  expo-notifications@0.29.14 - expected version: ~0.32.16
+  react-native@0.81.4 - expected version: 0.81.5
+  react-native-gesture-handler@2.30.0 - expected version: ~2.28.0
+  react-native-safe-area-context@5.7.0 - expected version: ~5.6.0
+  react-native-svg@15.15.4 - expected version: 15.12.1
+  react-native-webview@13.16.1 - expected version: 13.15.0
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+2026-03-25T22:08:23.973Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:24.156Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:26.225Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:29.834Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:36.229Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:38.247Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:40.274Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:42.289Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:43.645Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:43.898Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:44.308Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:46.331Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:48.351Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:50.366Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:52.381Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:54.393Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:56.410Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:08:58.425Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:00.441Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:02.454Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:04.471Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:06.489Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:08.504Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:10.521Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:12.541Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:14.556Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:16.582Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:18.599Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:20.640Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:22.653Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:24.672Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:26.689Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:28.705Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:30.744Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:32.757Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:34.770Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:36.793Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:38.818Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:40.834Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:42.849Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:44.869Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:46.884Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:48.899Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:50.919Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:52.943Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:54.956Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:57.020Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:09:59.039Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:01.060Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:03.075Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:05.109Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:07.130Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:09.143Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:11.159Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:13.173Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:15.186Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:17.207Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:19.222Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:21.236Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:23.259Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:25.276Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:27.290Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:29.305Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:31.340Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:33.360Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:35.375Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:37.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:39.414Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:41.428Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:43.442Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:45.457Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:47.473Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:49.496Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:51.513Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:53.550Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:55.572Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:57.630Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:10:59.649Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:01.667Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:03.682Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:05.784Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:07.798Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:09.815Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:11.828Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:13.845Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:15.861Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:17.875Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:19.891Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:21.905Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:23.921Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:25.938Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:27.964Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:29.991Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:32.008Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:34.027Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:36.048Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:38.064Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:40.078Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:42.091Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:44.106Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:46.125Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:48.142Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:50.157Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:52.173Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:54.191Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:56.208Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:11:58.225Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:00.238Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:02.260Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:04.282Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:06.305Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:08.320Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:10.335Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:12.357Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:14.373Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:16.391Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:18.419Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:20.435Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:22.450Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:24.464Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:26.481Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:28.497Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:30.530Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:32.545Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:34.558Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:36.579Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:38.602Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:40.654Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:42.669Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:44.702Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:46.853Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:48.867Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:50.895Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:52.939Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:54.963Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:56.978Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:12:59.005Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:01.026Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:03.055Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:05.070Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:07.104Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:09.120Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:11.140Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:13.152Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:15.171Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:17.185Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:19.198Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:21.212Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:23.227Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:25.242Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:27.261Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:29.275Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:31.290Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:33.306Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:35.321Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:37.334Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:39.353Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:41.371Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:43.390Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:45.405Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:47.427Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:49.441Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:51.457Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:53.472Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:55.489Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:57.508Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:13:59.530Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:01.567Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:03.700Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:05.715Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:07.728Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:09.749Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:11.763Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:13.778Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:15.792Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:17.808Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:19.822Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:21.837Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:23.854Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:25.869Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:27.885Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:29.973Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:31.989Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:34.004Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:36.023Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:38.041Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:40.108Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:42.121Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:44.158Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:46.175Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:48.199Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:50.338Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:52.352Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:54.368Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:56.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:14:58.408Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:00.436Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:02.453Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:04.476Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:06.490Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:08.505Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:10.523Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:12.536Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:14.554Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:16.569Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:18.683Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:20.719Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:22.733Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:24.870Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:26.883Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:28.897Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:30.914Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:32.929Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:34.945Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:36.961Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:38.998Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:41.023Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:43.045Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:45.080Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:47.109Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:49.130Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:51.146Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:53.160Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:55.175Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:57.195Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:15:59.210Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:01.238Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:03.256Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:05.273Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:07.294Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:09.316Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:11.329Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:13.343Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:15.357Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:17.372Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:19.389Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:21.405Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:23.419Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:25.441Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:27.471Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:29.502Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:31.521Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:33.558Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:35.581Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:37.606Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:39.625Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:41.645Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:43.658Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:45.687Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:47.700Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:49.722Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:55.274Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:57.287Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:16:59.302Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:01.327Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:03.346Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:09.070Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:11.086Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:13.099Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:15.150Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:17.164Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:19.178Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:21.195Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:23.214Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:25.230Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:27.248Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:29.261Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:31.288Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:33.303Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:35.316Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:37.349Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:39.365Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:41.389Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:43.413Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:45.429Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:47.444Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:49.457Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:51.476Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:53.490Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:55.508Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:57.521Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:17:59.536Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:01.551Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:03.566Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:05.583Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:07.599Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:09.617Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:11.634Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:13.648Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:15.662Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:17.676Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:19.691Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:21.705Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:23.726Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:25.739Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:27.752Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:29.776Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:31.801Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:33.816Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:35.831Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:37.847Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:39.863Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:41.878Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:43.892Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:45.907Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:47.921Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:49.937Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:51.952Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:53.965Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:55.980Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:18:57.994Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:00.009Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:02.048Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:04.096Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:06.110Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:08.125Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:10.155Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:12.170Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:14.184Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:16.200Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:18.214Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:20.230Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:22.243Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:24.256Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:26.271Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:28.292Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:30.306Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:32.323Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:34.339Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:36.354Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:38.372Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:40.387Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:42.404Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:44.421Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:46.435Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:48.454Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:50.468Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:52.485Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:54.502Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:56.517Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:19:58.533Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:00.548Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:02.563Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:04.577Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:06.590Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:08.604Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:10.619Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:12.637Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:14.654Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:16.668Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:19.215Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:21.230Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:23.247Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:25.262Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:27.276Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:29.294Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:31.310Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:33.332Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:35.350Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:37.365Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:39.379Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:41.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:43.409Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:45.425Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:47.439Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:49.455Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:51.470Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:53.484Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:55.501Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:57.514Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:20:59.528Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:01.547Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:03.565Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:05.578Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:07.593Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:09.608Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:11.622Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:13.636Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:15.655Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:17.671Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:19.686Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:21.700Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:23.715Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:25.728Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:27.742Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:29.758Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:31.774Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:33.790Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:35.813Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:37.830Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:39.846Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:41.861Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:43.876Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:45.891Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:47.904Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:49.920Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:51.935Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:53.950Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:55.965Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:57.984Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:21:59.998Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:02.047Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:04.061Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:06.074Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:08.087Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:10.106Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:12.119Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:14.132Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:16.158Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:18.175Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:20.190Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:22.208Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:24.222Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:26.236Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:28.253Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:30.266Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:32.289Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:34.306Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:36.319Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:38.335Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:40.360Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:42.376Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:44.393Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:46.411Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:48.424Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:50.439Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:52.453Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:54.467Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:56.485Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:22:58.500Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:00.514Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:02.528Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:04.544Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:06.557Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:08.572Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:10.585Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:12.602Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:14.621Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:16.636Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:18.649Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:20.664Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:22.678Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:24.693Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:26.720Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:28.734Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:30.750Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:32.769Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:34.787Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:36.802Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:38.815Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:40.828Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:42.843Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:44.860Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:46.874Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:48.886Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:50.899Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:52.914Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:54.928Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:56.943Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:23:58.965Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:00.983Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:02.998Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:05.025Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:07.040Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:09.054Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:11.070Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:13.085Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:15.399Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:17.418Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:19.433Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:21.458Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:23.471Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:25.485Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:27.502Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:29.525Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:31.541Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:33.554Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:35.578Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:37.593Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:39.609Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:41.628Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:43.643Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:45.657Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:47.671Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:49.694Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:51.709Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:53.725Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:55.742Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:57.756Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:24:59.773Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:01.791Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:03.816Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:05.833Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:07.859Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:09.876Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:11.890Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:13.906Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:15.919Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:17.933Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:19.963Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:21.997Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:24.029Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:26.048Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:28.088Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:30.105Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:32.125Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:34.140Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:36.153Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:38.170Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:40.187Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:42.207Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:44.228Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:46.241Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:48.264Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:50.281Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:52.309Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:54.324Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:56.338Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:25:58.381Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:00.407Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:02.421Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:04.477Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:06.493Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:08.553Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:10.568Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:12.583Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:14.597Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:16.612Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:18.625Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:20.639Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:22.697Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:24.714Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:26.727Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:28.740Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:30.754Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:32.767Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:34.782Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:36.797Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:38.813Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:40.827Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:42.843Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:44.858Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:46.894Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:48.909Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:50.925Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:52.949Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:54.962Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:56.976Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:26:58.991Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:01.007Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:03.022Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:05.036Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:07.060Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:09.084Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:11.098Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:13.112Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:15.127Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:17.141Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:19.155Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:21.170Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:23.181Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:25.198Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:27.219Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:29.235Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:31.258Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:33.273Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:35.286Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:37.299Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:39.315Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:41.340Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:43.352Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:45.368Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:47.386Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:49.400Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:51.417Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:53.431Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:55.447Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:57.463Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:27:59.480Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:01.496Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:03.522Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:05.535Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:07.551Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:09.565Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:11.580Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:13.595Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:15.610Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:17.622Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:19.637Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:21.654Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:23.676Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:25.689Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:27.703Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:29.728Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:31.749Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:33.792Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:35.817Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:37.832Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:39.846Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:41.859Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:43.875Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:45.889Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:47.902Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:49.918Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:51.935Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:53.954Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:56.046Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:28:58.070Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:00.088Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:02.103Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:04.120Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:06.134Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:08.148Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:10.163Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:12.326Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:14.342Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:16.354Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:18.367Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:20.390Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:22.405Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:24.420Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:26.435Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:28.449Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:30.464Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:32.478Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:34.495Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:36.511Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:38.527Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:40.541Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:42.559Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:44.572Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:46.586Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:48.600Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:50.628Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:52.640Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:54.651Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:57.193Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:29:59.209Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:01.243Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:03.256Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:05.275Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:07.299Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:09.317Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:11.335Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:13.351Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:15.376Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:17.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:19.406Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:21.422Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:23.435Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:25.451Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:27.470Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:29.485Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:31.503Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:33.519Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:35.538Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:37.552Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:39.617Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:41.651Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:43.666Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:45.681Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:47.704Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:49.720Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:51.739Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:53.752Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:55.768Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:57.782Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:30:59.804Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:01.819Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:03.833Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:05.875Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:07.887Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:09.901Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:11.916Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:13.930Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:15.949Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:17.962Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:19.978Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:21.998Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:24.023Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:26.040Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:28.061Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:30.076Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:32.089Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:34.102Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:36.117Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:38.142Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:40.157Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:42.171Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:44.190Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:46.207Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:48.221Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:50.244Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:52.261Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:54.279Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:56.295Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:31:58.308Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:00.321Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:02.340Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:04.465Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:06.480Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:08.494Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:10.515Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:12.531Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:14.544Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:16.560Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:18.577Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:20.593Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:22.615Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:24.632Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:26.647Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:28.662Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:30.696Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:32.710Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:34.734Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:36.751Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:38.763Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:40.775Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:42.787Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:44.807Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:46.819Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:48.841Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:50.859Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:52.873Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:54.896Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:56.913Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:32:58.929Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:00.943Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:02.965Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:04.978Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:06.991Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:09.003Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:11.029Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:13.043Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:15.054Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:17.068Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:19.081Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:21.096Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:23.113Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:25.133Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:27.148Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:29.164Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:31.190Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:33.205Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:35.268Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:37.283Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:39.301Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:41.318Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:43.330Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:45.346Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:47.359Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:49.373Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:51.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:53.405Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:55.422Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:57.435Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:33:59.448Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:01.460Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:03.476Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:05.489Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:07.502Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:09.516Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:11.532Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:13.545Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:15.557Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:17.571Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:19.585Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:21.606Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:23.620Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:25.653Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:27.666Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:29.687Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:31.703Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:33.731Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:35.743Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:37.760Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:39.779Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:41.798Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:43.811Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:45.825Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:47.841Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:49.864Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:51.877Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:53.890Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:55.903Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:57.916Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:34:59.931Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:01.948Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:04.026Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:06.070Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:08.091Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:10.107Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:12.139Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:14.377Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:16.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:18.563Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:20.743Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:22.759Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:24.772Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:26.786Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:28.800Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:30.816Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:32.828Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:34.845Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:36.856Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:38.873Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:40.888Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:42.901Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:44.916Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:46.929Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:48.943Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:50.961Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:52.975Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:54.996Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:57.036Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:35:59.050Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:01.065Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:03.079Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:05.095Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:07.111Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:09.125Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:11.140Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:13.153Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:15.169Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:17.181Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:19.196Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:21.209Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:23.226Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:25.243Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:27.260Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:29.277Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:31.291Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:33.306Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:35.319Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:37.334Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:39.347Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:41.365Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:43.379Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:45.392Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:47.411Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:49.427Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:51.443Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:53.457Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:55.472Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:57.487Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:36:59.504Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:01.519Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:03.533Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:05.546Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:07.560Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:09.578Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:11.592Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:13.605Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:15.619Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:17.634Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:19.662Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:21.678Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:23.693Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:25.706Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:27.719Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:29.736Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:31.751Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:33.765Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:35.780Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:37.795Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:39.811Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:41.831Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:43.851Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:45.885Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:47.904Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:49.932Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:51.958Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:53.984Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:56.032Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:37:58.062Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:00.079Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:02.096Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:04.127Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:06.144Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:08.161Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:10.176Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:12.198Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:14.222Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:16.252Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:18.278Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:20.427Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:22.462Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:24.498Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:26.522Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:28.551Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:30.575Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:32.602Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:34.630Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:36.671Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:38.708Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:40.744Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:42.771Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:44.785Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:46.800Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:48.835Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:50.859Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:52.900Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:54.925Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:56.946Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:38:58.975Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:01.009Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:03.043Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:05.071Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:07.101Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:09.128Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:11.178Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:13.218Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:15.251Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:17.293Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:19.325Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:21.358Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:23.386Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:25.417Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:27.434Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:29.458Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:31.473Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:33.502Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:35.525Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:37.560Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:39.601Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:41.634Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:43.667Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:45.706Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:47.747Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:49.783Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:51.829Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:53.864Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:55.918Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:57.960Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:39:59.993Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:02.058Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:04.095Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:06.132Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:08.180Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:10.212Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:12.253Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:14.289Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:16.330Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:18.386Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:20.430Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:22.469Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:24.524Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:26.573Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:28.611Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:30.648Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:32.684Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:34.741Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:36.799Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:38.833Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:40.869Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:42.920Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:44.965Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:47.007Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:49.043Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:51.083Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:53.119Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:55.169Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:57.215Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:40:59.287Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:01.337Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:03.378Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:05.419Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:07.462Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:09.513Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:11.569Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:13.620Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:15.725Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:17.770Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:19.812Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:21.853Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:23.882Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:25.932Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:27.976Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:30.006Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:32.053Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:34.085Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:36.127Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:38.159Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:40.205Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:42.253Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:44.298Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:46.350Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:48.378Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:50.413Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:52.449Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:54.464Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:56.484Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:41:58.498Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:00.525Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:02.561Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:04.592Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:06.618Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:08.652Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:10.686Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:12.720Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:14.748Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:16.788Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:18.819Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:20.851Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:22.891Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:24.931Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:26.966Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:28.998Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:31.032Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:33.046Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:35.073Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:37.089Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:39.102Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:41.119Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:43.133Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:45.146Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:47.159Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:49.175Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:51.188Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:53.205Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:55.217Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:57.231Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:42:59.247Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:01.264Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:03.276Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:05.291Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:07.312Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:09.327Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:11.340Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:13.355Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:15.367Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:17.383Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:19.399Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:21.413Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:23.432Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:25.444Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:27.458Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:29.471Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:31.485Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:33.499Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:35.511Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:37.527Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:39.539Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:41.552Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:43.566Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:45.579Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:47.593Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:49.609Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:51.625Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:53.637Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:55.650Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:57.666Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:43:59.680Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:44:01.695Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:44:03.712Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:44:05.726Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-25T22:44:07.740Z expo:start:server:middleware:serveStatic Maybe serve static: /
