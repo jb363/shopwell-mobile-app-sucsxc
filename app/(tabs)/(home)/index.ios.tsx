@@ -368,7 +368,7 @@ export default function HomeScreen() {
           console.log('[iOS HomeScreen] 🎙️ Starting recording...');
           const recorder = new AudioRecorder(RecordingPresets.HIGH_QUALITY);
           await recorder.prepareToRecordAsync();
-          recorder.record();
+          await recorder.record();
           setCurrentRecording(recorder);
           console.log('[iOS HomeScreen] ✅ Recording started');
           

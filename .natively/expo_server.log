@@ -261,3 +261,98 @@ PluginError: Failed to resolve plugin for module "expo-notifications" relative t
     at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
     at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
     at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T17:10:55.967Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T17:10:55.968Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T17:10:55.968Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T17:10:55.969Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+» android: expo-share-intent: your Expo SDK version does not match requirements! v6.0.0 needs ^55, found 54.0.0. Please refer to the compatibility table. https://github.com/achorein/expo-share-intent/#versioning
+Could not find plugin "expo-notifications"
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T17:12:05.195Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T17:12:05.196Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T17:12:05.196Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T17:12:05.196Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+» android: expo-share-intent: your Expo SDK version does not match requirements! v6.0.0 needs ^55, found 54.0.0. Please refer to the compatibility table. https://github.com/achorein/expo-share-intent/#versioning
+Could not find plugin "expo-notifications"
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T17:14:17.795Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T17:14:17.796Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T17:14:17.796Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T17:14:17.796Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+» android: expo-share-intent: your Expo SDK version does not match requirements! v6.0.0 needs ^55, found 54.0.0. Please refer to the compatibility table. https://github.com/achorein/expo-share-intent/#versioning
+Could not find plugin "expo-notifications"
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T17:16:30.282Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T17:16:30.282Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T17:16:30.282Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T17:16:30.282Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+» android: expo-share-intent: your Expo SDK version does not match requirements! v6.0.0 needs ^55, found 54.0.0. Please refer to the compatibility table. https://github.com/achorein/expo-share-intent/#versioning
+Could not find plugin "expo-notifications"
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)
+2026-03-25T17:18:42.798Z expo:env /expo-project/.env does not exist, skipping this env file
+2026-03-25T17:18:42.798Z expo:env /expo-project/.env.development does not exist, skipping this env file
+2026-03-25T17:18:42.798Z expo:env /expo-project/.env.local does not exist, skipping this env file
+2026-03-25T17:18:42.799Z expo:env /expo-project/.env.development.local does not exist, skipping this env file
+Starting project at /expo-project
+» android: expo-share-intent: your Expo SDK version does not match requirements! v6.0.0 needs ^55, found 54.0.0. Please refer to the compatibility table. https://github.com/achorein/expo-share-intent/#versioning
+Could not find plugin "expo-notifications"
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+PluginError: Failed to resolve plugin for module "expo-notifications" relative to "/expo-project". Do you have node modules installed?
+    at resolvePluginForModule (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:96:9)
+    at resolveConfigPluginFunctionWithInfo (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:145:7)
+    at resolveConfigPluginFunction (/expo-project/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js:136:7)
+    at withStaticPlugin (/expo-project/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js:85:70)
+    at /expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:84
+    at Array.reduce (<anonymous>)
+    at withPlugins (/expo-project/node_modules/@expo/config-plugins/build/plugins/withPlugins.js:30:18)
+    at withConfigPlugins (/expo-project/node_modules/@expo/config/build/plugins/withConfigPlugins.js:35:47)
+    at fillAndReturnConfig (/expo-project/node_modules/@expo/config/build/Config.js:236:78)
+    at getConfig (/expo-project/node_modules/@expo/config/build/Config.js:293:10)

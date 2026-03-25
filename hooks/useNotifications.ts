@@ -174,7 +174,7 @@ export function useNotifications() {
           body: 'Here is the notification body',
           data: { data: 'goes here' },
         },
-        trigger: { seconds: 1 },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
       });
       console.log('[useNotifications] ✅ Notification scheduled');
     } catch (error) {
