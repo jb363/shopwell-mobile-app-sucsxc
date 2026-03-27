@@ -31,7 +31,7 @@ try {
 
 // Derive projectId and experienceId from app config (required for iOS push tokens)
 const PROJECT_ID: string =
-  Constants.expoConfig?.extra?.eas?.projectId ?? 'e7626989-42f0-4892-8690-78e62394d076';
+  Constants.expoConfig?.extra?.eas?.projectId ?? '2660e422-ff9f-4525-8ca0-080bf290cdf4';
 const EXPERIENCE_ID: string =
   `@${Constants.expoConfig?.owner ?? 'natively'}/${Constants.expoConfig?.slug ?? 'shopwell-mobile-app-sucsxc'}`;
 

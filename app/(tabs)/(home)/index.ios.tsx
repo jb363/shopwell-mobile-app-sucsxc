@@ -35,7 +35,7 @@ try {
 
 const SHOPWELL_URL = 'https://shopwell.ai';
 
-const PROJECT_ID = 'e7626989-42f0-4892-8690-78e62394d076';
+const PROJECT_ID = '2660e422-ff9f-4525-8ca0-080bf290cdf4';
 
 export default function HomeScreen() {
   console.log('[iOS HomeScreen] Initializing...');
