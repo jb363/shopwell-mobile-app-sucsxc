@@ -2763,3 +2763,7 @@ Logs for your project will appear below.
 2026-03-27T01:49:45.038Z expo:start:server:middleware:serveStatic Maybe serve static: /
 2026-03-27T01:49:47.093Z expo:start:server:middleware:serveStatic Maybe serve static: /
 2026-03-27T01:49:49.110Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-27T01:49:51.126Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-27T01:49:53.151Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-27T01:49:55.164Z expo:start:server:middleware:serveStatic Maybe serve static: /
+2026-03-27T01:49:57.182Z expo:start:server:middleware:serveStatic Maybe serve static: /
