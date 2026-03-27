@@ -19,6 +19,7 @@ import { shopWellColors } from "@/constants/Colors";
 import { crashReporter } from "@/utils/crashReporter";
 import { useTrackingPermission } from "@/hooks/useTrackingPermission";
 import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -389,44 +390,55 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style="auto" animated />
-      <ThemeProvider
-        value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
-      >
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <Stack>
-            {/* Main app with tabs */}
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <NotificationProvider>
+        <StatusBar style="auto" animated />
+        <ThemeProvider
+          value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
+        >
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <Stack>
+              {/* Main app with tabs */}
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-            {/* Share Target Screen */}
-            <Stack.Screen 
-              name="share-target" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal',
-              }} 
-            />
+              {/* Share Target Screen */}
+              <Stack.Screen
+                name="share-target"
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                }}
+              />
 
-            {/* Crash Diagnostics Screen */}
-            <Stack.Screen 
-              name="crash-diagnostics" 
-              options={{ 
-                title: 'Crash Diagnostics',
-                presentation: 'modal',
-              }} 
-            />
+              {/* Notification Preferences Screen */}
+              <Stack.Screen
+                name="notification-preferences"
+                options={{
+                  title: 'Notifications',
+                  presentation: 'modal',
+                }}
+              />
 
-            {/* 404 Not Found Screen */}
-            <Stack.Screen 
-              name="+not-found" 
-              options={{ 
-                title: 'Not Found',
-              }} 
-            />
-          </Stack>
-          <SystemBars style={"auto"} />
-        </GestureHandlerRootView>
-      </ThemeProvider>
+              {/* Crash Diagnostics Screen */}
+              <Stack.Screen
+                name="crash-diagnostics"
+                options={{
+                  title: 'Crash Diagnostics',
+                  presentation: 'modal',
+                }}
+              />
+
+              {/* 404 Not Found Screen */}
+              <Stack.Screen
+                name="+not-found"
+                options={{
+                  title: 'Not Found',
+                }}
+              />
+            </Stack>
+            <SystemBars style={"auto"} />
+          </GestureHandlerRootView>
+        </ThemeProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

@@ -54,8 +54,10 @@
       ],
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.ai.shopwell.app"
-        ]
+          "group.ai.shopwell.app",
+          "group.ai.shopwell.app.onesignal"
+        ],
+        "aps-environment": "production"
       }
     },
     "android": {
@@ -129,6 +131,12 @@
       "favicon": "./assets/images/shopwell-ai-app-icon.png"
     },
     "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "production"
+        }
+      ],
       "expo-router",
       [
         "expo-share-intent",
@@ -208,7 +216,8 @@
       },
       "eas": {
         "projectId": "2660e422-ff9f-4525-8ca0-080bf290cdf4"
-      }
+      },
+      "oneSignalAppId": "442afb54-945f-4ccd-8ee8-2cd636033685"
     },
     "owner": "shopwellai"
   }
