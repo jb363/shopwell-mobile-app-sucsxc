@@ -1,224 +1,46 @@
 {
   "expo": {
-    "name": "ShopWell.ai Mobile",
-    "slug": "shopwell-ai-mobile",
-    "version": "1.0.30",
+    "name": "Newly",
+    "slug": "Newly",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/shopwell-ai-app-icon.png",
-    "scheme": "shopwellaimobile",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/shopwell-ai-app-icon.png",
+      "image": "./assets/images/natively-dark.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ai.shopwell.app",
-      "buildNumber": "1.0.21",
+      "bundleIdentifier": "com.placeholder.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "ShopWell needs access to your camera to scan product barcodes and QR codes.",
-        "NSPhotoLibraryUsageDescription": "ShopWell needs access to your photo library to let you select images for your shopping lists.",
-        "NSMicrophoneUsageDescription": "ShopWell needs access to your microphone to record voice notes for your shopping lists.",
-        "NSContactsUsageDescription": "ShopWell would like to access your contacts to help you share shopping lists with friends and family.",
-        "NSLocationWhenInUseUsageDescription": "ShopWell needs your location to show nearby stores and provide location-based features.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
-        "NSLocationAlwaysUsageDescription": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
-        "NSUserTrackingUsageDescription": "We use tracking to personalize product recommendations and improve your shopping experience.",
-        "NSAppTrackingTransparencyUsageDescription": "We use tracking to personalize product recommendations and improve your shopping experience.",
-        "NSFaceIDUsageDescription": "ShopWell uses Face ID to securely authenticate and protect your account.",
-        "UIBackgroundModes": [
-          "location",
-          "fetch",
-          "remote-notification"
-        ],
-        "CFBundleURLTypes": [
-          {
-            "CFBundleTypeRole": "Editor",
-            "CFBundleURLName": "ai.shopwell.app",
-            "CFBundleURLSchemes": [
-              "shopwellaimobile"
-            ]
-          }
-        ],
-        "LSApplicationQueriesSchemes": [
-          "shopwellaimobile"
-        ]
-      },
-      "config": {
-        "usesNonExemptEncryption": false
-      },
-      "associatedDomains": [
-        "applinks:shopwell.ai",
-        "applinks:*.shopwell.ai"
-      ],
-      "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.ai.shopwell.app",
-          "group.ai.shopwell.app.onesignal"
-        ],
-        "aps-environment": "production"
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/shopwell-ai-app-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/natively-dark.png",
+        "backgroundColor": "#000000"
       },
-      "package": "com.axiomstrategies.shopwellai",
-      "versionCode": 34,
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "RECORD_AUDIO",
-        "READ_CONTACTS",
-        "WRITE_CONTACTS",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "POST_NOTIFICATIONS",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "shopwell.ai"
-            },
-            {
-              "scheme": "shopwellaimobile"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        },
-        {
-          "action": "SEND",
-          "category": [
-            "DEFAULT"
-          ],
-          "data": [
-            {
-              "mimeType": "text/plain"
-            }
-          ]
-        },
-        {
-          "action": "SEND",
-          "category": [
-            "DEFAULT"
-          ],
-          "data": [
-            {
-              "mimeType": "image/*"
-            }
-          ]
-        }
-      ]
+      "package": "com.placeholder.app"
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/shopwell-ai-app-icon.png"
+      "favicon": "./assets/images/final_quest_240x240.png",
+      "bundler": "metro"
     },
     "plugins": [
-      [
-        "onesignal-expo-plugin",
-        {
-          "mode": "production"
-        }
-      ],
+      "expo-font",
       "expo-router",
-      [
-        "expo-share-intent",
-        {
-          "iosActivationRules": {
-            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
-            "NSExtensionActivationSupportsWebPageWithMaxCount": 1
-          }
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/shopwell-ai-app-icon.png",
-          "color": "#ffffff",
-          "sounds": []
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
-          "locationAlwaysPermission": "ShopWell needs your location to notify you when you're near stores with active shopping lists.",
-          "locationWhenInUsePermission": "ShopWell needs your location to show nearby stores and provide location-based features."
-        }
-      ],
-      "expo-tracking-transparency",
-      "expo-contacts",
-      "expo-quick-actions",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "ShopWell needs access to your photo library to let you select images for your shopping lists.",
-          "cameraPermission": "ShopWell needs access to your camera to scan product barcodes and QR codes."
-        }
-      ],
-      "expo-secure-store",
-      "expo-local-authentication",
-      "react-native-edge-to-edge",
-      "./plugins/withAndroidShareTarget",
-      [
-        "@bacons/apple-targets",
-        {
-          "ShareExtension": {
-            "type": "share-extension",
-            "bundleIdentifier": "ai.shopwell.app.ShareExtension",
-            "deploymentTarget": "13.0",
-            "icon": "./assets/images/shopwell-ai-app-icon.png",
-            "entitlements": {
-              "com.apple.security.application-groups": [
-                "group.ai.shopwell.app"
-              ]
-            },
-            "infoPlist": {
-              "CFBundleDisplayName": "ShopWell.ai",
-              "NSExtension": {
-                "NSExtensionAttributes": {
-                  "NSExtensionActivationRule": {
-                    "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
-                    "NSExtensionActivationSupportsWebPageWithMaxCount": 1
-                  }
-                },
-                "NSExtensionPointIdentifier": "com.apple.share-services",
-                "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ShareViewController"
-              }
-            }
-          }
-        }
-      ]
+      "expo-web-browser",
+      "expo-secure-store"
     ],
+    "scheme": "natively",
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "2660e422-ff9f-4525-8ca0-080bf290cdf4"
-      },
-      "oneSignalAppId": "442afb54-945f-4ccd-8ee8-2cd636033685"
-    },
-    "owner": "shopwellai"
+      "router": {}
+    }
   }
 }
